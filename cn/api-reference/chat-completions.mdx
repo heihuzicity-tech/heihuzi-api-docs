@@ -1,0 +1,80 @@
+---
+title: "Chat Completions"
+api: "POST /v1/chat/completions"
+description: "OpenAI Chat Completions 兼容入口，适合旧版客户端迁移。"
+---
+
+`/v1/chat/completions` 是兼容接口，用于已经接入 OpenAI Chat Completions 的旧项目、旧 SDK 或只支持 `messages` 格式的工具。新项目和 Codex 场景优先使用 `/v1/responses`。
+
+<RequestExample>
+```bash cURL
+curl --request POST \
+  --url https://code.heihuzi.ai/v1/chat/completions \
+  --header 'Authorization: Bearer <token>' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "model": "gpt-5.5",
+    "messages": [
+      {
+        "role": "user",
+        "content": "用一句话说明黑胡子AI便利店的用途"
+      }
+    ]
+  }'
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    "https://code.heihuzi.ai/v1/chat/completions",
+    headers={
+        "Authorization": "Bearer <token>",
+        "Content-Type": "application/json",
+    },
+    json={
+        "model": "gpt-5.5",
+        "messages": [
+            {
+                "role": "user",
+                "content": "用一句话说明黑胡子AI便利店的用途",
+            }
+        ],
+    },
+)
+
+print(response.json())
+```
+</RequestExample>
+
+## Body
+
+<ParamField body="model" type="string" required>
+  模型 ID。可用模型以 `/v1/models` 返回为准。
+</ParamField>
+
+<ParamField body="messages" type="array" required>
+  OpenAI Chat Completions 兼容消息列表。
+</ParamField>
+
+<ParamField body="stream" type="boolean">
+  是否启用流式响应。
+</ParamField>
+
+<ParamField body="temperature" type="number">
+  采样温度。具体支持情况取决于当前渠道和模型。
+</ParamField>
+
+<ParamField body="max_tokens" type="integer">
+  最大输出 token 数。部分模型或渠道可能使用兼容字段映射。
+</ParamField>
+
+## Response
+
+返回 OpenAI Chat Completions 兼容结构。该接口主要用于迁移和兼容，不是 Codex / OpenAI 新项目的首选入口。
+
+## 使用边界
+
+- 主推荐入口是 `/v1/responses`。
+- 该接口不会提供 Claude Code Messages 协议语义。
+- 如果旧客户端无法切换到 Responses，可以继续使用该兼容入口。

@@ -1,0 +1,60 @@
+---
+title: "cURL"
+description: "使用 cURL 验证黑胡子AI便利店 API。"
+---
+
+cURL 适合做最小化排查：确认 Token、模型、权限和具体接口是否可用。
+
+## Models
+
+```bash
+curl --request GET \
+  --url https://code.heihuzi.ai/v1/models \
+  --header 'Authorization: Bearer <token>'
+```
+
+## Responses
+
+```bash
+curl --request POST \
+  --url https://code.heihuzi.ai/v1/responses \
+  --header 'Authorization: Bearer <token>' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "model": "gpt-5.5",
+    "input": "hello"
+  }'
+```
+
+## Claude Code Messages
+
+```bash
+curl --request POST \
+  --url https://code.heihuzi.ai/v1/messages \
+  --header 'Authorization: Bearer <token>' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "model": "claude-sonnet-4-6",
+    "max_tokens": 512,
+    "messages": [
+      {
+        "role": "user",
+        "content": "hello"
+      }
+    ]
+  }'
+```
+
+## GPT Image 2
+
+```bash
+curl --request POST \
+  --url https://code.heihuzi.ai/v1/images/generations \
+  --header 'Authorization: Bearer <token>' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "model": "gpt-image-2",
+    "prompt": "一张极简风格的蓝色 API 网关图标",
+    "size": "1024x1024"
+  }'
+```

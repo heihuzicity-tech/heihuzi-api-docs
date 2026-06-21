@@ -1,0 +1,31 @@
+---
+title: "模型映射与使用边界"
+description: "Claude Code-compatible 模型的调度方式和协议边界。"
+---
+
+Claude Code 原生调用面向 Claude Code / Anthropic Messages-compatible 客户端。平台会根据模型名、分组能力和渠道配置选择可用上游。
+
+## 推荐模型族
+
+| 模型族 | 推荐用途 | 默认倾向 |
+| --- | --- | --- |
+| `claude-opus-*` | 高复杂度推理、长任务 | 更强能力，成本和耗时更高。 |
+| `claude-sonnet-*` | 日常编码、分析、自动化 | Claude Code 的常用默认选择。 |
+| `claude-haiku-*` | 快速轻量任务 | 低延迟、轻量输出。 |
+
+## OpenAI 分组映射
+
+当 Claude Code-compatible 请求由 OpenAI 分组承接时，平台会按模型族映射到对应 GPT / Codex 能力：
+
+| Claude Code-compatible 模型族 | 默认映射方向 |
+| --- | --- |
+| `claude-opus-*` | `gpt-5.4` |
+| `claude-sonnet-*` | `gpt-5.3-codex` |
+| `claude-haiku-*` | `gpt-5.4-mini` |
+
+## 边界说明
+
+- `/v1/messages` 是独立协议入口，不接受 OpenAI Responses 请求体。
+- 具体模型可见性以 `/v1/models` 返回为准。
+- 该能力需要 API Key 所属分组允许 Messages 调度。
+- 文档里的模型族说明是使用建议，不是对每个账号的可用性承诺。

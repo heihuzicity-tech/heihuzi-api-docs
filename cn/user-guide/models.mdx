@@ -1,0 +1,26 @@
+---
+title: "模型选择"
+description: "如何在 GPT / Codex、Claude Code-compatible 和 GPT Image 2 之间选择。"
+---
+
+先按客户端协议选择模型族，再用 `/v1/models` 确认当前 API Key 是否可见。
+
+## GPT / Codex
+
+适合 Codex、OpenAI SDK、Responses 和 Chat Completions 兼容调用。常用模型包括 `gpt-5.5`、`gpt-5.4`、`gpt-5.4-mini`、`gpt-5.3-codex`、`gpt-5.3-codex-spark`。
+
+## Claude Code-compatible
+
+适合 Claude Code 和 Anthropic Messages-compatible 客户端。优先按任务选择 `claude-sonnet-*`、`claude-opus-*` 或 `claude-haiku-*` 模型族。
+
+## 图像
+
+图像生成和图像编辑优先使用 `gpt-image-2`。图片接口需要分组开启图片生成能力。
+
+## 判断标准
+
+- 新项目文本调用：优先 Responses。
+- 旧 OpenAI 客户端迁移：使用 Chat Completions 兼容入口。
+- Claude Code：使用 Messages。
+- 图片：使用 Images。
+- 看不到模型：先查 API Key 分组和渠道配置。

@@ -1,0 +1,70 @@
+---
+title: "快速验证"
+description: "用最短路径验证 API Key、文本接口、Claude Code 入口和 GPT Image 2。"
+---
+
+Base URL：`https://code.heihuzi.ai`
+
+开始集成前，先用下面四个请求确认 API Key、模型和分组权限是否正常。
+
+## 1. 查询模型
+
+```bash
+curl --request GET \
+  --url https://code.heihuzi.ai/v1/models \
+  --header 'Authorization: Bearer <token>'
+```
+
+如果模型列表为空或没有目标模型，先检查 API Key 所属分组和渠道配置。
+
+## 2. 验证 OpenAI API 调用
+
+```bash
+curl --request POST \
+  --url https://code.heihuzi.ai/v1/responses \
+  --header 'Authorization: Bearer <token>' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "model": "gpt-5.5",
+    "input": "用一句话介绍黑胡子AI便利店"
+  }'
+```
+
+Codex、OpenAI SDK 和新项目优先使用这个入口。
+
+## 3. 验证 Claude Code 入口
+
+```bash
+curl --request POST \
+  --url https://code.heihuzi.ai/v1/messages \
+  --header 'Authorization: Bearer <token>' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "model": "claude-sonnet-4-6",
+    "max_tokens": 512,
+    "messages": [
+      {
+        "role": "user",
+        "content": "hello"
+      }
+    ]
+  }'
+```
+
+Claude Code 使用这个入口，不使用 `/v1/responses`。
+
+## 4. 验证 GPT Image 2
+
+```bash
+curl --request POST \
+  --url https://code.heihuzi.ai/v1/images/generations \
+  --header 'Authorization: Bearer <token>' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "model": "gpt-image-2",
+    "prompt": "一张极简风格的蓝色 API 网关图标",
+    "size": "1024x1024"
+  }'
+```
+
+如果返回权限错误，检查 API Key 分组是否开启图片生成能力。

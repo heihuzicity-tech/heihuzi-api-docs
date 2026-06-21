@@ -1,0 +1,62 @@
+---
+title: "Models"
+api: "GET /v1/models"
+description: "查询当前 API Key 可见模型。"
+---
+
+`/v1/models` 返回当前 API Key 可见的模型列表。文档中的推荐模型只表示平台支持方向，不承诺每个 Key 都能看到全部模型。
+
+<RequestExample>
+```bash cURL
+curl --request GET \
+  --url https://code.heihuzi.ai/v1/models \
+  --header 'Authorization: Bearer <token>'
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    "https://code.heihuzi.ai/v1/models",
+    headers={"Authorization": "Bearer <token>"},
+)
+
+print(response.json())
+```
+</RequestExample>
+
+## 推荐模型族
+
+| 类型 | 推荐模型 | 适用场景 |
+| --- | --- | --- |
+| GPT / Codex | `gpt-5.5`、`gpt-5.4`、`gpt-5.4-mini`、`gpt-5.3-codex`、`gpt-5.3-codex-spark`、`codex-auto-review` | Responses、Chat Completions、Codex 工具链。 |
+| Claude Code-compatible | `claude-opus-*`、`claude-sonnet-*`、`claude-haiku-*` | Claude Code / Messages 协议客户端。 |
+| Image | `gpt-image-2`、其他 `gpt-image-*` 模型 | 图像生成和图像编辑。 |
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gpt-5.5",
+      "object": "model",
+      "owned_by": "openai"
+    },
+    {
+      "id": "gpt-image-2",
+      "object": "model",
+      "owned_by": "openai"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## 注意事项
+
+- 可见模型受 API Key、分组、渠道、上游账号状态影响。
+- 模型显示可见不等于每个参数都被该模型支持。
+- Claude Code-compatible 模型是协议兼容入口，会按平台配置映射到可用上游。

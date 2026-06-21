@@ -1,0 +1,129 @@
+---
+title: "GPT Image 2 图像编辑"
+api: "POST /v1/images/edits"
+description: "GPT Image 2 图像编辑接口，支持 URL 输入和 multipart 上传。"
+---
+
+`/v1/images/edits` 用于图生图、局部编辑和参考图编辑。该接口仅面向 OpenAI-compatible 分组，并受图片生成权限控制。
+
+支持两种输入方式：
+
+- `application/json`：通过 `images[].image_url` 和 `mask.image_url` 传入公网图片 URL。
+- `multipart/form-data`：通过 `image` / `image[]` 和 `mask` 上传本地文件。
+
+<RequestExample>
+```bash cURL
+curl --request POST \
+  --url https://code.heihuzi.ai/v1/images/edits \
+  --header 'Authorization: Bearer <token>' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "model": "gpt-image-2",
+    "prompt": "把这张照片变成水彩画风格",
+    "images": [
+      {
+        "image_url": "https://assets.heihuzi.ai/photo.jpg"
+      }
+    ],
+    "size": "1024x1024",
+    "output_format": "png"
+  }'
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    "https://code.heihuzi.ai/v1/images/edits",
+    headers={
+        "Authorization": "Bearer <token>",
+        "Content-Type": "application/json",
+    },
+    json={
+        "model": "gpt-image-2",
+        "prompt": "把这张照片变成水彩画风格",
+        "images": [
+            {
+                "image_url": "https://assets.heihuzi.ai/photo.jpg",
+            }
+        ],
+        "size": "1024x1024",
+        "output_format": "png",
+    },
+)
+
+print(response.json())
+```
+</RequestExample>
+
+## Body
+
+<ParamField body="model" type="string" required>
+  图像编辑模型。推荐固定使用 `gpt-image-2`。
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  编辑提示词。
+</ParamField>
+
+<ParamField body="images" type="array" required>
+  JSON 模式下的参考图数组。
+</ParamField>
+
+<ParamField body="images[].image_url" type="string" required>
+  公网可访问图片 URL。
+</ParamField>
+
+<ParamField body="mask" type="object">
+  可选遮罩对象。
+</ParamField>
+
+<ParamField body="mask.image_url" type="string">
+  JSON 模式下的遮罩图片 URL。
+</ParamField>
+
+<ParamField body="size" type="string">
+  输出尺寸。支持 `auto` 或具体像素尺寸。
+</ParamField>
+
+<ParamField body="input_fidelity" type="string">
+  编辑场景可传输入保真度参数。
+</ParamField>
+
+<ParamField body="output_format" type="string">
+  输出图片格式，例如 `png`、`jpeg`、`webp`。
+</ParamField>
+
+## Multipart 上传
+
+```bash
+curl --request POST \
+  --url https://code.heihuzi.ai/v1/images/edits \
+  --header 'Authorization: Bearer <token>' \
+  --form 'model=gpt-image-2' \
+  --form 'prompt=把这张照片变成水彩画风格' \
+  --form 'image=@photo.png' \
+  --form 'size=1024x1024'
+```
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "created": 1710000000,
+  "data": [
+    {
+      "url": "https://assets.heihuzi.ai/edited-image.png"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+## 注意事项
+
+- JSON 模式适合已经有公网图片 URL 的场景。
+- Multipart 模式适合直接上传本地文件。
+- 该接口不公开异步任务查询流程。
+- 非 OpenAI-compatible 分组不能调用 Images 接口。

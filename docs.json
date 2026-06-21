@@ -1,72 +1,147 @@
 {
   "$schema": "https://mintlify.com/docs.json",
+  "name": "黑胡子AI便利店",
   "theme": "mint",
-  "name": "Mintlify Starter Kit",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#2563EB",
+    "light": "#3B82F6",
+    "dark": "#1D4ED8"
   },
   "favicon": "/favicon.svg",
   "navigation": {
-    "pages": [
+    "tabs": [
       {
-        "group": "Getting Started",
-        "pages": [
-          "index",
-          "quickstart"
+        "tab": "API 手册",
+        "groups": [
+          {
+            "group": "概览",
+            "pages": [
+              "cn/index",
+              "cn/authentication"
+            ]
+          },
+          {
+            "group": "OpenAI API 调用",
+            "pages": [
+              "cn/api-reference/responses",
+              "cn/api-reference/chat-completions",
+              "cn/models"
+            ]
+          },
+          {
+            "group": "Claude Code 原生调用",
+            "pages": [
+              "cn/api-reference/messages",
+              "cn/api-reference/claude-code"
+            ]
+          },
+          {
+            "group": "GPT Image 2",
+            "pages": [
+              "cn/api-reference/images/gpt-image-2/generation",
+              "cn/api-reference/images/gpt-image-2/edits"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "集成指南",
+        "groups": [
+          {
+            "group": "开始集成",
+            "pages": [
+              "cn/quickstart",
+              "cn/integrations/index"
+            ]
+          },
+          {
+            "group": "Codex",
+            "pages": [
+              "cn/integrations/codex-cli"
+            ]
+          },
+          {
+            "group": "Claude Code",
+            "pages": [
+              "cn/integrations/claude-code"
+            ]
+          },
+          {
+            "group": "SDK 和工具",
+            "pages": [
+              "cn/integrations/openai-sdk",
+              "cn/integrations/curl"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "用户指南",
+        "groups": [
+          {
+            "group": "账户与模型",
+            "pages": [
+              "cn/user-guide/index",
+              "cn/user-guide/api-keys",
+              "cn/user-guide/models"
+            ]
+          },
+          {
+            "group": "图像生成",
+            "pages": [
+              "cn/user-guide/gpt-image-2",
+              "cn/user-guide/image-edits"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "常见问题",
+        "groups": [
+          {
+            "group": "排查",
+            "pages": [
+              "cn/faqs/index",
+              "cn/faqs/auth-and-permissions",
+              "cn/faqs/models",
+              "cn/faqs/images"
+            ]
+          }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
+    ]
   },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+  "api": {
+    "mdx": {
+      "server": "https://code.heihuzi.ai",
+      "auth": {
+        "method": "bearer"
+      }
+    },
+    "playground": {
+      "display": "interactive"
+    },
+    "examples": {
+      "languages": [
+        "bash",
+        "python",
+        "javascript",
+        "go"
+      ]
+    },
+    "params": {
+      "expanded": "all"
+    }
   },
   "navbar": {
     "links": [
       {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "label": "Dashboard",
+        "href": "https://code.heihuzi.ai"
       }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://app.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-      "copy",
-      "view",
-      "chatgpt",
-      "claude",
-      "perplexity",
-      "mcp",
-      "cursor",
-      "vscode"
     ]
   },
   "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    "socials": {}
   }
 }

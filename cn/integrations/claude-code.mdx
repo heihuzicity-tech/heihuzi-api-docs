@@ -1,0 +1,64 @@
+---
+title: "Claude Code"
+description: "使用控制台「使用密钥」弹窗同款配置接入 Claude Code。"
+---
+
+Claude Code 使用 `/v1/messages`，Base URL 指向生产根域 `https://code.heihuzi.ai`，不要加 `/v1`。在控制台「使用密钥」弹窗中选择 `Claude Code`，复制对应系统的配置。
+
+<Tabs>
+  <Tab title="macOS / Linux">
+    直接在当前终端运行，或写入 `~/.bashrc`、`~/.zshrc` 等 shell 配置文件。
+
+```bash Terminal
+export ANTHROPIC_BASE_URL="https://code.heihuzi.ai"
+export ANTHROPIC_AUTH_TOKEN="<token>"
+export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+```
+  </Tab>
+
+  <Tab title="Windows CMD">
+    在 Command Prompt 中运行。
+
+```bat Command Prompt
+set ANTHROPIC_BASE_URL=https://code.heihuzi.ai
+set ANTHROPIC_AUTH_TOKEN=<token>
+set CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+```
+  </Tab>
+
+  <Tab title="PowerShell">
+    在 PowerShell 中运行。
+
+```powershell PowerShell
+$env:ANTHROPIC_BASE_URL="https://code.heihuzi.ai"
+$env:ANTHROPIC_AUTH_TOKEN="<token>"
+$env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+```
+  </Tab>
+
+  <Tab title="VSCode Claude Code">
+    如果通过 VSCode Claude Code 使用，写入 `settings.json`。
+```json ~/.claude/settings.json
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://code.heihuzi.ai",
+    "ANTHROPIC_AUTH_TOKEN": "<token>",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "CLAUDE_CODE_ATTRIBUTION_HEADER": "0"
+  }
+}
+```
+
+```text Windows 路径
+%userprofile%\.claude\settings.json
+```
+  </Tab>
+</Tabs>
+
+## 使用建议
+
+- 文档中的 `<token>` 是占位符；真实密钥以控制台「使用密钥」弹窗生成内容为准。
+- `ANTHROPIC_BASE_URL` 使用根域 `https://code.heihuzi.ai`，不是 `/v1`。
+- Claude Code-compatible 模型优先使用 `claude-sonnet-*`，复杂任务可使用 `claude-opus-*`。
+- 如果返回 403，检查 API Key 所属分组是否开启 Messages 调度能力。
+- 不要把 Claude Code 请求体发送到 `/v1/responses`。

@@ -1,0 +1,25 @@
+---
+title: "模型问题"
+description: "模型不可见、模型不可调度和映射相关问题。"
+---
+
+## 为什么 `/v1/models` 没有我想要的模型？
+
+模型列表由 API Key、分组、渠道和上游账号共同决定。文档里的推荐模型不等于每个 Key 都能直接使用。
+
+## 模型显示了但调用失败？
+
+常见原因：
+
+- 当前渠道临时不可用。
+- 请求体字段不被该模型支持。
+- 分组能力不足，例如图片权限或 Messages 调度权限未开启。
+- 上游账号触发限流或返回错误。
+
+## Claude Code 模型是不是官方 Anthropic？
+
+不是这个含义。文档表达的是 Claude Code-compatible 调用入口。平台会按模型族和配置调度到可用上游，不承诺每个请求都直接访问官方 Anthropic。
+
+## Codex 应该用哪些模型？
+
+Codex / OpenAI API 调用优先使用 `gpt-5.5`、`gpt-5.3-codex`、`gpt-5.3-codex-spark` 等 GPT / Codex 模型族。

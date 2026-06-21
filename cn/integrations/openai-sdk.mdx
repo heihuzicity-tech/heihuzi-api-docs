@@ -1,0 +1,50 @@
+---
+title: "OpenAI SDK"
+description: "使用 OpenAI SDK 的 baseURL 接入黑胡子AI便利店。"
+---
+
+OpenAI SDK 新项目优先使用 Responses。旧项目如果暂时无法迁移，可以继续使用 Chat Completions 兼容入口。
+
+## JavaScript
+
+```javascript
+import OpenAI from "openai";
+
+const client = new OpenAI({
+  apiKey: process.env.HEIHUZI_API_KEY,
+  baseURL: "https://code.heihuzi.ai/v1"
+});
+
+const response = await client.responses.create({
+  model: "gpt-5.5",
+  input: "写一个 TypeScript debounce 函数"
+});
+
+console.log(response);
+```
+
+## Python
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    api_key="YOUR_API_KEY",
+    base_url="https://code.heihuzi.ai/v1",
+)
+
+response = client.responses.create(
+    model="gpt-5.5",
+    input="写一个 Python CLI 参数解析示例",
+)
+
+print(response)
+```
+
+## 兼容旧项目
+
+如果项目仍使用 Chat Completions，把 SDK 的 Base URL 指向同一个 `/v1`，并调用 Chat Completions 方法即可。新功能开发仍建议迁移到 Responses。
+
+## 图像
+
+图像生成和图像编辑使用 OpenAI Images 兼容接口，模型推荐 `gpt-image-2`。图片接口需要 API Key 分组开启图片生成能力。
