@@ -1,23 +1,12 @@
 ---
 title: "API Key 使用"
-description: "API Key 的来源、权限和安全建议。"
+description: "用对应能力的 Key 查询模型并运行示例。"
 ---
 
-API Key 用于调用 黑胡子AI便利店的公开 API。所有请求都通过 Bearer Token 认证。
+在运行环境中设置文档示例使用的 `HEIHUZI_API_KEY`。真实 Key 应保存在服务端环境变量或密钥管理服务中，避免写入公开代码或分享截图。
 
-## 权限来源
+先请求 [Models](/cn/models)。本次文本、Messages、图片 Key 的模型列表不同，图片权限不足的 Key 调用 Images 返回 403；认证成功后还需要使用正确的能力和模型。
 
-API Key 的能力来自所属分组：
+Codex CLI 的实测命令使用 `HEIHUZI_ACCEPTANCE_API_KEY`；Claude Code 使用 `ANTHROPIC_AUTH_TOKEN`。变量名和 Base URL 按[对应客户端页面](/cn/integrations/index)填写。
 
-- 可见模型列表。
-- 可调用渠道。
-- 是否允许图片生成。
-- 是否允许 Claude Code Messages 调度。
-- 速率和并发限制。
-
-## 安全建议
-
-- 不要把 API Key 写进前端代码或公开仓库。
-- 服务端通过环境变量或密钥管理系统读取。
-- 怀疑泄露时立即停用并重新生成。
-- 为不同业务或客户使用不同 API Key，便于限流和追踪。
+错误排查见[认证与权限](/cn/faqs/auth-and-permissions)。

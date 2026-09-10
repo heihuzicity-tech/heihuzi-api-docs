@@ -1,31 +1,31 @@
 ---
 title: "认证"
-description: "黑胡子AI便利店 API 的 Bearer Token 鉴权和权限边界。"
+description: "三种实测鉴权头，以及实际触发的错误。"
 ---
 
-公开 API 需要在请求头中携带平台 API Key。本手册示例统一使用 Bearer Token：
+本手册的请求示例通过环境变量 `HEIHUZI_API_KEY` 读取对应能力的 API Key，使用 `Authorization: Bearer …`。请在运行环境中设置自己的 Key。
 
-```http
-Authorization: Bearer <token>
-```
+## 已验证的鉴权方式
 
-Anthropic 兼容客户端也可以使用 `x-api-key: <token>`。网关还接受 Gemini 兼容客户端的 `x-goog-api-key`；更换鉴权头不会改变 Key 的模型或渠道权限。不要把 Key 放入 URL 的 `key` / `api_key` 查询参数，这种方式会返回 400。
+`GET /v1/models` 分别使用以下三种请求头，均返回模型列表：
 
-## 权限来源
+| 请求头 | 内容 |
+| --- | --- |
+| `Authorization` | `Bearer <你的 API Key>` |
+| `x-api-key` | `<你的 API Key>` |
+| `x-goog-api-key` | `<你的 API Key>` |
 
-API Key 只决定身份，实际能力还取决于它所属的分组和渠道配置：
+本次文本、Messages 和图片 Key 返回不同模型列表。图片 Key 能成功生成图片，而使用没有图片权限的文本 Key 请求生成接口，返回 403：`Image generation is not enabled for this group`。
 
-- 文本接口需要分组可访问对应模型和渠道。
-- GPT Image 接口需要开启图片生成能力。
-- Claude Code Messages 需要开启对应的 Messages 调度能力。
-- `/v1/models` 返回的是当前 Key 可见模型，不代表平台全量模型。
+## 实际触发的错误
 
-## 错误含义
-
-| 状态码 | 常见原因 | 处理方式 |
+| 状态码 | 已复现的请求 | 处理方法 |
 | --- | --- | --- |
-| 401 | Token 缺失、格式错误、已失效 | 检查 `Authorization` 请求头和 API Key。 |
-| 403 | 分组没有对应能力 | 检查图片生成、Messages 调度或模型访问权限。 |
-| 404 | 路径错误，或目标模型/渠道不可见 | 检查接口路径和 `/v1/models` 返回结果。 |
-| 429 | 触发速率限制或并发限制 | 降低并发，稍后重试。 |
-| 500/503 | 上游或网关临时失败 | 记录请求信息后重试或联系管理员排查。 |
+| 400 | URL 携带 `key` / `api_key` 查询参数；非法 JSON；生成请求缺少 prompt；编辑缺少图片或使用 file_id；partial_images 为 -1 或 4 | 按对应接口示例修正请求 |
+| 401 | 不提供 Key，或提供无效 Key | 检查 Key 和鉴权头 |
+| 403 | 无图片权限的 Key 请求 Images | 使用具有图片权限的 Key |
+| 404 | 错误路径；当前 Messages Key 请求 claude-sonnet-4-6；图片异步提交 | 检查路径、具体模型和[当前异步状态](/cn/faqs/images) |
+
+URL 参数测试使用无效占位值，同时提供有效请求头，仍返回 400；认证信息请放在请求头中。
+
+排查时保留状态码、`error.type` / `error.message`、响应头 `X-Client-Request-Id` 和请求时间。分享排查信息前删除真实 Key。

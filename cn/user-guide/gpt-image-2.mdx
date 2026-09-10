@@ -1,49 +1,23 @@
 ---
-title: "GPT Image 2.5 图像生成"
-description: "选模型、调质量、生成透明图，并正确保存图片结果。"
+title: "GPT Image 使用指南"
+description: "三个图片模型的实测入口和参数阅读位置。"
 ---
 
-日常创作先选 `gpt-image-2.5-flare`；更重视细节和编辑精度时选 `gpt-image-2.5-sunburst`。旧版 `gpt-image-2` 仍保留，实际可用性以当前 API Key 的[模型列表](/cn/models)为准。
+## 模型与入口
 
-## 模型选择
+| 模型 | 已测入口 | 已测质量 |
+| --- | --- | --- |
+| `gpt-image-2.5-flare` | 生成、编辑、SSE | low、medium、high、xhigh、max、auto |
+| `gpt-image-2.5-sunburst` | 生成、编辑、SSE | low、medium、high、xhigh、max、auto |
+| `gpt-image-2` | JSON 生成、JSON / 文件编辑 | low、medium、high、auto |
 
-| 模型 ID | 使用建议 |
-| --- | --- |
-| `gpt-image-2.5-flare` | 日常生成；Images 接口省略 `model` 时的默认值 |
-| `gpt-image-2.5-sunburst` | 对细节和编辑精度要求较高的创作 |
-| `gpt-image-2` | 保留已有 2.0 工作流，不使用 2.5 专属质量档位 |
+质量矩阵使用单张 1024×1024 PNG；流式使用 low。生成和编辑省略模型的实测调度记录均为 Flare，业务中建议显式填写完整模型名。
 
-请填写完整模型 ID，不要用 `gpt-image-2.5` 作为通用别名。模型可见还需要分组开启图片权限，并有可用渠道。当前 2.5 官方绘图渠道使用 Images 的生成和编辑接口，不将 Responses 图像工具作为同一把绘图 Key 的默认接入方式。
+## 按目标使用
 
-模型定位参考 [OpenAI Flare 说明](https://developers.openai.com/api/docs/models/gpt-image-2.5-flare)和 [OpenAI Sunburst 说明](https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst)。具体请求字段和平台兼容行为见本手册的 API 页面。
+- 文字生成图片：运行[图像生成](/cn/api-reference/images/gpt-image-2/generation)中的示例。
+- 修改已有图片：运行[图像编辑](/cn/api-reference/images/gpt-image-2/edits)中的 JSON 或文件上传示例。
+- 透明输出：使用生成或编辑页表格中的 2.5 PNG/WebP 透明组合。
+- 保存流式结果：运行[图片流式返回](/cn/api-reference/images/streaming)中的完整 Python 示例。
 
-## 第一次调用
-
-使用[快速验证](/cn/quickstart)中的图片请求：`n: 1`、`size: "1024x1024"`、`quality: "low"`。成功后再调整参数。
-
-## 按需求调整
-
-| 目标 | 调整方式 |
-| --- | --- |
-| 更细致的画面 | 逐步提高 quality；2.5 支持 `xhigh`、`max`，耗时可能增加 |
-| 横图或竖图 | 用 size 的宽高表达，例如 `1536x1024` 或 `1024x1536` |
-| 更高分辨率 | 使用目标渠道接受的像素尺寸，以返回图片实际像素为准 |
-| 透明背景 | 2.5 + `background: "transparent"` + PNG/WebP |
-| 更小的文件 | JPEG/WebP + output_compression；不要把它当作生成质量开关 |
-| 修改现有图片 | 改用[图像编辑](/cn/user-guide/image-edits) |
-
-`1K`、`2K`、`4K` 是创作页面的档位概念。直接调用 Images API 时填写 `size`，不要照搬页面内部的 `resolution` 或 `aspect_ratio` 参数。网关会转发质量、尺寸等字段，具体取值及组合仍由所选上游校验。
-
-## 保存结果
-
-同步响应的 `data[]` 包含实际输出。优先读取非空 `b64_json` 并解码；若返回 `url`，先判断是 HTTP 下载地址还是 Data URL。遍历所有元素，不要只保存第一张。
-
-详见 [SDK 保存示例](/cn/integrations/openai-sdk)。`response_format` 是兼容字段，不能保证每个渠道都按它返回。图片尺寸、质量和用量元信息可能因渠道而异。
-
-## 耗时和费用
-
-同一费率不等于相同单张费用。最终扣费受实际用量、模型及分组配置影响；不要直接套用旧版 2.0 的估价。
-
-高质量或大图应给客户端更长的等待时间。连接中断不代表生成已取消；重复提交可能再次生成并产生费用。当前公共服务未开放图片异步提交，同步请求不返回可供重连查询的 `task_id`。
-
-完整字段与兼容边界见[图像生成 API](/cn/api-reference/images/gpt-image-2/generation)和[图像编辑 API](/cn/api-reference/images/gpt-image-2/edits)。
+Flare、Sunburst 的横竖尺寸、两张输出及 JPEG/WebP 组合均在生成和编辑页列出。需要固定输出尺寸时显式填写 `size`。

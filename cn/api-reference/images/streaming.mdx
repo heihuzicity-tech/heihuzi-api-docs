@@ -1,54 +1,92 @@
 ---
 title: "图片流式返回"
-description: "Images SSE 的预览图、完成事件与错误处理。"
+description: "生成和编辑均经过真实 SSE 调用、预览与最终图片检查。"
 ---
 
-Images 接口传入 `stream: true` 时请求流式输出，需要保持连接直到收到最终结果。本接口不会因此返回可轮询的任务 ID。
+Flare、Sunburst 的生成和编辑接口均已验证 `stream: true`，实际响应为 `text/event-stream`。**流式完成与预览数量是两件事：收到可解码的完成图片，才能确认本次生成或编辑完成。**
 
-默认按非流式方式接入；确认所用渠道支持流式输出后，再使用下面的请求示例。网关具备流式转发能力，不代表每个上游模型都支持 `stream` 或预览图。
+验证日期：**2026-09-10**。测试参数为 `n: 1`、`size: "1024x1024"`、`quality: "low"`、`output_format: "png"`。
 
-先检查响应的 `Content-Type`：包含 `text/event-stream` 时按本页的 SSE 方式处理；如果渠道返回 JSON，则按普通 Images 的 `data[]` / `error` 解析。不能只根据请求里的 `stream: true` 决定解析方式。
+## 真实观测
+
+下表列出 `partial_images: 1` 的四次调用；时间从发送请求开始计算，供理解事件先后顺序。
+
+| 请求 | 模型 | 预览 | 完成 |
+| --- | --- | --- | --- |
+| 生成 | Flare | 该次未返回预览 | 11.53 秒，`image_generation.completed` |
+| 生成 | Sunburst | 11.457 秒，`image_generation.partial_image` | 12.885 秒，`image_generation.completed` |
+| 编辑 | Flare | 该次未返回预览 | 12.418 秒，`image_edit.completed` |
+| 编辑 | Sunburst | 13.126 秒，`image_edit.partial_image` | 14.844 秒，`image_edit.completed` |
+
+进一步测试 `partial_images: 2` 时，Flare 生成返回一张预览，Sunburst 生成只返回完成图片。因此，客户端需要处理**零张或少于请求值的预览**。上表是实测耗时记录，不是响应时间承诺。
+
+`partial_images` 的 `0`、`1`、`2`、`3` 已分别验证；`0` 的调用只收到完成图片，`-1` 和 `4` 返回 400。最终张数由 `n` 指定，本页流式示例使用 `n: 1`。
+
+## cURL 保存原始事件流
 
 ```bash
-curl --no-buffer --request POST \
+curl --fail-with-body --silent --show-error --max-time 600 --no-buffer \
+  --request POST \
   --url https://code.heihuzi.ai/v1/images/generations \
   --header "Authorization: Bearer $HEIHUZI_API_KEY" \
   --header 'Content-Type: application/json' \
   --data '{
-    "model": "gpt-image-2.5-flare",
-    "prompt": "一只坐在窗台上的橘猫",
-    "size": "1024x1024",
-    "quality": "low",
-    "stream": true,
-    "partial_images": 1
-  }'
+  "model": "gpt-image-2.5-sunburst",
+  "prompt": "A simple blue ceramic cup on a white background.",
+  "n": 1,
+  "size": "1024x1024",
+  "quality": "low",
+  "output_format": "png",
+  "stream": true,
+  "partial_images": 1
+}' \
+  --output stream.sse
 ```
 
-`partial_images` 使用 `0`–`3`，`0` 表示只接收最终图片。此参数描述预览数量，最终输出张数由 `n` 指定。
+完整 SSE 数据保存到 `stream.sse`，不能把整个文件当作一个 JSON 文档读取。
 
-## 事件
+## Python SDK 保存预览和最终图片
 
-| 场景 | 预览事件 | 完成事件 |
-| --- | --- | --- |
-| 图像生成 | `image_generation.partial_image` | `image_generation.completed` |
-| 图像编辑 | `image_edit.partial_image` | `image_edit.completed` |
+以下完整代码已用 `openai==2.32.0` 实际运行，并检查生成的 PNG 文件。预览和完成事件的 `b64_json` 分别保存。
 
-上表和下例展示常见的 Images 事件，base64 为占位符。原生 Images 渠道会保留上游事件，网关不保证将所有渠道的事件名和字段转换成完全相同的格式；客户端应按实际 `event` / `type` 解析，并容忍额外字段。
+```python
+import base64
+import os
+from pathlib import Path
+from openai import OpenAI
 
-```text
-event: image_generation.partial_image
-data: {"type":"image_generation.partial_image","partial_image_index":0,"b64_json":"<preview-base64>"}
-
-event: image_generation.completed
-data: {"type":"image_generation.completed","created_at":1788998400,"b64_json":"<final-base64>","output_format":"png","size":"1024x1024"}
+client = OpenAI(
+    api_key=os.environ["HEIHUZI_API_KEY"],
+    base_url="https://code.heihuzi.ai/v1",
+    timeout=600.0,
+    max_retries=0,
+)
+events = client.images.generate(
+    model="gpt-image-2.5-sunburst",
+    prompt="A simple blue ceramic cup on a white background.",
+    n=1,
+    size="1024x1024",
+    quality="low",
+    output_format="png",
+    stream=True,
+    partial_images=1,
+)
+completed = 0
+for event in events:
+    print(event.type, flush=True)
+    if event.type == "image_generation.partial_image":
+        Path(f"preview-{event.partial_image_index}.png").write_bytes(
+            base64.b64decode(event.b64_json)
+        )
+    elif event.type == "image_generation.completed":
+        completed += 1
+        Path(f"final-{completed}.png").write_bytes(base64.b64decode(event.b64_json))
+if completed != 1:
+    raise RuntimeError(f"Expected 1 final image, got {completed}")
 ```
 
-客户端应按 SSE 空行分隔事件，再解析 `data:` 中的 JSON。不要对整个流调用一次 `response.json()`，也不要把某一次网络读取当作一个完整事件。
+## 编辑流式
 
-- 预览图不是最终结果；实际预览数可能少于 `partial_images`。
-- 多张输出可能出现多个完成事件，不能在收到第一张后直接丢弃剩余流。
-- 忽略 SSE 注释和保活内容；不要强制依赖某个渠道一定发送 `[DONE]`。
-- 流建立后仍可能收到 `error` 事件；HTTP 200 不等于生成成功。
-- 连接中断且没有最终结果时，不应直接认定任务失败并无限重试。
+在[JSON 编辑请求](/cn/api-reference/images/gpt-image-2/edits)中加入 `stream: true` 和 `partial_images: 1`，保留参考图数组。Flare、Sunburst 的这组请求均已验证。
 
-本页适用于 `/v1/images/generations` 与 `/v1/images/edits`。Responses 使用另一种输出协议，不能将其事件解析器直接用于 Images。当前 GPT Image 2.5 官方绘图渠道的接入入口是这两个 Images 接口。
+编辑使用 `image_edit.partial_image` / `image_edit.completed`，生成使用 `image_generation.partial_image` / `image_generation.completed`。原始 SSE 以空行分隔事件，`data:` 为事件 JSON；接收端应持续读取到流结束并保存最终图片。未收到完成图片时，应记录响应并排查。

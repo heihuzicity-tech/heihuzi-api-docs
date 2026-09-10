@@ -1,35 +1,23 @@
 ---
-title: "黑胡子AI便利店 API"
-description: "OpenAI-compatible、Claude Code-compatible 与 GPT Image 能力的统一 API 网关。"
+title: "黑胡子 AI API"
+description: "已按真实生产接口验证的 API 请求和接入示例。"
 ---
 
-本手册介绍黑胡子AI便利店的 OpenAI-compatible 调用、Claude Code-compatible 调用和 GPT Image 2.5 图像生成/编辑。接口说明以当前网关的路由、参数处理和响应结构为准。
+API 地址：**`https://code.heihuzi.ai`**。文档验证日期：**2026-09-10**。
 
-## 选择入口
+本手册列出的请求、参数组合和代码示例已通过该地址实际调用。图片结果检查了编码、尺寸、数量及透明通道；流式检查了真实事件和最终图片。具体模型与组合范围列在对应接口页。
 
-| 场景 | 推荐入口 | 说明 |
-| --- | --- | --- |
-| Codex / OpenAI 新项目 | `/v1/responses` | 主推荐文本、多模态和工具调用入口。 |
-| 旧版 OpenAI 客户端迁移 | `/v1/chat/completions` | 兼容 `messages` 格式，不作为新项目首选。 |
-| Claude Code | `/v1/messages` | Claude Code / Anthropic Messages-compatible 协议入口。 |
-| 图像生成 | `/v1/images/generations` | GPT Image 2.5 文生图，默认 `gpt-image-2.5-flare`。 |
-| 图像编辑 | `/v1/images/edits` | GPT Image 图生图、局部编辑和参考图编辑。 |
-| 查询模型 | `/v1/models` | 返回当前 API Key 可见模型。 |
+## 接口入口
 
-模型选择见 [GPT Image 2.5 使用指南](/cn/user-guide/gpt-image-2)，完整字段见[图像生成](/cn/api-reference/images/gpt-image-2/generation)和[图像编辑](/cn/api-reference/images/gpt-image-2/edits)。
+| 能力 | 接口 |
+| --- | --- |
+| 查询模型 | `GET /v1/models` |
+| Responses | `POST /v1/responses` |
+| Chat Completions | `POST /v1/chat/completions` |
+| Messages | `POST /v1/messages` |
+| 图片生成 | `POST /v1/images/generations` |
+| 图片编辑 | `POST /v1/images/edits` |
 
-## 基础信息
+从[快速验证](/cn/quickstart)开始，或查看[集成指南](/cn/integrations/index)。所有请求都应使用与目标能力对应的 Key，认证和已复现错误见[认证](/cn/authentication)。
 
-<Info>
-  Base URL：`https://code.heihuzi.ai`
-</Info>
-
-本手册示例统一使用 Bearer Token，其他兼容鉴权头见[认证](/cn/authentication)。Token 来自平台 API Key，实际可调用模型和能力由 API Key 所属分组、渠道配置和上游账号共同决定。
-
-## 兼容边界
-
-- OpenAI-compatible 不等于支持所有 OpenAI 字段，具体以每个接口页的参数说明为准。
-- Claude Code-compatible 是网关兼容入口，不代表直接调用官方 Anthropic。
-- GPT Image 2.5 官方绘图渠道使用 Images 接口；非流式结果在 `data[]`。Responses 的可用性需要另行满足渠道与模型条件。
-- 当前公共服务未开放图片异步提交；同步图片请求不返回任务 ID。
-- 本手册中的 GPT Image 参数不代表其他图像、音视频或批处理模型使用相同协议。
+GPT Image 2.5 的 API 目录保留生成、编辑、流式三个页面，模型选择统一见[图片使用指南](/cn/user-guide/gpt-image-2)。

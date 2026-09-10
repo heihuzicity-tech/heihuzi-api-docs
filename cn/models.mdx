@@ -1,41 +1,35 @@
 ---
 title: "Models"
+description: "查询当前 Key 可见模型，并选择已经实测的调用入口。"
 api: "GET /v1/models"
-description: "查询当前 API Key 可见模型。"
 ---
 
-`/v1/models` 返回当前 API Key 可见的模型列表。文档中的推荐模型只表示平台支持方向，不承诺每个 Key 都能看到全部模型。
+`GET https://code.heihuzi.ai/v1/models` 查询当前 API Key 的模型列表。本次分别使用文本、Messages、图片 Key，返回的列表不同；请使用与目标能力对应的 Key。
 
 <RequestExample>
-```bash cURL
-curl --request GET \
+```bash
+curl --fail-with-body --silent --show-error --max-time 600 \
+  --request GET \
   --url https://code.heihuzi.ai/v1/models \
-  --header 'Authorization: Bearer <token>'
-```
-
-```python Python
-import requests
-
-response = requests.get(
-    "https://code.heihuzi.ai/v1/models",
-    headers={"Authorization": "Bearer <token>"},
-)
-
-print(response.json())
+  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
+  --output models.json
 ```
 </RequestExample>
 
-## 推荐模型族
+## 实测模型与入口
 
-| 类型 | 推荐模型 | 适用场景 |
-| --- | --- | --- |
-| GPT / Codex | `gpt-6-astra`、`gpt-5.6-sol`、`gpt-5.6-terra`、`gpt-5.6-luna`；兼容模型包括 `gpt-5.5`、`gpt-5.4`、`gpt-5.4-mini`、`gpt-5.3-codex-spark` | Responses、Chat Completions、Codex 工具链。 |
-| Claude Code-compatible | `claude-opus-*`、`claude-sonnet-*`、`claude-haiku-*` | Claude Code / Messages 协议客户端。 |
-| GPT Image | `gpt-image-2.5-flare`、`gpt-image-2.5-sunburst`、`gpt-image-2` | 图像生成和编辑；Images 省略 model 时默认 Flare。 |
+验证日期：**2026-09-10**。下表每个模型均执行过对应接口请求；流式、质量、图片输入等额外参数范围见具体接口页。
 
-2.5 的模型选择见[图像使用指南](/cn/user-guide/gpt-image-2)，质量档位与透明输出见[图像生成 API](/cn/api-reference/images/gpt-image-2/generation)。这里列出的是后端识别的常见模型名，不保证每把 Key 都有权限；不要使用 `gpt-image-2.5` 代替具体模型 ID。
+| 接口 | 已完成实际调用的模型 |
+| --- | --- |
+| Responses 文本 | `gpt-5.5`、`gpt-5.6-luna`、`gpt-5.6-sol`、`gpt-5.6-terra`、`gpt-6-astra` |
+| Chat Completions | `gpt-5.5` |
+| Messages | `claude-sonnet-5`、`claude-opus-5`、`claude-haiku-4-5-20251001` |
+| Images 生成、编辑 | `gpt-image-2.5-flare`、`gpt-image-2.5-sunburst`、`gpt-image-2` |
 
-## Response
+## 图片 Key 的真实响应节选
+
+仅保留 `object` 和模型的 `id`、`object`、`owned_by` 字段。
 
 <ResponseExample>
 ```json
@@ -43,7 +37,7 @@ print(response.json())
   "object": "list",
   "data": [
     {
-      "id": "gpt-5.6-sol",
+      "id": "gpt-image-2",
       "object": "model",
       "owned_by": "openai"
     },
@@ -62,9 +56,4 @@ print(response.json())
 ```
 </ResponseExample>
 
-## 注意事项
-
-- 可见模型受 API Key、分组、渠道、上游账号状态影响。
-- 普通调用不添加 `client_version` 查询参数；Codex 客户端携带该参数时，此路径可能返回 Codex 专用模型清单格式。
-- 模型显示可见不等于每个参数都被该模型支持。
-- Claude Code-compatible 模型是协议兼容入口，会按平台配置映射到可用上游。
+示例中的模型不能替代自己 Key 的查询结果。模型列表用于发现模型，具体请求仍需验证；例如本次旧模型 `claude-sonnet-4-6` 实际返回 404，文档示例已改用测通的 `claude-sonnet-5`。

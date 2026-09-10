@@ -1,38 +1,16 @@
 ---
 title: "集成指南"
-description: "按客户端类型选择黑胡子AI便利店的接入方式。"
+description: "按经过实际调用的客户端和协议选择接入方式。"
 ---
 
-不同客户端应该选择不同协议入口。控制台「API Keys」里的「使用密钥」弹窗会按密钥所属分组生成可复制配置；下面的集成页使用同一套配置格式，文档里用 `<token>` 代表你的 API Key。
+## 已验证的接入方式
 
-## 推荐选择
-
-| 客户端 | 推荐入口 | 配置位置 |
+| 客户端 | 实测版本 / 环境 | 接入配置 |
 | --- | --- | --- |
-| Codex CLI | `/v1/responses` | `~/.codex/config.toml` + `~/.codex/auth.json` |
-| Codex CLI WebSocket | `/v1/responses` | 同 Codex CLI，额外开启 WebSocket 特性 |
-| Claude Code | `/v1/messages` | 终端环境变量或 `~/.claude/settings.json` |
-| OpenAI SDK | `/v1/responses` | SDK `baseURL` 设置为 `https://code.heihuzi.ai/v1` |
-| cURL | 按接口验证 | 直接携带 Bearer Token 请求 |
+| [Codex CLI](/cn/integrations/codex-cli) | macOS，0.153.2 | Responses HTTP，根地址 `https://code.heihuzi.ai` |
+| [Claude Code](/cn/integrations/claude-code) | macOS，2.1.206 | Messages，根地址 `https://code.heihuzi.ai` |
+| [Python OpenAI SDK](/cn/integrations/openai-sdk) | 2.32.0 | `base_url="https://code.heihuzi.ai/v1"` |
+| [JavaScript OpenAI SDK](/cn/integrations/openai-sdk) | 7.13.0 | `baseURL: "https://code.heihuzi.ai/v1"` |
+| [cURL](/cn/integrations/curl) | 当前 macOS 命令行 | 填写完整 `/v1/...` URL |
 
-## 通用信息
-
-- 控制台 API Base URL：`https://code.heihuzi.ai`
-- Codex CLI `base_url`：`https://code.heihuzi.ai`
-- OpenAI SDK `baseURL`：`https://code.heihuzi.ai/v1`
-- 认证方式：Bearer Token
-- 模型列表：以 `/v1/models` 返回为准
-- 图片能力：需要 API Key 分组开启图片生成权限
-- Claude Code：需要 API Key 分组开启 Messages 调度能力
-
-## 使用密钥弹窗
-
-实际用户接入时，建议在控制台复制密钥自己的配置：
-
-1. 进入「API Keys」。
-2. 确认密钥已经分配分组。
-3. 点击目标密钥的「使用密钥」。
-4. 按客户端选择 `Codex CLI`、`Codex CLI (WebSocket)` 或 `Claude Code`。
-5. 复制弹窗生成的配置到对应文件或终端。
-
-文档中的 `<token>` 只是占位符，用户自己的弹窗会填入真实密钥。
+先完成[快速验证](/cn/quickstart)，再运行对应客户端示例。不同能力使用对应 Key；[Models](/cn/models)可查询其模型列表。

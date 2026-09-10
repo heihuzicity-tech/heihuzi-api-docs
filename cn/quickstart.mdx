@@ -1,75 +1,25 @@
 ---
 title: "快速验证"
-description: "用最短路径验证 API Key、文本接口、Claude Code 入口和图像生成。"
+description: "先确认 Key 的模型列表，再运行对应能力的实测示例。"
 ---
 
-Base URL：`https://code.heihuzi.ai`
-
-开始集成前，先用下面四个请求确认 API Key、模型和分组权限是否正常。
-
-## 1. 查询模型
+1. 在运行环境中设置 `HEIHUZI_API_KEY` 为自己的 API Key。
+2. 运行下面的查询，检查 `models.json` 的 `data[].id`。
+3. 按查询结果选择对应接口示例。
 
 ```bash
-curl --request GET \
+curl --fail-with-body --silent --show-error --max-time 600 \
+  --request GET \
   --url https://code.heihuzi.ai/v1/models \
-  --header 'Authorization: Bearer <token>'
+  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
+  --output models.json
 ```
 
-如果模型列表为空或没有目标模型，先检查 API Key 所属分组和渠道配置。
+| 想完成的操作 | 使用入口 |
+| --- | --- |
+| GPT 文本 | [Responses](/cn/api-reference/responses) |
+| Messages 文本 | [Claude Code Messages](/cn/api-reference/messages) |
+| 生成图片 | [GPT Image 2.5 图像生成](/cn/api-reference/images/gpt-image-2/generation) |
+| 修改参考图 | [GPT Image 2.5 图像编辑](/cn/api-reference/images/gpt-image-2/edits) |
 
-## 2. 验证 OpenAI API 调用
-
-```bash
-curl --request POST \
-  --url https://code.heihuzi.ai/v1/responses \
-  --header 'Authorization: Bearer <token>' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "model": "gpt-5.5",
-    "input": "用一句话介绍黑胡子AI便利店"
-  }'
-```
-
-Codex、OpenAI SDK 和新项目优先使用这个入口。
-
-## 3. 验证 Claude Code 入口
-
-```bash
-curl --request POST \
-  --url https://code.heihuzi.ai/v1/messages \
-  --header 'Authorization: Bearer <token>' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "model": "claude-sonnet-4-6",
-    "max_tokens": 512,
-    "messages": [
-      {
-        "role": "user",
-        "content": "hello"
-      }
-    ]
-  }'
-```
-
-Claude Code 使用这个入口，不使用 `/v1/responses`。
-
-## 4. 验证图像生成
-
-```bash
-curl --request POST \
-  --url https://code.heihuzi.ai/v1/images/generations \
-  --header 'Authorization: Bearer <token>' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "model": "gpt-image-2.5-flare",
-    "prompt": "一张极简风格的蓝色 API 网关图标",
-    "size": "1024x1024",
-    "quality": "low",
-    "output_format": "png",
-    "n": 1
-  }'
-```
-
-如果返回权限错误，检查 API Key 分组是否开启图片生成能力。成功后处理 `data[]` 的 `b64_json` 或 `url`；Python 保存示例见 [OpenAI SDK](/cn/integrations/openai-sdk)。
-
-需要更高编辑精度时可选 `gpt-image-2.5-sunburst`，模型选择见[图像使用指南](/cn/user-guide/gpt-image-2)。2.5 的质量档位、透明输出和参数边界见[图像生成 API](/cn/api-reference/images/gpt-image-2/generation)。
+图片返回的是 base64 数据，使用 [SDK 示例](/cn/integrations/openai-sdk)保存为 PNG 文件；流式示例会保存预览和最终图片。

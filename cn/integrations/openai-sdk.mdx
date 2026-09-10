@@ -1,97 +1,15 @@
 ---
 title: "OpenAI SDK"
-description: "使用 OpenAI SDK 调用文本、GPT Image 2.5 和参考图编辑，并保存图片。"
+description: "已实际运行的 Python 和 JavaScript SDK 示例。"
 ---
 
-使用支持 Images 和 Responses 的 OpenAI SDK，Base URL 设置为 `https://code.heihuzi.ai/v1`。示例在服务端执行，API Key 从环境变量 `HEIHUZI_API_KEY` 读取。
+以下代码在服务端运行，API Key 从 `HEIHUZI_API_KEY` 读取。SDK Base URL 为 `https://code.heihuzi.ai/v1`。
 
-## 文本：JavaScript
+**实测版本：Python openai 2.32.0；JavaScript openai 7.13.0。** 在自己的 Python / Node.js 项目中安装对应版本后运行。文本与图片示例分别使用具备对应能力的 Key。
 
-```javascript
-import OpenAI from "openai";
+## JavaScript 文本
 
-const client = new OpenAI({
-  apiKey: process.env.HEIHUZI_API_KEY,
-  baseURL: "https://code.heihuzi.ai/v1"
-});
-const response = await client.responses.create({
-  model: "gpt-5.6-sol",
-  input: "写一个 TypeScript debounce 函数"
-});
-console.log(response);
-```
-
-## Python：生成并保存图片
-
-下面的函数兼容 base64、Data URL 和 HTTP URL，处理所有返回图片。示例请求 PNG，但保存扩展名仍参考实际响应格式。
-
-```python
-import base64
-import os
-from pathlib import Path
-import requests
-from openai import OpenAI
-
-client = OpenAI(
-    api_key=os.environ["HEIHUZI_API_KEY"],
-    base_url="https://code.heihuzi.ai/v1",
-    timeout=600.0,
-    max_retries=0,  # 避免超时后自动重复生成；自行决定重试策略
-)
-
-def save_images(result, prefix="generated"):
-    payload = result.model_dump()
-    if payload.get("error") or not payload.get("data"):
-        raise RuntimeError(payload)
-    for index, item in enumerate(payload.get("data") or []):
-        image_format = payload.get("output_format") or "png"
-        if item.get("b64_json"):
-            content = base64.b64decode(item["b64_json"])
-        elif (item.get("url") or "").startswith("data:"):
-            header, encoded = item["url"].split(",", 1)
-            image_format = header.split("/", 1)[1].split(";", 1)[0]
-            content = base64.b64decode(encoded)
-        elif (item.get("url") or "").startswith(("https://", "http://")):
-            download = requests.get(item["url"], timeout=60)
-            download.raise_for_status()
-            mime = download.headers.get("Content-Type", "").split(";", 1)[0]
-            image_format = {"image/png": "png", "image/jpeg": "jpeg", "image/webp": "webp"}.get(mime, image_format)
-            content = download.content
-        else:
-            raise ValueError("图片结果缺少 b64_json 或可用 URL")
-        extension = {"png": "png", "jpeg": "jpg", "webp": "webp"}.get(image_format, "png")
-        path = Path(f"{prefix}-{index + 1}.{extension}")
-        path.write_bytes(content)
-        print(path)
-
-result = client.images.generate(
-    model="gpt-image-2.5-flare",
-    prompt="一只橘猫坐在窗台上看夕阳，水彩画风格",
-    n=1,
-    size="1024x1024",
-    quality="low",
-    output_format="png",
-)
-save_images(result)
-```
-
-## Python：上传参考图编辑
-
-复用上面的 client 和 save_images。SDK 的 `image` 参数会上传 multipart 文件，和原始 JSON 请求里的 `images[].image_url` 不同。
-
-```python
-with open("reference.png", "rb") as image:
-    result = client.images.edit(
-        model="gpt-image-2.5-sunburst",
-        image=image,
-        prompt="保留杯子形状和文字，只将背景改成浅蓝色摄影棚",
-        quality="high",
-        output_format="png",
-    )
-save_images(result, prefix="edited")
-```
-
-## JavaScript：生成图片
+保存为 `.mjs` 文件运行，实际返回 `API_OK`。
 
 ```javascript
 import OpenAI from "openai";
@@ -102,27 +20,106 @@ const client = new OpenAI({
   timeout: 600000,
   maxRetries: 0
 });
-const result = await client.images.generate({
-  model: "gpt-image-2.5-flare",
-  prompt: "一个极简的蓝色 API 网关图标",
-  size: "1024x1024",
-  quality: "low",
-  output_format: "png",
-  n: 1
+const response = await client.responses.create({
+  model: "gpt-5.5",
+  input: "Reply with exactly API_OK."
 });
-if (result.error || !result.data?.length) throw new Error(JSON.stringify(result));
-for (const item of result.data) {
-  if (item.b64_json) {
-    const bytes = Buffer.from(item.b64_json, "base64");
-    console.log("图片字节数：", bytes.length); // 将 bytes 写入自己的文件或存储
-  } else {
-    console.log(item.url); // 按 HTTP URL 或 Data URL 处理
-  }
-}
+if (!response.output_text) throw new Error("No text returned");
+console.log(response.output_text);
 ```
 
-## SDK 版本兼容
+## Python 生成并保存 PNG
 
-2.5 的模型名或 `xhigh` / `max` 可能晚于旧 SDK 的类型声明。先升级 SDK；仍受静态类型限制时，可以使用本手册的原始 HTTP 示例，不要为了通过类型检查把模型改成错误的名字。
+```python
+import base64
+import os
+from pathlib import Path
+from openai import OpenAI
 
-图片调用使用 Images 接口并等待完整结果，当前公共服务未开放图片异步提交。旧文本项目仍可调用同一 Base URL 下的 Chat Completions；新接入的文本请求优先使用 Responses。
+client = OpenAI(
+    api_key=os.environ["HEIHUZI_API_KEY"],
+    base_url="https://code.heihuzi.ai/v1",
+    timeout=600.0,
+    max_retries=0,
+)
+result = client.images.generate(
+    model="gpt-image-2.5-flare",
+    prompt="A simple blue ceramic cup on a white background.",
+    n=1,
+    size="1024x1024",
+    quality="low",
+    output_format="png",
+)
+if not result.data:
+    raise RuntimeError("No image returned")
+for index, item in enumerate(result.data, 1):
+    if not item.b64_json:
+        raise RuntimeError("Missing b64_json")
+    Path(f"generated-{index}.png").write_bytes(base64.b64decode(item.b64_json))
+print("Saved", len(result.data), "image(s)")
+```
+
+## Python 上传参考图编辑
+
+将[测试参考图](/images/reference.png)保存为 `reference.png`，放在运行目录。
+
+```python
+import base64
+import os
+from pathlib import Path
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["HEIHUZI_API_KEY"],
+    base_url="https://code.heihuzi.ai/v1",
+    timeout=600.0,
+    max_retries=0,
+)
+with open("reference.png", "rb") as image:
+    result = client.images.edit(
+        model="gpt-image-2.5-sunburst",
+        image=image,
+        prompt="Change the blue cup to a bright red cup. Keep the cup shape and the white background.",
+        n=1,
+        size="1024x1024",
+        quality="low",
+        output_format="png",
+    )
+if not result.data:
+    raise RuntimeError("No image returned")
+for index, item in enumerate(result.data, 1):
+    if not item.b64_json:
+        raise RuntimeError("Missing b64_json")
+    Path(f"edited-{index}.png").write_bytes(base64.b64decode(item.b64_json))
+print("Saved", len(result.data), "image(s)")
+```
+
+## JavaScript 生成并保存 PNG
+
+```javascript
+import OpenAI from "openai";
+import { writeFile } from "node:fs/promises";
+
+const client = new OpenAI({
+  apiKey: process.env.HEIHUZI_API_KEY,
+  baseURL: "https://code.heihuzi.ai/v1",
+  timeout: 600000,
+  maxRetries: 0
+});
+const result = await client.images.generate({
+  model: "gpt-image-2.5-flare",
+  prompt: "A simple blue ceramic cup on a white background.",
+  n: 1,
+  size: "1024x1024",
+  quality: "low",
+  output_format: "png"
+});
+if (!result.data?.length) throw new Error("No image returned");
+for (const [index, item] of result.data.entries()) {
+  if (!item.b64_json) throw new Error("Missing b64_json");
+  await writeFile(`generated-js-${index + 1}.png`, Buffer.from(item.b64_json, "base64"));
+}
+console.log("Saved", result.data.length, "image(s)");
+```
+
+以上图片示例都检查到一张有效的 1024×1024 PNG。流式 SDK 的完整执行示例见[图片流式返回](/cn/api-reference/images/streaming)。

@@ -1,184 +1,128 @@
 ---
 title: "GPT Image 2.5 图像生成"
+description: "经过生产 API 验证的生成请求、参数组合和图片响应。"
 api: "POST /v1/images/generations"
-description: "Flare、Sunburst 与 GPT Image 2 的生成参数、图片结果和渠道兼容边界。"
 ---
 
-根据提示词生成图片。GPT Image 请求需要能访问 OpenAI 图像渠道的 API Key，并开启分组图片生成权限。省略 `model` 时默认使用 `gpt-image-2.5-flare`；建议显式填写模型。
-
-Base URL：`https://code.heihuzi.ai`。请求使用 `application/json`，鉴权为 `Authorization: Bearer <token>`。
+通过 `POST https://code.heihuzi.ai/v1/images/generations` 生成图片。验证日期：**2026-09-10**。请使用具有图片权限的 API Key；无图片权限的 Key 实测返回 403。
 
 <RequestExample>
-```bash cURL
-curl --request POST \
+```bash
+curl --fail-with-body --silent --show-error --max-time 600 \
+  --request POST \
   --url https://code.heihuzi.ai/v1/images/generations \
   --header "Authorization: Bearer $HEIHUZI_API_KEY" \
   --header 'Content-Type: application/json' \
   --data '{
-    "model": "gpt-image-2.5-flare",
-    "prompt": "一只橘猫坐在窗台上看夕阳，水彩画风格",
-    "n": 1,
-    "size": "1024x1024",
-    "quality": "low",
-    "output_format": "png"
-  }'
-```
-
-```python Python
-import os
-import requests
-
-response = requests.post(
-    "https://code.heihuzi.ai/v1/images/generations",
-    headers={"Authorization": f"Bearer {os.environ['HEIHUZI_API_KEY']}"},
-    json={
-        "model": "gpt-image-2.5-flare",
-        "prompt": "一只橘猫坐在窗台上看夕阳，水彩画风格",
-        "n": 1,
-        "size": "1024x1024",
-        "quality": "low",
-        "output_format": "png",
-    },
-    timeout=(15, 600),
-)
-response.raise_for_status()
-payload = response.json()
-if payload.get("error") or not payload.get("data"):
-    raise RuntimeError(payload)
-print(payload)
-```
-
-```javascript JavaScript
-// 在 Node.js 服务端执行，避免把 API Key 暴露在浏览器中。
-const response = await fetch("https://code.heihuzi.ai/v1/images/generations", {
-  method: "POST",
-  headers: {
-    Authorization: `Bearer ${process.env.HEIHUZI_API_KEY}`,
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({
-    model: "gpt-image-2.5-flare",
-    prompt: "一只橘猫坐在窗台上看夕阳，水彩画风格",
-    n: 1,
-    size: "1024x1024",
-    quality: "low",
-    output_format: "png"
-  })
-});
-if (!response.ok) throw new Error(await response.text());
-const payload = await response.json();
-if (payload.error || !payload.data?.length) throw new Error(JSON.stringify(payload));
-console.log(payload);
+  "model": "gpt-image-2.5-flare",
+  "prompt": "A simple blue ceramic cup on a white background.",
+  "n": 1,
+  "size": "1024x1024",
+  "quality": "low",
+  "output_format": "png"
+}' \
+  --output generation.json
 ```
 </RequestExample>
 
+请求会把完整响应保存到 `generation.json`。生成并保存 PNG 的可执行代码见 [OpenAI SDK](/cn/integrations/openai-sdk)。
+
 ## 请求参数
 
-下列字段可由网关接收和转发，但具体的尺寸、质量档位、透明输出、压缩、遮罩及预览能力由所选模型和上游渠道决定。网关接受字段不代表所有参数组合都能成功。
-
 <ParamField body="model" type="string" default="gpt-image-2.5-flare">
-  可选。使用 `gpt-image-2.5-flare`、`gpt-image-2.5-sunburst` 或 `gpt-image-2`。实际可用模型以当前 Key 的模型列表为准。
+使用 `gpt-image-2.5-flare`、`gpt-image-2.5-sunburst` 或 `gpt-image-2`。建议显式填写；省略模型的请求及实际调度记录已确认使用 Flare。
 </ParamField>
 
 <ParamField body="prompt" type="string" required>
-  图像描述。明确主体、构图、风格及需要出现在画面中的文字。
+描述图片内容或编辑要求。缺少提示词的请求返回 400。
 </ParamField>
 
 <ParamField body="n" type="integer" default="1">
-  生成张数，使用正整数。上限及多张输出能力由所选模型和渠道决定；初次调用建议设为 `1`。客户端应遍历实际返回的 `data` 数组。
+返回图片张数。三个模型省略时均返回一张；Flare、Sunburst 已验证 `1`、`2`。客户端遍历实际返回的 `data` 数组。
 </ParamField>
 
 <ParamField body="size" type="string">
-  `auto` 或 `宽x高`，例如 `1024x1024`。省略时交由上游选择，允许的尺寸由上游校验。不要填写 `1K`、`2K`、`4K`，也不要用 `resolution` 或 `aspect_ratio` 代替此字段。
+Flare、Sunburst 已验证 `1024x1024`、`1536x1024`、`1024x1536`、`auto`。省略尺寸的测试返回 `1254x1254`，因此需要固定尺寸时请显式填写。GPT Image 2 本页固定尺寸测试使用 `1024x1024`。
 </ParamField>
 
 <ParamField body="quality" type="string">
-  2.5 的可选值为 `auto`、`low`、`medium`、`high`、`xhigh`、`max`；旧版 `gpt-image-2` 使用前四种。取值由上游校验，省略时使用上游默认值。
+Flare、Sunburst 已验证 `low`、`medium`、`high`、`xhigh`、`max`、`auto`；GPT Image 2 已验证 `low`、`medium`、`high`、`auto`。质量测试使用一张 `1024x1024` PNG。
 </ParamField>
 
 <ParamField body="background" type="string">
-  `auto`、`opaque` 或 `transparent`。透明输出请选择 2.5，并搭配 `png` 或 `webp`。
+Flare、Sunburst 已验证 `transparent` 搭配 PNG/WebP、`opaque` 搭配 JPEG、`auto` 搭配 WebP。透明输出文件已检查实际 alpha 通道，具体组合见下表。
 </ParamField>
 
 <ParamField body="output_format" type="string">
-  图片编码格式：`png`、`jpeg`、`webp`。此字段不控制响应是 URL 还是 base64。
+Flare、Sunburst 已验证 `png`、`jpeg`、`webp`，返回内容解码后与所请求的编码一致。GPT Image 2 本页示例使用 PNG。
 </ParamField>
 
 <ParamField body="output_compression" type="integer">
-  JPEG/WebP 输出的压缩参数，常用范围 `0`–`100`；PNG 请求省略。取值由上游校验。
-</ParamField>
-
-<ParamField body="moderation" type="string">
-  上游内容审核选项，例如 `auto`、`low`，仅在渠道支持时生效。不会关闭平台自身的内容审核。
+JPEG 已验证 `0`、`100`；WebP 已验证 `50`。PNG 示例省略此字段。
 </ParamField>
 
 <ParamField body="stream" type="boolean" default="false">
-  `true` 表示请求流式输出。渠道返回 `text/event-stream` 时按 SSE 解析；若仍返回 JSON，则按普通 Images 响应处理。见[流式返回](/cn/api-reference/images/streaming)。
+Flare、Sunburst 设置 `true` 后实际返回 SSE；省略时返回 JSON。见[图片流式返回](/cn/api-reference/images/streaming)。
 </ParamField>
 
 <ParamField body="partial_images" type="integer">
-  流式预览图数量，使用 `0`–`3`；`0` 表示只接收最终图片。仅在 `stream: true` 且上游支持时有意义。实际事件数量可能少于请求数量，不等同于最终图片张数 `n`。
+流式模式已验证 `0`、`1`、`2`、`3`；`-1`、`4` 返回 400。实际预览数可以少于请求值，最终图片以完成事件为准。此参数与最终图片张数 `n` 分开使用。
 </ParamField>
 
-<ParamField body="response_format" type="string">
-  旧客户端兼容字段。官方 Images 通道会移除它；不要依赖 `url` 或 `b64_json` 强制控制所有渠道的响应。新请求建议省略。
-</ParamField>
+## 已验证的参数组合
 
-## 透明背景示例
+以下每行分别经过 Flare 和 Sunburst 实际调用。基准为 `n: 1`、`size: "1024x1024"`、`quality: "low"`、`output_format: "png"`；每行仅替换列出的参数。表格说明这些已测组合。
 
-```json
-{
-  "model": "gpt-image-2.5-sunburst",
-  "prompt": "一个精致的蓝色陶瓷杯产品图，透明背景，无阴影",
-  "size": "1024x1024",
-  "quality": "xhigh",
-  "background": "transparent",
-  "output_format": "png"
-}
-```
+| 场景 | 在基准请求上替换的参数 | 实际结果 |
+| --- | --- | --- |
+| 质量档位 | `quality` 分别为 `medium`、`high`、`xhigh`、`max`、`auto` | 均返回有效 PNG；非 auto 档位在响应中对应返回 |
+| 横图 | `size: "1536x1024"` | 1536×1024 PNG |
+| 竖图 | `size: "1024x1536"` | 1024×1536 PNG |
+| 自动尺寸 | `size: "auto"` | 返回可解码图片，读取响应 `size` |
+| 两张图片 | `n: 2` | `data` 中两张有效图片 |
+| 透明 PNG | `background: "transparent"` | 含透明像素的 PNG |
+| 透明 WebP | `background: "transparent"`、`output_format: "webp"`、`output_compression: 50` | 含透明像素的 WebP |
+| JPEG | `background: "opaque"`、`output_format: "jpeg"`，`output_compression` 分别为 `0`、`100` | 均为有效 JPEG |
+| WebP | `background: "auto"`、`output_format: "webp"`、`output_compression: 50` | 有效 WebP |
 
-## 响应
+透明输出的提示词也明确要求透明背景。跨行叠加参数会形成新的组合，应先在业务中验证再采用。
 
-非流式成功响应使用 OpenAI Images 结构。以下 base64 是占位符：
+GPT Image 2 已分别验证四个质量档位、固定 1024×1024、单张 PNG；省略可选参数也返回一张有效图片。
+
+## 真实响应节选
+
+下面保留一次真实响应的字段，图片 base64 已省略。
 
 <ResponseExample>
 ```json
 {
-  "created": 1788998400,
-  "data": [{"b64_json": "<base64-image-data>"}],
+  "created": 1789015675,
+  "background": "opaque",
   "output_format": "png",
+  "quality": "low",
   "size": "1024x1024",
-  "quality": "low"
+  "usage": {
+    "input_tokens": 23,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 23
+    },
+    "output_tokens": 196,
+    "output_tokens_details": {
+      "image_tokens": 196,
+      "text_tokens": 0
+    },
+    "total_tokens": 219
+  },
+  "data": [
+    {
+      "b64_json": "<此处省略真实图片的 base64>"
+    }
+  ]
 }
 ```
 </ResponseExample>
 
-| 字段 | 含义 |
-| --- | --- |
-| `created` | Unix 秒时间戳 |
-| `data[]` | 实际生成结果；处理全部元素 |
-| `data[].b64_json` | 图片的 base64 数据，解码后保存 |
-| `data[].url` | 部分渠道返回的 HTTP URL 或 `data:image/...;base64,...`；不一定是长期有效下载链接 |
-| `data[].revised_prompt` | 可选，返回的提示词修订信息 |
-| `model`、`size`、`quality`、`background`、`output_format` | 可选元信息，以实际响应为准 |
-| `usage` | 可选用量信息，不能直接当作本平台最终扣费金额 |
+`data[].b64_json` 解码后是图片文件；`output_format`、`size`、`quality`、`background` 是本次返回的元信息。`usage` 为响应中的 token 计数。
 
-`url` 与 `b64_json` 可能仅出现其一，也可能同时出现。保存示例见 [OpenAI SDK](/cn/integrations/openai-sdk)。非流式连接等待期间可能收到用于保活的空白字符，应在响应结束后解析完整 JSON。首次保活会提交 HTTP 200，之后发生的上游错误仍可能通过 JSON 的 `error` 返回。因此成功判断应同时检查 HTTP 状态、是否存在 `error`，以及是否有实际图片数据。
-
-## 错误与重试
-
-| 状态码 | 常见原因 | 处理方式 |
-| --- | --- | --- |
-| 400 | 请求体、模型或上游参数不合法；内容审核拒绝 | 查看 `error.type` / `error.message`，修正后再提交 |
-| 401 | API Key 无效 | 检查鉴权 |
-| 403 | 分组未开启图片能力，或模型访问受限 | 检查 Key 所属分组 |
-| 404 | 路径或平台不支持 | 检查地址和渠道类型 |
-| 413 | 请求体超限 | 减小输入体积 |
-| 429 | 并发、额度或速率限制 | 降低并发，按 `Retry-After`（如有）等待 |
-| 500 / 502 / 503 / 504 | 上游、网关、容量或超时异常 | 保留请求信息排查，避免立即重复生成 |
-
-同步接口不返回任务 ID。当前公共服务未开放图片异步提交，请保持连接等待完整结果；超时后避免立即重复提交。详见[图片常见问题](/cn/faqs/images)。
-
-## 兼容字段
-
-`style` 不作为 GPT Image 2 / 2.5 的风格参数，风格要求写入 `prompt`；生成接口不使用 `input_fidelity`。官方 Images 通道会移除旧版 `gpt-image-2` 的 `background: "transparent"`，需要透明输出时选择 2.5 与 PNG/WebP。模型选择见[图像使用指南](/cn/user-guide/gpt-image-2)。
+成功处理应检查 HTTP 状态、JSON 是否含 `error`，并确认 `data` 中有可解码图片。[认证与错误](/cn/authentication)列出本次实际触发的错误；[图片常见问题](/cn/faqs/images)说明异步接口的当前状态。

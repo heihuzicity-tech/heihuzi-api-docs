@@ -1,78 +1,62 @@
 ---
 title: "Claude Code Messages"
+description: "已验证 Sonnet 5、Opus 5、Haiku 的 Messages 调用。"
 api: "POST /v1/messages"
-description: "Claude Code / Anthropic Messages-compatible 调用入口。"
 ---
 
-`/v1/messages` 是 Claude Code 原生调用入口，面向 Claude Code / Anthropic Messages-compatible 客户端。它不是 OpenAI Responses 协议，不能和 `/v1/responses` 的请求体混用。
+`POST https://code.heihuzi.ai/v1/messages` 已验证 `claude-sonnet-5`、`claude-opus-5`、`claude-haiku-4-5-20251001`。请使用对应的 Messages API Key。
 
 <RequestExample>
-```bash cURL
-curl --request POST \
+```bash
+curl --fail-with-body --silent --show-error --max-time 600 \
+  --request POST \
   --url https://code.heihuzi.ai/v1/messages \
-  --header 'Authorization: Bearer <token>' \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
   --header 'Content-Type: application/json' \
   --data '{
-    "model": "claude-sonnet-4-6",
-    "max_tokens": 1024,
-    "messages": [
-      {
-        "role": "user",
-        "content": "解释这个仓库的启动流程"
-      }
-    ]
-  }'
-```
-
-```python Python
-import requests
-
-response = requests.post(
-    "https://code.heihuzi.ai/v1/messages",
-    headers={
-        "Authorization": "Bearer <token>",
-        "Content-Type": "application/json",
-    },
-    json={
-        "model": "claude-sonnet-4-6",
-        "max_tokens": 1024,
-        "messages": [
-            {
-                "role": "user",
-                "content": "解释这个仓库的启动流程",
-            }
-        ],
-    },
-)
-
-print(response.json())
+  "model": "claude-sonnet-5",
+  "max_tokens": 256,
+  "messages": [
+    {
+      "role": "user",
+      "content": "Reply with exactly API_OK."
+    }
+  ]
+}' \
+  --output messages.json
 ```
 </RequestExample>
 
-## Body
+## 请求参数
 
-<ParamField body="model" type="string" required>
-  Claude Code-compatible 模型名。推荐使用 `claude-sonnet-*`、`claude-opus-*`、`claude-haiku-*` 模型族。
-</ParamField>
+<ParamField body="model" type="string" required>填写完整模型 ID；省略模型实测返回 400。</ParamField>
+<ParamField body="max_tokens" type="integer">本页三种模型的文本用例均填写 `256`。</ParamField>
+<ParamField body="messages" type="object[]">示例使用一条 `role: "user"`、`content` 为字符串的消息。</ParamField>
+<ParamField body="stream" type="boolean">Sonnet 5 已验证省略返回 JSON，设为 `true` 返回 SSE。</ParamField>
 
-<ParamField body="max_tokens" type="integer" required>
-  最大输出 token 数。
-</ParamField>
+## 真实响应节选
 
-<ParamField body="messages" type="array" required>
-  Anthropic Messages-compatible 消息列表。
-</ParamField>
+```json
+{
+  "type": "message",
+  "role": "assistant",
+  "model": "claude-sonnet-5",
+  "content": [
+    {
+      "text": "API_OK",
+      "type": "text"
+    }
+  ],
+  "stop_reason": "end_turn",
+  "usage": {
+    "cache_creation_input_tokens": 50,
+    "cache_read_input_tokens": 13,
+    "input_tokens": 12,
+    "output_tokens": 3
+  }
+}
+```
 
-<ParamField body="stream" type="boolean">
-  是否启用流式响应。
-</ParamField>
+从 `content[]` 的 `type: "text"` 对象读取 `text`。Sonnet 5 的流式用例仅在上述示例请求体中增加 `stream: true`；实测收到 `message_start`、`content_block_delta`、`message_delta`、`message_stop`，文字位于 `content_block_delta` 事件的 `delta.text`。
 
-## Response
-
-返回 Anthropic Messages-compatible 结构。该接口会按平台配置调度到可用上游，不应理解为直接调用官方 Anthropic。
-
-## 使用边界
-
-- Claude Code 使用 `/v1/messages`。
-- Codex / OpenAI SDK 使用 `/v1/responses` 或兼容的 `/v1/chat/completions`。
-- 模型最终是否可用，以 `/v1/models` 和当前分组权限为准。
+Claude Code 的客户端接入见 [Claude Code](/cn/integrations/claude-code)。模型记录见[模型与调用结果](/cn/api-reference/claude-code)。

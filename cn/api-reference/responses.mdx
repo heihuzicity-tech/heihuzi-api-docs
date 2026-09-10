@@ -1,67 +1,36 @@
 ---
 title: "Responses"
+description: "实测文本、消息数组、图片输入、函数调用和 SSE。"
 openapi: "/openapi/responses.json POST /v1/responses"
-description: "OpenAI Responses 兼容入口，推荐用于 Codex、OpenAI SDK 和新项目。"
 ---
 
-`/v1/responses` 是 Codex / OpenAI API 调用的主推荐入口，适合文本、多模态输入和工具调用。旧版客户端可以使用 `/v1/chat/completions`，但新接入优先选择 Responses。
+`POST https://code.heihuzi.ai/v1/responses` 已验证文本生成。五个文本模型见 [Models](/cn/models)；本页扩展输入及流式测试使用 `gpt-5.5`。
 
 <RequestExample>
-```bash cURL
-curl --request POST \
+```bash
+curl --fail-with-body --silent --show-error --max-time 600 \
+  --request POST \
   --url https://code.heihuzi.ai/v1/responses \
-  --header 'Authorization: Bearer <token>' \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
   --header 'Content-Type: application/json' \
   --data '{
-    "model": "gpt-5.5",
-    "input": "写一个 TypeScript debounce 函数"
-  }'
-```
-
-```python Python
-import requests
-
-response = requests.post(
-    "https://code.heihuzi.ai/v1/responses",
-    headers={
-        "Authorization": "Bearer <token>",
-        "Content-Type": "application/json",
-    },
-    json={
-        "model": "gpt-5.5",
-        "input": "写一个 TypeScript debounce 函数",
-    },
-)
-
-print(response.json())
-```
-
-```javascript JavaScript
-const response = await fetch("https://code.heihuzi.ai/v1/responses", {
-  method: "POST",
-  headers: {
-    "Authorization": "Bearer <token>",
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({
-    model: "gpt-5.5",
-    input: "写一个 TypeScript debounce 函数"
-  })
-});
-
-console.log(await response.json());
+  "model": "gpt-5.5",
+  "input": "Reply with exactly API_OK."
+}' \
+  --output responses.json
 ```
 </RequestExample>
 
-## 图片调用边界
+## 已验证的输入
 
-当前 GPT Image 2.5 官方绘图渠道使用 [Images 图像生成](/cn/api-reference/images/gpt-image-2/generation)和[图像编辑](/cn/api-reference/images/gpt-image-2/edits)。拥有图片模型访问权限，不代表同一把 Key 可以调用 Responses 图像工具。
+| 请求形式 | 实际验证 |
+| --- | --- |
+| `input` 字符串 | 五个文本模型均返回文本 |
+| `input` 消息数组 | `[{"role":"user","content":"Reply with exactly API_OK."}]` 搭配 `stream: true` 返回 SSE 文本 |
+| 图片输入 | `gpt-5.5` 的 `input_text` + `input_image` Data URL 正确识别蓝色杯子 |
+| 自定义函数 | `gpt-5.5` 调用 `add`，客户端回传函数结果后模型回答 `5` |
 
-Responses 图像工具需要同时满足原生 Responses 渠道、可用的文本模型和图片生成权限。网关对生图请求会检查原生 Responses 能力，不能依靠文本协议转换补足此能力。因此本页不将 Responses 图像工具列为当前 2.5 官方绘图渠道的接入方式。
-
-## 响应读取示例
-
-返回 OpenAI Responses 兼容结构。下面是文本响应的字段示意；实际响应还可能包含工具调用、推理项及用量信息。
+## 真实响应节选
 
 ```json
 {
@@ -69,21 +38,71 @@ Responses 图像工具需要同时满足原生 Responses 渠道、可用的文�
   "status": "completed",
   "output": [
     {
+      "id": "msg_0e0caf29cbdbf6a6016aa2370876a087d08ec5232de4e272aa",
       "type": "message",
-      "role": "assistant",
       "status": "completed",
       "content": [
-        {"type": "output_text", "text": "这里是生成的文本内容。", "annotations": []}
-      ]
+        {
+          "type": "output_text",
+          "annotations": [],
+          "logprobs": [],
+          "text": "API_OK"
+        }
+      ],
+      "phase": "final_answer",
+      "role": "assistant"
     }
   ]
 }
 ```
 
-非流式文本从 `output[]` 的消息内容读取；流式模式按 Responses 事件处理，例如 `response.output_text.delta` 和 `response.completed`。不要将它与 Images 的 `data[]` 或图片流式事件混用。
+非流式文本读取 `output[]` 中 `type: "message"` 的 `content[]`，其中 `type: "output_text"` 的 `text` 为文字。OpenAI SDK 也可使用 `output_text`，见[SDK 示例](/cn/integrations/openai-sdk)。
 
-## 与 Chat Completions 的关系
+`stream: true` 的实测事件包括 `response.output_text.delta` 和 `response.completed`。缺少 `model` 或 `input` 的请求已验证返回 400。
 
-- Responses 是 Codex / OpenAI 新接入的首选入口。
-- Chat Completions 只作为旧版 `messages` 客户端的兼容入口。
-- 两个接口都走 OpenAI-compatible 能力，但请求体和响应结构不同。
+## 自定义函数完整示例
+
+下面代码已真实执行两次 API 调用：先获取 `add` 调用，再提交本地计算结果。
+
+```python
+import json
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["HEIHUZI_API_KEY"],
+    base_url="https://code.heihuzi.ai/v1",
+    timeout=600.0,
+    max_retries=0,
+)
+inputs = [{"role": "user", "content": "Use add to calculate 2 plus 3, then answer with the number only."}]
+response = client.responses.create(
+    model="gpt-5.5",
+    input=inputs,
+    tools=[{
+        "type": "function",
+        "name": "add",
+        "description": "Add two numbers.",
+        "parameters": {
+            "type": "object",
+            "properties": {"a": {"type": "number"}, "b": {"type": "number"}},
+            "required": ["a", "b"],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    }],
+    tool_choice={"type": "function", "name": "add"},
+)
+calls = [item for item in response.output if item.type == "function_call"]
+if len(calls) != 1 or calls[0].name != "add":
+    raise RuntimeError("Expected one add call")
+call = calls[0]
+args = json.loads(call.arguments)
+value = args["a"] + args["b"]
+inputs.extend(item.model_dump() for item in response.output)
+inputs.append({"type": "function_call_output", "call_id": call.call_id, "output": str(value)})
+final = client.responses.create(model="gpt-5.5", input=inputs)
+print(final.output_text)
+```
+
+图像生成与编辑使用 [Images 接口](/cn/api-reference/images/gpt-image-2/generation)。本页的图片输入测试用于识别参考图内容。

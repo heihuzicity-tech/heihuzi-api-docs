@@ -1,88 +1,25 @@
-# 黑胡子AI便利店 API 文档
+# 黑胡子 AI API 文档
 
-这里是黑胡子AI便利店对外 API 的 Mintlify 文档站点。
+对外文档源文件位于此目录；生产站为 https://docs.heihuzi.ai/cn。
 
-## 本地预览
+## 发布入口
 
-```bash
-cd docs-api
-npx mintlify dev
-```
+Mintlify 从独立仓库 `heihuzicity-tech/heihuzi-api-docs` 的 `main` 分支读取，仓库根目录包含 `docs.json`。主项目只维护文档源文件，不需要推送主项目或改动后端部署。
 
-## 发布前校验
+## 内容发布门槛
 
-```bash
-cd docs-api
-npx mintlify validate
-npx mintlify broken-links
-```
+1. 读取当前后端实现，确认实际公开入口和权限。
+2. 使用当前生产地址 `https://code.heihuzi.ai` 执行真实请求。每个公开模型、参数组合、请求示例和响应说明都要有对应证据；源码、单元测试、Mock、HTTP 200 或页面构建成功不能代替实际能力验证。
+3. 图片验证响应内容、可解码文件、数量、尺寸、编码；透明图片检查 alpha；SSE 验证完成事件、实际预览数量及最终图片。客户端示例必须实际运行。
+4. 未验证或未通过的能力说明不得发布。历史错误模型、失效配置、假定参数范围及未经测试的客户端配置要修正或移除。
+5. 运行 Mintlify `validate`、`broken-links`，再将此目录同步到独立发布仓库。发布后核对 Mintlify 成功状态、线上正文、导航、表单及旧路径跳转。
 
-如需生成离线静态包，可执行：
+本轮生产验收证据保存在主项目 `outputs/api-docs-live-acceptance-20260910-bqi8qn3m/`，包括请求、原始响应、图片、SDK/CLI 结果及 `claim-evidence.json`。这些内部验收文件不发布到文档仓库。
 
-```bash
-cd docs-api
-npx mintlify export --output /tmp/heihuzi-docs-export.zip
-```
+## 页面和字段
 
-## 设计目标
+Responses 字段由 `openapi/responses.json` 定义；其他 API 页采用 MDX ParamField。对象子字段必须嵌套在父字段内。修改后检查在线表单的字符串 / 数组切换和子字段输入。
 
-- 使用 Mintlify `mint` 主题。
-- 对齐 APIMart 风格的顶部标签、左侧能力导航、API 方法标识、请求示例、参数块和响应示例。
-- 内容以黑胡子AI便利店当前真实公开 API 为准。
-- 第三方文档只作为布局和阅读节奏参考，不作为接口契约来源。
+图片 API 导航只保留生成、编辑、流式三个页面；模型选择集中在用户指南。保留现有 `gpt-image-2` 路径及四个旧地址跳转。
 
-## 公开 API 页面
-
-- `POST /v1/responses`
-- `POST /v1/chat/completions`
-- `GET /v1/models`
-- `POST /v1/messages`
-- `POST /v1/images/generations`
-- `POST /v1/images/edits`
-
-## 参数表单维护
-
-- Responses 的请求字段由 `openapi/responses.json` 定义，页面 `cn/api-reference/responses.mdx` 引用该文件；`input` 用 `oneOf` 明确区分字符串和消息数组。
-- 其他接口继续使用 MDX `ParamField`。对象和对象数组的子字段必须嵌套在父字段内，不要将 `images[].image_url` 之类的完整路径写成顶层 `body` 名称。
-- 修改字段后除构建校验外，还要打开在线调试表单，验证类型切换和数组项输入；无需发送付费 API 请求。
-
-## 生产 Base URL
-
-公开示例统一使用 `https://code.heihuzi.ai`。
-
-## 生产文档域名
-
-已部署到 Mintlify，并绑定 `https://docs.heihuzi.ai`。
-
-## Mintlify 部署步骤
-
-Mintlify CLI 当前没有直接部署命令。当前线上发布采用独立 GitHub 仓库承载文档站：
-
-```text
-heihuzicity-tech/heihuzi-api-docs
-```
-
-正确流程：
-
-1. 在主项目 `docs-api` 目录修改文档。
-2. 运行 `npx mintlify@latest validate` 和 `npx mintlify@latest broken-links`。
-3. 将 `docs-api` 内容同步到 `heihuzicity-tech/heihuzi-api-docs` 仓库根目录。
-4. 在 Mintlify Git settings 中选择 `heihuzicity-tech / heihuzi-api-docs`、分支 `main`。
-5. 确认 `docs.json is in a subdirectory` 关闭，因为部署仓库的 `docs.json` 位于根目录。
-6. 确认 Authentication method 为 `Public`。
-7. 验证 `https://heihuzi-ai.mintlify.app/cn` 和 `https://docs.heihuzi.ai/cn` 返回 200。
-
-完整部署和 DNS 操作流程见：`../docs/API文档站部署与域名配置流程.md`。
-
-## 范围说明
-
-- Responses 是推荐的 OpenAI-compatible 入口。
-- Chat Completions 作为旧客户端兼容入口公开。
-- Claude Code 使用 Messages-compatible 入口。
-- GPT Image 2.5 包含 `gpt-image-2.5-flare` 和 `gpt-image-2.5-sunburst`，保留 `gpt-image-2`；默认 Flare。
-- 当前 2.5 官方绘图渠道使用 Images 生成和编辑入口。源码中的异步任务扩展当前未启用，不作为已开放 API 展示；该绘图渠道也不满足原生 Responses 生图条件。
-- 参数接收、上游校验与生产配置必须分别核对。不能由路由注册、模型可见、单元测试通过或网页功能反推公共 API 已开放。
-- 发布前按部署版本复核路由、权限、参数转换和返回分支，另查实时功能开关；本地测试不代替真实上游调用验证。
-- 保留现有 `cn/api-reference/images/gpt-image-2/*` 和 `cn/user-guide/gpt-image-2` 页面路径，避免已有链接失效；页面内容已涵盖 2.5。
-- 2026-09-10 已恢复此前被删除的独立发布仓库，Mintlify 已重新读取到 `main` 分支。发布后须核对部署成功状态和线上正文，不能将本地文档更新视为线上发布完成。
-- 内部接口或未来接口在正式公开前，不写入对外 API 文档。
+公开示例中的认证值只使用占位符或环境变量，不写入任何真实密钥。

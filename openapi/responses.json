@@ -3,7 +3,7 @@
   "info": {
     "title": "黑胡子 AI Responses API",
     "version": "2026-09-10",
-    "description": "Responses 兼容入口的常用字段。具体模型、工具和参数支持以当前 Key 与渠道为准。"
+    "description": "2026-09-10 生产接口实际验证的 Responses 输入。"
   },
   "servers": [
     {
@@ -20,7 +20,7 @@
       "post": {
         "operationId": "createResponse",
         "summary": "Responses",
-        "description": "OpenAI Responses 兼容入口，推荐用于 Codex、OpenAI SDK 和新项目。",
+        "description": "文本、图片输入和函数调用的具体实测范围见本页。",
         "requestBody": {
           "required": true,
           "content": {
@@ -35,14 +35,15 @@
                 "properties": {
                   "model": {
                     "type": "string",
-                    "description": "Responses 文本模型 ID，例如 gpt-5.6-sol、gpt-5.6-luna、gpt-6-astra。以当前 Key 的 /v1/models 及渠道支持范围为准。"
+                    "description": "已验证文本模型：gpt-5.5、gpt-5.6-luna、gpt-5.6-sol、gpt-5.6-terra、gpt-6-astra。扩展输入和流式测试使用 gpt-5.5。",
+                    "example": "gpt-5.5"
                   },
                   "input": {
-                    "description": "输入内容为字符串或消息数组；也可使用 Responses 兼容的多模态消息数组。在线调试时选择 string 后直接填写文字，选择 object[] 后添加 JSON 消息对象。",
+                    "description": "字符串，或消息 / 函数结果数组。本页已测消息内容为字符串、input_text + input_image Data URL，以及 function_call_output。",
                     "oneOf": [
                       {
                         "type": "string",
-                        "example": "你好"
+                        "example": "Reply with exactly API_OK."
                       },
                       {
                         "type": "array",
@@ -53,7 +54,7 @@
                         "example": [
                           {
                             "role": "user",
-                            "content": "你好"
+                            "content": "Reply with exactly API_OK."
                           }
                         ]
                       }
@@ -61,7 +62,7 @@
                   },
                   "stream": {
                     "type": "boolean",
-                    "description": "是否启用流式响应。"
+                    "description": "gpt-5.5 已验证 JSON 和 SSE。"
                   },
                   "tools": {
                     "type": "array",
@@ -69,11 +70,12 @@
                       "type": "object",
                       "additionalProperties": true
                     },
-                    "description": "OpenAI Responses 兼容工具列表。具体工具是否可用取决于模型、渠道及权限，不能由模型可见性推断。"
+                    "description": "已验证自定义 add 函数的参数传递和结果回传，完整格式见本页可执行示例。"
                   },
-                  "temperature": {
-                    "type": "number",
-                    "description": "采样温度。具体支持情况取决于当前模型和渠道。"
+                  "tool_choice": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "description": "已验证 {\"type\":\"function\",\"name\":\"add\"}。"
                   }
                 }
               }
@@ -82,12 +84,33 @@
         },
         "responses": {
           "200": {
-            "description": "返回 OpenAI Responses 兼容结构。非流式响应为 JSON；stream=true 时按 text/event-stream 的 Responses 事件处理。具体内容随模型与渠道而异。",
+            "description": "JSON 文本位于 output 消息的 content；SSE 实测事件包括 response.output_text.delta 和 response.completed。",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "additionalProperties": true
+                },
+                "example": {
+                  "object": "response",
+                  "status": "completed",
+                  "output": [
+                    {
+                      "id": "msg_0e0caf29cbdbf6a6016aa2370876a087d08ec5232de4e272aa",
+                      "type": "message",
+                      "status": "completed",
+                      "content": [
+                        {
+                          "type": "output_text",
+                          "annotations": [],
+                          "logprobs": [],
+                          "text": "API_OK"
+                        }
+                      ],
+                      "phase": "final_answer",
+                      "role": "assistant"
+                    }
+                  ]
                 }
               },
               "text/event-stream": {

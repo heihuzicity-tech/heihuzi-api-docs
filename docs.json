@@ -147,8 +147,7 @@
       "languages": [
         "bash",
         "python",
-        "javascript",
-        "go"
+        "javascript"
       ]
     },
     "params": {

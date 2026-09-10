@@ -1,80 +1,75 @@
 ---
 title: "Chat Completions"
+description: "gpt-5.5 的 messages 请求、普通响应与流式响应。"
 api: "POST /v1/chat/completions"
-description: "OpenAI Chat Completions 兼容入口，适合旧版客户端迁移。"
 ---
 
-`/v1/chat/completions` 是兼容接口，用于已经接入 OpenAI Chat Completions 的旧项目、旧 SDK 或只支持 `messages` 格式的工具。新项目和 Codex 场景优先使用 `/v1/responses`。
+`POST https://code.heihuzi.ai/v1/chat/completions` 的非流式和流式均已使用 `gpt-5.5` 验证。
 
 <RequestExample>
-```bash cURL
-curl --request POST \
+```bash
+curl --fail-with-body --silent --show-error --max-time 600 \
+  --request POST \
   --url https://code.heihuzi.ai/v1/chat/completions \
-  --header 'Authorization: Bearer <token>' \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
   --header 'Content-Type: application/json' \
   --data '{
-    "model": "gpt-5.5",
-    "messages": [
-      {
-        "role": "user",
-        "content": "用一句话说明黑胡子AI便利店的用途"
-      }
-    ]
-  }'
-```
-
-```python Python
-import requests
-
-response = requests.post(
-    "https://code.heihuzi.ai/v1/chat/completions",
-    headers={
-        "Authorization": "Bearer <token>",
-        "Content-Type": "application/json",
-    },
-    json={
-        "model": "gpt-5.5",
-        "messages": [
-            {
-                "role": "user",
-                "content": "用一句话说明黑胡子AI便利店的用途",
-            }
-        ],
-    },
-)
-
-print(response.json())
+  "model": "gpt-5.5",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Reply with exactly API_OK."
+    }
+  ]
+}' \
+  --output chat.json
 ```
 </RequestExample>
 
-## Body
+## 请求参数
 
-<ParamField body="model" type="string" required>
-  模型 ID。可用模型以 `/v1/models` 返回为准。
-</ParamField>
+<ParamField body="model" type="string" required>本页验证 `gpt-5.5`；省略返回 400。</ParamField>
+<ParamField body="messages" type="object[]" required>示例传入一条 `role: "user"`、`content` 为字符串的消息；省略返回 400。</ParamField>
+<ParamField body="stream" type="boolean">已验证省略时返回 JSON，设为 `true` 返回 SSE。</ParamField>
+<ParamField body="temperature" type="number">流式用例使用 `0.2`。</ParamField>
+<ParamField body="max_tokens" type="integer">流式用例使用 `256` 作为请求输出长度上限。</ParamField>
 
-<ParamField body="messages" type="array" required>
-  OpenAI Chat Completions 兼容消息列表。
-</ParamField>
+## 返回值
 
-<ParamField body="stream" type="boolean">
-  是否启用流式响应。
-</ParamField>
+非流式从 `choices[].message.content` 读取文本。本次响应节选如下。
 
-<ParamField body="temperature" type="number">
-  采样温度。具体支持情况取决于当前渠道和模型。
-</ParamField>
+```json
+{
+  "object": "chat.completion",
+  "model": "gpt-5.5",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "API_OK"
+      },
+      "finish_reason": "stop"
+    }
+  ]
+}
+```
 
-<ParamField body="max_tokens" type="integer">
-  最大输出 token 数。部分模型或渠道可能使用兼容字段映射。
-</ParamField>
+流式用例的完整请求体为：
 
-## Response
+```json
+{
+  "model": "gpt-5.5",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Reply with exactly API_OK."
+    }
+  ],
+  "stream": true,
+  "temperature": 0.2,
+  "max_tokens": 256
+}
+```
 
-返回 OpenAI Chat Completions 兼容结构。该接口主要用于迁移和兼容，不是 Codex / OpenAI 新项目的首选入口。
-
-## 使用边界
-
-- 主推荐入口是 `/v1/responses`。
-- 该接口不会提供 Claude Code Messages 协议语义。
-- 如果旧客户端无法切换到 Responses，可以继续使用该兼容入口。
+实测响应为 `text/event-stream`，文本分片位于 `choices[].delta.content`，结束标记为 `data: [DONE]`。使用 [Responses](/cn/api-reference/responses) 的客户端应按该接口的独立结构读取。

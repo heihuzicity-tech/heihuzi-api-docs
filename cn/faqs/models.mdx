@@ -1,25 +1,17 @@
 ---
-title: "模型问题"
-description: "模型不可见、模型不可调度和映射相关问题。"
+title: "模型选择问题"
+description: "模型列表与对应接口的实测范围。"
 ---
 
-## 为什么 `/v1/models` 没有我想要的模型？
+## 为什么不同 Key 看到的模型不同？
 
-模型列表由 API Key、分组、渠道和上游账号共同决定。文档里的推荐模型不等于每个 Key 都能直接使用。
+本次分别用文本、Messages、图片 Key 查询 `/v1/models`，返回了不同的模型集合。请查询自己 Key 的列表，再使用对应接口。
 
-## 模型显示了但调用失败？
+## 当前示例使用哪些模型？
 
-常见原因：
+- Responses / Chat Completions：`gpt-5.5`。
+- Messages / Claude Code：`claude-sonnet-5`。
+- 图片生成：`gpt-image-2.5-flare`。
+- 图片编辑与流式示例：Flare 或 `gpt-image-2.5-sunburst`，以示例中的完整 ID 为准。
 
-- 当前渠道临时不可用。
-- 请求体字段不被该模型支持。
-- 分组能力不足，例如图片权限或 Messages 调度权限未开启。
-- 上游账号触发限流或返回错误。
-
-## Claude Code 模型是不是官方 Anthropic？
-
-不是这个含义。文档表达的是 Claude Code-compatible 调用入口。平台会按模型族和配置调度到可用上游，不承诺每个请求都直接访问官方 Anthropic。
-
-## Codex 应该用哪些模型？
-
-先查当前 Key 的模型列表，再选择 `gpt-6-astra`、`gpt-5.6-sol`、`gpt-5.6-terra`、`gpt-5.6-luna` 或可见的兼容模型。图片生成使用 GPT Image，模型选择见[图像使用指南](/cn/user-guide/gpt-image-2)，完整字段见[图像生成 API](/cn/api-reference/images/gpt-image-2/generation)。
+其他已测模型见 [Models](/cn/models)。图片质量、格式和输入能力请按[生成](/cn/api-reference/images/gpt-image-2/generation)、[编辑](/cn/api-reference/images/gpt-image-2/edits)页的已测组合使用。

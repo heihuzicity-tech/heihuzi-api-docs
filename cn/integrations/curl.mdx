@@ -1,78 +1,73 @@
 ---
 title: "cURL"
-description: "使用 cURL 验证黑胡子AI便利店 API。"
+description: "已运行并检查返回内容的 cURL 示例。"
 ---
 
-cURL 适合做最小化排查：确认 Token、模型、权限和具体接口是否可用。
+先在运行环境中设置 `HEIHUZI_API_KEY`，按目标能力选择文本、Messages 或图片 Key。下列代码均经过真实请求验证，结果保存到当前目录。
 
-## Models
+## 查询模型
 
 ```bash
-curl --request GET \
+curl --fail-with-body --silent --show-error --max-time 600 \
+  --request GET \
   --url https://code.heihuzi.ai/v1/models \
-  --header 'Authorization: Bearer <token>'
-```
-
-## Responses
-
-```bash
-curl --request POST \
-  --url https://code.heihuzi.ai/v1/responses \
-  --header 'Authorization: Bearer <token>' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "model": "gpt-5.5",
-    "input": "hello"
-  }'
-```
-
-## Claude Code Messages
-
-```bash
-curl --request POST \
-  --url https://code.heihuzi.ai/v1/messages \
-  --header 'Authorization: Bearer <token>' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "model": "claude-sonnet-4-6",
-    "max_tokens": 512,
-    "messages": [
-      {
-        "role": "user",
-        "content": "hello"
-      }
-    ]
-  }'
-```
-
-## GPT Image 2.5
-
-```bash
-curl --request POST \
-  --url https://code.heihuzi.ai/v1/images/generations \
-  --header 'Authorization: Bearer <token>' \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "model": "gpt-image-2.5-flare",
-    "prompt": "一张极简风格的蓝色 API 网关图标",
-    "size": "1024x1024",
-    "quality": "low",
-    "output_format": "png",
-    "n": 1
-  }'
-```
-
-## 上传参考图编辑
-
-```bash
-curl --request POST \
-  --url https://code.heihuzi.ai/v1/images/edits \
   --header "Authorization: Bearer $HEIHUZI_API_KEY" \
-  --form 'model=gpt-image-2.5-sunburst' \
-  --form 'prompt=保留杯子形状，把背景改为浅蓝色' \
-  --form 'image=@cup.png' \
-  --form 'quality=high' \
-  --form 'output_format=png'
+  --output models.json
 ```
 
-JSON 参考图、遮罩和多图示例见[图像编辑](/cn/api-reference/images/gpt-image-2/edits)。请求流式输出时可使用 `--no-buffer`，并根据实际 Content-Type 处理 SSE 或 JSON，见[流式返回](/cn/api-reference/images/streaming)。
+## Responses 文本
+
+```bash
+curl --fail-with-body --silent --show-error --max-time 600 \
+  --request POST \
+  --url https://code.heihuzi.ai/v1/responses \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "model": "gpt-5.5",
+  "input": "Reply with exactly API_OK."
+}' \
+  --output responses.json
+```
+
+## Messages 文本
+
+```bash
+curl --fail-with-body --silent --show-error --max-time 600 \
+  --request POST \
+  --url https://code.heihuzi.ai/v1/messages \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "model": "claude-sonnet-5",
+  "max_tokens": 256,
+  "messages": [
+    {
+      "role": "user",
+      "content": "Reply with exactly API_OK."
+    }
+  ]
+}' \
+  --output messages.json
+```
+
+## 生成图片
+
+```bash
+curl --fail-with-body --silent --show-error --max-time 600 \
+  --request POST \
+  --url https://code.heihuzi.ai/v1/images/generations \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "model": "gpt-image-2.5-flare",
+  "prompt": "A simple blue ceramic cup on a white background.",
+  "n": 1,
+  "size": "1024x1024",
+  "quality": "low",
+  "output_format": "png"
+}' \
+  --output generation.json
+```
+
+`generation.json` 中的 `data[].b64_json` 为图片 base64。[SDK 示例](/cn/integrations/openai-sdk)演示解码保存；[图像编辑](/cn/api-reference/images/gpt-image-2/edits)提供实测文件上传；[流式返回](/cn/api-reference/images/streaming)提供 cURL SSE 示例。

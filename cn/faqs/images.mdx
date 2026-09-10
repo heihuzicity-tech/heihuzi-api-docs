@@ -1,58 +1,28 @@
 ---
-title: "GPT Image 2.5 常见问题"
-description: "模型名、参数兼容、图片结果、流式解析与当前开放范围。"
+title: "图片常见问题"
+description: "图片权限、流式预览、编辑输入和异步接口的实测结果。"
 ---
 
-## 该写哪个模型名？
+## 为什么提交异步任务返回 404？
 
-日常优先 `gpt-image-2.5-flare`；需要更高编辑精度时使用 `gpt-image-2.5-sunburst`。Images 接口不写 model 时默认 Flare。不要填写通用别名 `gpt-image-2.5`。旧版 `gpt-image-2` 仍保留，以 `/v1/models` 的实际可见列表为准。
+2026-09-10 对 `/v1/images/generations/async` 和 `/v1/images/edits/async` 的真实请求均返回 404，错误为 `async image tasks are not enabled`。当前文档提供[同步生成](/cn/api-reference/images/gpt-image-2/generation)、[同步编辑](/cn/api-reference/images/gpt-image-2/edits)和[连接内流式返回](/cn/api-reference/images/streaming)。
 
-## 为什么看得到模型，却提示没有图片权限？
+## 开启流式为什么没有预览图？
 
-模型可见和图片权限是两项条件。`Image generation is not enabled for this group` 表示分组没有开启图片能力。GPT Image 请求还需要路由到支持该模型的 OpenAI 图像渠道；单有文本调用权限不够。
+已观测到请求 `partial_images: 1` 或 `2` 时只有完成事件的结果，也观测到预览先到、完成随后到的结果。按完成事件保存最终图片，不把预览数量当作成功条件。
 
-## 为什么图片接口返回不支持？
+## 为什么生成返回 403？
 
-检查 API Key 所属分组及路由。当前网关的 Images 路由分别处理 OpenAI 和 Grok 平台；本手册中的 GPT Image 2.5 参数适用于 OpenAI 图像渠道，不能直接套到 Grok 或其他平台。
+无图片权限的文本 Key 请求 Images 时实测返回 `Image generation is not enabled for this group`。使用图片 Key 后，同一入口已成功返回有效图片。
 
-## 2.5 可以用哪些质量和尺寸？
+## 为什么编辑返回 400？
 
-2.5 的 quality 可选值为 `auto`、`low`、`medium`、`high`、`xhigh`、`max`；旧版 2.0 不使用后两档。size 使用 `auto` 或 `宽x高`，例如 `1024x1024`。网关接收和转发这些字段，具体取值及组合由上游校验，不要用 `resolution`、`aspect_ratio` 或 `1K` 档位代替 Images API 的 size。
+已复现缺少参考图、`images[].file_id`、`mask.file_id` 的错误。JSON 使用 `images[].image_url`；文件上传使用 `image` 或 `image[]`，示例见[图像编辑](/cn/api-reference/images/gpt-image-2/edits)。
 
-## 怎样获得透明 PNG？
+## 怎样确认透明图片有效？
 
-使用 2.5，并同时传 `background: "transparent"`、`output_format: "png"`。也可输出 WebP，不能用 JPEG 保留透明通道。旧版 `gpt-image-2` 不承诺透明背景。
+本次 Flare、Sunburst 的 PNG 和 WebP 透明组合均检查到 alpha 通道中的透明像素。按[已测参数组合](/cn/api-reference/images/gpt-image-2/generation)填写，并保存 base64 解码后的原文件。
 
-## 为什么 response_format=url 仍然没有普通图片链接？
+## 默认尺寸是 1024×1024 吗？
 
-这是旧客户端兼容字段，官方 Images 通道会移除它。其他兼容通道还可能返回 Data URL。客户端应兼容 `data[].b64_json` 和 `data[].url`，并区分 HTTP URL 与 `data:image/...`。
-
-## 编辑接口能否直接传 file_id？
-
-Images JSON 编辑接口不支持 `images[].file_id` 和 `mask.file_id`。使用图片 URL、完整 Data URL 或 multipart 上传。JSON 使用 `images` 数组，multipart 使用 `image` / `image[]`；不要混用。
-
-## style 和 input_fidelity 为什么没有效果？
-
-GPT Image 的风格要求写入 prompt。`style` 不作为 2 / 2.5 的有效风格参数；`input_fidelity` 仅部分编辑通道接受，默认省略。需要提高生成质量时使用 quality。
-
-## 能否异步生成并查询结果？
-
-当前公共服务未开放图片异步提交。异步提交路径会因功能未启用返回 404，错误信息为 `async image tasks are not enabled`。请使用 `/v1/images/generations` 或 `/v1/images/edits`，并保持连接等待完整结果。
-
-同步请求不返回任务 ID，添加 `async` 字段不会变成异步任务。平台网页的后台生成流程也不代表公共 API 已开放同样的任务查询能力。
-
-## 同步接口返回 200，也需要检查 error 吗？
-
-需要。服务端可能先发送空白字符保活并提交 HTTP 200，随后才收到上游失败。因此还应检查完整 JSON 是否包含 `error`，以及 `data[]` 是否有实际图片，不能只检查 HTTP 状态码。
-
-## SSE 返回 200 后为什么仍然失败？
-
-先检查实际 `Content-Type`：返回 JSON 时按普通 Images 响应处理；返回 SSE 时，流建立后仍可能出现 error 事件。必须收到并解析最终图片事件才能认定有生成结果；预览图、保活内容和 HTTP 200 都不能替代完成结果。见[流式返回](/cn/api-reference/images/streaming)。
-
-## 为什么超时后不建议马上重试？
-
-客户端断开不代表上游已取消。重复提交可能产生新的生成和费用。高质量、大图应延长等待时间；发生超时后先保留错误信息排查，避免自动重复提交。
-
-## 能用当前绘图 Key 调用 Responses 生图吗？
-
-当前 GPT Image 2.5 官方绘图渠道使用 Images 接口，非流式图片结果位于 `data[]`。Responses 图像工具还需要渠道支持原生 Responses、对应文本模型及图片权限；只看到图片模型或拥有绘图权限并不满足这些条件。当前接入请使用[图像生成](/cn/api-reference/images/gpt-image-2/generation)或[图像编辑](/cn/api-reference/images/gpt-image-2/edits)。
+本次省略尺寸的测试返回 1254×1254。需要 1024×1024 时，显式发送 `size: "1024x1024"`。

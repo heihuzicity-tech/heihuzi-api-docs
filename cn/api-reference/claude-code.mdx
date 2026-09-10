@@ -1,33 +1,16 @@
 ---
-title: "模型映射与使用边界"
-description: "Claude Code-compatible 模型的调度方式和协议边界。"
+title: "模型与调用结果"
+description: "当前 Messages 模型的实际调用结果。"
 ---
 
-Claude Code 原生调用面向 Claude Code / Anthropic Messages-compatible 客户端。平台会根据模型名、分组能力和渠道配置选择可用上游。
+验证日期：**2026-09-10**，请求入口为 `/v1/messages`，使用 Messages Key。
 
-## 推荐模型族
-
-| 模型族 | 推荐用途 | 默认倾向 |
-| --- | --- | --- |
-| `claude-opus-*` | 高复杂度推理、长任务 | 更强能力，成本和耗时更高。 |
-| `claude-sonnet-*` | 日常编码、分析、自动化 | Claude Code 的常用默认选择。 |
-| `claude-haiku-*` | 快速轻量任务 | 低延迟、轻量输出。 |
-
-## OpenAI 分组映射
-
-当 Claude Code-compatible 请求由 OpenAI 分组承接时，平台会按模型族映射到对应 GPT / Codex 能力：
-
-| Claude Code-compatible 模型族 | 默认映射方向 |
+| 模型 ID | 请求与实际结果 |
 | --- | --- |
-| `claude-opus-*` | `gpt-5.4` |
-| `claude-sonnet-*` | `gpt-5.3-codex` |
-| `claude-haiku-*` | `gpt-5.4-mini` |
+| `claude-sonnet-5` | 文本和 SSE 均返回 `API_OK`；Claude Code 客户端也已运行成功 |
+| `claude-opus-5` | 文本请求返回 `API_OK` |
+| `claude-haiku-4-5-20251001` | 问“2 加 3”，返回 `5` |
 
-上表是未设置自定义映射时的源码默认值。分组可以配置模型族或指定模型的映射，渠道和账号也可能进一步改写上游模型；不能把表中默认值当成所有 Key 的实际目标模型。
+请填写完整模型 ID。[Models](/cn/models) 页面提供当前 Key 的模型查询方式。
 
-## 边界说明
-
-- `/v1/messages` 是独立协议入口，不接受 OpenAI Responses 请求体。
-- 具体模型可见性以 `/v1/models` 返回为准。
-- 该能力需要 API Key 所属分组允许 Messages 调度。
-- 文档里的模型族说明是使用建议，不是对每个账号的可用性承诺。
+本次调用 `claude-sonnet-4-6` 返回 404，错误类型为 `model_not_found`。因此当前示例使用 `claude-sonnet-5`。接入请求见 [Messages API](/cn/api-reference/messages)。
