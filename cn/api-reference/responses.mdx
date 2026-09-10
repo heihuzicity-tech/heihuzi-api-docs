@@ -32,6 +32,9 @@ curl --fail-with-body --silent --show-error --max-time 600 \
 
 ## 真实响应节选
 
+响应示例取自真实调用。
+
+<ResponseExample>
 ```json
 {
   "object": "response",
@@ -55,6 +58,7 @@ curl --fail-with-body --silent --show-error --max-time 600 \
   ]
 }
 ```
+</ResponseExample>
 
 非流式文本读取 `output[]` 中 `type: "message"` 的 `content[]`，其中 `type: "output_text"` 的 `text` 为文字。OpenAI SDK 也可使用 `output_text`，见[SDK 示例](/cn/integrations/openai-sdk)。
 
