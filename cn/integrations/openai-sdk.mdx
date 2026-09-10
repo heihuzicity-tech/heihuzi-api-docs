@@ -125,4 +125,4 @@ for (const item of result.data) {
 
 2.5 的模型名或 `xhigh` / `max` 可能晚于旧 SDK 的类型声明。先升级 SDK；仍受静态类型限制时，可以使用本手册的原始 HTTP 示例，不要为了通过类型检查把模型改成错误的名字。
 
-异步图片接口是本平台扩展，使用普通 HTTP 请求提交和查询，见[异步图像生成](/cn/api-reference/images/async-generation)。旧文本项目仍可调用同一 Base URL 下的 Chat Completions；新接入优先使用 Responses。
+图片调用使用 Images 接口并等待完整结果，当前公共服务未开放图片异步提交。旧文本项目仍可调用同一 Base URL 下的 Chat Completions；新接入的文本请求优先使用 Responses。

@@ -75,4 +75,4 @@ curl --request POST \
   --form 'output_format=png'
 ```
 
-JSON 参考图、遮罩和多图示例见[图像编辑](/cn/api-reference/images/gpt-image-2/edits)；先提交后查询见[异步接口](/cn/api-reference/images/async-generation)。SSE 请求使用 `--no-buffer`，见[流式返回](/cn/api-reference/images/streaming)。
+JSON 参考图、遮罩和多图示例见[图像编辑](/cn/api-reference/images/gpt-image-2/edits)。请求流式输出时可使用 `--no-buffer`，并根据实际 Content-Type 处理 SSE 或 JSON，见[流式返回](/cn/api-reference/images/streaming)。

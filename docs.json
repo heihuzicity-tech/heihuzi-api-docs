@@ -38,18 +38,9 @@
           {
             "group": "GPT Image 2.5",
             "pages": [
-              "cn/api-reference/images/models",
               "cn/api-reference/images/gpt-image-2/generation",
               "cn/api-reference/images/gpt-image-2/edits",
               "cn/api-reference/images/streaming"
-            ]
-          },
-          {
-            "group": "图片异步任务",
-            "pages": [
-              "cn/api-reference/images/async-generation",
-              "cn/api-reference/images/async-edits",
-              "cn/api-reference/images/tasks"
             ]
           }
         ]
@@ -121,6 +112,27 @@
       }
     ]
   },
+  "redirects": [
+    {
+      "source": "/cn/api-reference/images/models",
+      "destination": "/cn/user-guide/gpt-image-2"
+    },
+    {
+      "source": "/cn/api-reference/images/async-generation",
+      "destination": "/cn/faqs/images",
+      "permanent": false
+    },
+    {
+      "source": "/cn/api-reference/images/async-edits",
+      "destination": "/cn/faqs/images",
+      "permanent": false
+    },
+    {
+      "source": "/cn/api-reference/images/tasks",
+      "destination": "/cn/faqs/images",
+      "permanent": false
+    }
+  ],
   "api": {
     "mdx": {
       "server": "https://code.heihuzi.ai",

@@ -3,7 +3,11 @@ title: "图片流式返回"
 description: "Images SSE 的预览图、完成事件与错误处理。"
 ---
 
-同步 Images 接口传入 `stream: true` 时，可以在渠道支持的情况下接收 SSE。流式连接与[异步任务](/cn/api-reference/images/async-generation)是两种用法：SSE 需要保持连接，异步任务返回 ID 后另行查询。
+Images 接口传入 `stream: true` 时请求流式输出，需要保持连接直到收到最终结果。本接口不会因此返回可轮询的任务 ID。
+
+默认按非流式方式接入；确认所用渠道支持流式输出后，再使用下面的请求示例。网关具备流式转发能力，不代表每个上游模型都支持 `stream` 或预览图。
+
+先检查响应的 `Content-Type`：包含 `text/event-stream` 时按本页的 SSE 方式处理；如果渠道返回 JSON，则按普通 Images 的 `data[]` / `error` 解析。不能只根据请求里的 `stream: true` 决定解析方式。
 
 ```bash
 curl --no-buffer --request POST \
@@ -29,7 +33,7 @@ curl --no-buffer --request POST \
 | 图像生成 | `image_generation.partial_image` | `image_generation.completed` |
 | 图像编辑 | `image_edit.partial_image` | `image_edit.completed` |
 
-下面展示兼容 Images 的事件结构，base64 为占位符；直连上游渠道可能带有额外字段，应按实际 `event` / `type` 解析。
+上表和下例展示常见的 Images 事件，base64 为占位符。原生 Images 渠道会保留上游事件，网关不保证将所有渠道的事件名和字段转换成完全相同的格式；客户端应按实际 `event` / `type` 解析，并容忍额外字段。
 
 ```text
 event: image_generation.partial_image
@@ -47,6 +51,4 @@ data: {"type":"image_generation.completed","created_at":1788998400,"b64_json":"<
 - 流建立后仍可能收到 `error` 事件；HTTP 200 不等于生成成功。
 - 连接中断且没有最终结果时，不应直接认定任务失败并无限重试。
 
-## 与 Responses 的区别
-
-`/v1/responses` 的图像工具使用 Responses 事件，例如 `response.image_generation_call.partial_image`，字段可为 `partial_image_b64`；不要与本页 Images 事件混用。非流式 Responses 的最终图片从 `output[]` 中 `type: "image_generation_call"` 的 `result` 读取。
+本页适用于 `/v1/images/generations` 与 `/v1/images/edits`。Responses 使用另一种输出协议，不能将其事件解析器直接用于 Images。当前 GPT Image 2.5 官方绘图渠道的接入入口是这两个 Images 接口。

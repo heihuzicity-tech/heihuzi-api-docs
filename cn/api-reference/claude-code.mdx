@@ -23,6 +23,8 @@ Claude Code 原生调用面向 Claude Code / Anthropic Messages-compatible 客�
 | `claude-sonnet-*` | `gpt-5.3-codex` |
 | `claude-haiku-*` | `gpt-5.4-mini` |
 
+上表是未设置自定义映射时的源码默认值。分组可以配置模型族或指定模型的映射，渠道和账号也可能进一步改写上游模型；不能把表中默认值当成所有 Key 的实际目标模型。
+
 ## 边界说明
 
 - `/v1/messages` 是独立协议入口，不接受 OpenAI Responses 请求体。

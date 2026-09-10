@@ -64,6 +64,8 @@ print(payload)
 
 ## 请求参数
 
+字段由网关接收后转发，具体尺寸、质量、遮罩与多图能力由模型和渠道校验。接受字段不代表所有组合都能成功；通用参数的兼容说明见[图像生成](/cn/api-reference/images/gpt-image-2/generation)。
+
 <ParamField body="model" type="string" default="gpt-image-2.5-flare">
   可选。使用 `gpt-image-2.5-flare`、`gpt-image-2.5-sunburst` 或 `gpt-image-2`。
 </ParamField>
@@ -77,7 +79,7 @@ print(payload)
 </ParamField>
 
 <ParamField body="images[].image_url" type="string" required>
-  每张参考图的可访问 URL 或包含 MIME 类型的 base64 Data URL。`images[].file_id` 不受支持，传入会返回 400。
+  每张参考图的可访问 URL 或包含 MIME 类型的 base64 Data URL。不能用 `images[].file_id` 替代 `image_url`，这样会返回 400。
 </ParamField>
 
 <ParamField body="mask" type="object">
@@ -117,7 +119,7 @@ print(payload)
 </ParamField>
 
 <ParamField body="stream" type="boolean" default="false">
-  开启后接收 SSE 图片事件，不再是单个 JSON 响应。详见[流式返回](/cn/api-reference/images/streaming)。
+  请求流式输出。实际返回 `text/event-stream` 时按 SSE 解析，返回 JSON 时按普通 Images 响应处理。详见[流式返回](/cn/api-reference/images/streaming)。
 </ParamField>
 
 <ParamField body="partial_images" type="integer">
@@ -184,4 +186,4 @@ curl --request POST \
 ```
 </ResponseExample>
 
-错误码和超时处理参见[图像生成](/cn/api-reference/images/gpt-image-2/generation)。需要异步查询时，使用[异步图像编辑](/cn/api-reference/images/async-edits)，而不是向本接口添加自定义 `async` 字段。
+错误码和超时处理参见[图像生成](/cn/api-reference/images/gpt-image-2/generation)。当前公共服务未开放图片异步提交；本接口不返回任务 ID，添加自定义 `async` 字段不会变成异步任务。

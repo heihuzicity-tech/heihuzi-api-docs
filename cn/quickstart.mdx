@@ -72,4 +72,4 @@ curl --request POST \
 
 如果返回权限错误，检查 API Key 分组是否开启图片生成能力。成功后处理 `data[]` 的 `b64_json` 或 `url`；Python 保存示例见 [OpenAI SDK](/cn/integrations/openai-sdk)。
 
-需要更高编辑精度时选 `gpt-image-2.5-sunburst`；2.5 的 `xhigh` / `max` 和透明输出见[模型与参数](/cn/api-reference/images/models)。需要提交后轮询时，使用已启用的[异步接口](/cn/api-reference/images/async-generation)。
+需要更高编辑精度时可选 `gpt-image-2.5-sunburst`，模型选择见[图像使用指南](/cn/user-guide/gpt-image-2)。2.5 的质量档位、透明输出和参数边界见[图像生成 API](/cn/api-reference/images/gpt-image-2/generation)。

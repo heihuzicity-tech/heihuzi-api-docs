@@ -39,9 +39,6 @@ npx mintlify export --output /tmp/heihuzi-docs-export.zip
 - `POST /v1/messages`
 - `POST /v1/images/generations`
 - `POST /v1/images/edits`
-- `POST /v1/images/generations/async`（需启用异步任务）
-- `POST /v1/images/edits/async`（需启用异步任务）
-- `GET /v1/images/tasks/{task_id}`
 
 ## 生产 Base URL
 
@@ -77,7 +74,9 @@ heihuzicity-tech/heihuzi-api-docs
 - Chat Completions 作为旧客户端兼容入口公开。
 - Claude Code 使用 Messages-compatible 入口。
 - GPT Image 2.5 包含 `gpt-image-2.5-flare` 和 `gpt-image-2.5-sunburst`，保留 `gpt-image-2`；默认 Flare。
-- 图像生成、编辑使用 OpenAI Images-compatible 入口；异步提交与查询为本平台扩展。
+- 当前 2.5 官方绘图渠道使用 Images 生成和编辑入口。源码中的异步任务扩展当前未启用，不作为已开放 API 展示；该绘图渠道也不满足原生 Responses 生图条件。
+- 参数接收、上游校验与生产配置必须分别核对。不能由路由注册、模型可见、单元测试通过或网页功能反推公共 API 已开放。
+- 发布前按部署版本复核路由、权限、参数转换和返回分支，另查实时功能开关；本地测试不代替真实上游调用验证。
 - 保留现有 `cn/api-reference/images/gpt-image-2/*` 和 `cn/user-guide/gpt-image-2` 页面路径，避免已有链接失效；页面内容已涵盖 2.5。
 - 2026-09-10 已恢复此前被删除的独立发布仓库，Mintlify 已重新读取到 `main` 分支。发布后须核对部署成功状态和线上正文，不能将本地文档更新视为线上发布完成。
 - 内部接口或未来接口在正式公开前，不写入对外 API 文档。

@@ -1,6 +1,6 @@
 ---
 title: "GPT Image 2.5 常见问题"
-description: "模型名、参数兼容、图片结果、流式和异步任务排查。"
+description: "模型名、参数兼容、图片结果、流式解析与当前开放范围。"
 ---
 
 ## 该写哪个模型名？
@@ -17,7 +17,7 @@ description: "模型名、参数兼容、图片结果、流式和异步任务排
 
 ## 2.5 可以用哪些质量和尺寸？
 
-quality 支持 `auto`、`low`、`medium`、`high`、`xhigh`、`max`；旧版 2.0 不使用后两档。size 使用 `auto` 或 `宽x高`，例如 `1024x1024`。具体尺寸由上游校验，不要用 `resolution`、`aspect_ratio` 或 `1K` 档位代替 Images API 的 size。
+2.5 的 quality 可选值为 `auto`、`low`、`medium`、`high`、`xhigh`、`max`；旧版 2.0 不使用后两档。size 使用 `auto` 或 `宽x高`，例如 `1024x1024`。网关接收和转发这些字段，具体取值及组合由上游校验，不要用 `resolution`、`aspect_ratio` 或 `1K` 档位代替 Images API 的 size。
 
 ## 怎样获得透明 PNG？
 
@@ -37,17 +37,9 @@ GPT Image 的风格要求写入 prompt。`style` 不作为 2 / 2.5 的有效风�
 
 ## 能否异步生成并查询结果？
 
-可以在服务端启用后使用 `/v1/images/generations/async` 或 `/v1/images/edits/async`，再通过 `/v1/images/tasks/{task_id}` 查询。它们是本平台扩展，不是直接向同步请求添加一个 async 字段。详见[异步生成](/cn/api-reference/images/async-generation)。
+当前公共服务未开放图片异步提交。异步提交路径会因功能未启用返回 404，错误信息为 `async image tasks are not enabled`。请使用 `/v1/images/generations` 或 `/v1/images/edits`，并保持连接等待完整结果。
 
-如果提示 `async image tasks are not enabled`，表示服务端未启用。该情况不影响继续使用同步接口。
-
-## 异步任务返回 HTTP 200，为什么没有图片？
-
-200 仅表示查询成功。查看 status：`processing` 继续等待；`completed` 读取 `result.data[]`；`failed` 读取 error 并停止轮询。异步接收的 HTTP 202 也不代表图片已经生成。
-
-## 为什么任务突然返回 404？
-
-请使用提交任务时的同一把 API Key。任务不存在、已过期或归属不匹配都会返回 404；以 expires_at 判断有效期，完成后及时保存图片。
+同步请求不返回任务 ID，添加 `async` 字段不会变成异步任务。平台网页的后台生成流程也不代表公共 API 已开放同样的任务查询能力。
 
 ## 同步接口返回 200，也需要检查 error 吗？
 
@@ -55,12 +47,12 @@ GPT Image 的风格要求写入 prompt。`style` 不作为 2 / 2.5 的有效风�
 
 ## SSE 返回 200 后为什么仍然失败？
 
-流建立后可能出现 error 事件。必须收到并解析最终图片事件才能认定有生成结果；预览图、保活内容和 HTTP 200 都不能替代完成结果。见[流式返回](/cn/api-reference/images/streaming)。
+先检查实际 `Content-Type`：返回 JSON 时按普通 Images 响应处理；返回 SSE 时，流建立后仍可能出现 error 事件。必须收到并解析最终图片事件才能认定有生成结果；预览图、保活内容和 HTTP 200 都不能替代完成结果。见[流式返回](/cn/api-reference/images/streaming)。
 
 ## 为什么超时后不建议马上重试？
 
-客户端断开不代表上游已取消。重复提交可能产生新的生成和费用。高质量、大图应延长等待时间；异步请求已经拿到 task_id 时，应继续查询同一任务。
+客户端断开不代表上游已取消。重复提交可能产生新的生成和费用。高质量、大图应延长等待时间；发生超时后先保留错误信息排查，避免自动重复提交。
 
-## Images 和 Responses 的图片字段有什么不同？
+## 能用当前绘图 Key 调用 Responses 生图吗？
 
-Images 非流式结果在 `data[]`；Responses 的图片在 `output[]` 中 `type: "image_generation_call"` 项的 `result`。Responses 顶层 model 选文本模型，图片模型写在 `tools[].model`，见[完整示例](/cn/api-reference/responses)。
+当前 GPT Image 2.5 官方绘图渠道使用 Images 接口，非流式图片结果位于 `data[]`。Responses 图像工具还需要渠道支持原生 Responses、对应文本模型及图片权限；只看到图片模型或拥有绘图权限并不满足这些条件。当前接入请使用[图像生成](/cn/api-reference/images/gpt-image-2/generation)或[图像编辑](/cn/api-reference/images/gpt-image-2/edits)。

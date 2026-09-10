@@ -1,6 +1,6 @@
 ---
 title: "GPT Image 2.5 图像编辑"
-description: "参考图、文件上传、遮罩及异步编辑的使用方法。"
+description: "参考图、文件上传、遮罩及图片结果的使用方法。"
 ---
 
 使用 `/v1/images/edits` 编辑已有图片。日常优先 `gpt-image-2.5-flare`；对细节保留、编辑精度要求更高时可选择 `gpt-image-2.5-sunburst`。
@@ -30,7 +30,7 @@ JSON 中不能用 `file_id` 代替 `image_url`。图片的 MIME 类型应与真�
 
 同步调用读取 `data[]` 中的 `b64_json` 或 `url`，保存方法与图像生成一致。
 
-需要后台处理时，改用[异步图像编辑](/cn/api-reference/images/async-edits)，保存返回的 `task_id`，再用同一把 Key [查询结果](/cn/api-reference/images/tasks)。异步提交不能设置 `stream: true`。
+当前公共服务未开放图片异步提交，请保持连接等待完整结果。需要流式输出时传 `stream: true`，并根据实际 Content-Type 解析，见[图片流式返回](/cn/api-reference/images/streaming)。
 
 ## 常见问题
 

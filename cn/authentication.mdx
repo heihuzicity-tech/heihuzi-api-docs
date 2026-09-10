@@ -3,11 +3,13 @@ title: "认证"
 description: "黑胡子AI便利店 API 的 Bearer Token 鉴权和权限边界。"
 ---
 
-所有公开 API 都需要在请求头中携带 Bearer Token。Token 来源是平台 API Key。
+公开 API 需要在请求头中携带平台 API Key。本手册示例统一使用 Bearer Token：
 
 ```http
 Authorization: Bearer <token>
 ```
+
+Anthropic 兼容客户端也可以使用 `x-api-key: <token>`。网关还接受 Gemini 兼容客户端的 `x-goog-api-key`；更换鉴权头不会改变 Key 的模型或渠道权限。不要把 Key 放入 URL 的 `key` / `api_key` 查询参数，这种方式会返回 400。
 
 ## 权限来源
 

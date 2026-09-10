@@ -7,7 +7,7 @@ description: "401、403、404 等认证和权限错误排查。"
 
 401 通常表示认证失败：
 
-- 没有传 `Authorization` 请求头。
+- 没有通过 `Authorization: Bearer` 或[兼容鉴权头](/cn/authentication)传入有效 Key。
 - Bearer Token 格式错误。
 - API Key 不存在、已失效或被停用。
 

@@ -1,7 +1,7 @@
 ---
 title: "GPT Image 2.5 图像生成"
 api: "POST /v1/images/generations"
-description: "Flare、Sunburst 与 GPT Image 2 的文生图、质量、尺寸、透明背景和流式输出。"
+description: "Flare、Sunburst 与 GPT Image 2 的生成参数、图片结果和渠道兼容边界。"
 ---
 
 根据提示词生成图片。GPT Image 请求需要能访问 OpenAI 图像渠道的 API Key，并开启分组图片生成权限。省略 `model` 时默认使用 `gpt-image-2.5-flare`；建议显式填写模型。
@@ -74,6 +74,8 @@ console.log(payload);
 
 ## 请求参数
 
+下列字段可由网关接收和转发，但具体的尺寸、质量档位、透明输出、压缩、遮罩及预览能力由所选模型和上游渠道决定。网关接受字段不代表所有参数组合都能成功。
+
 <ParamField body="model" type="string" default="gpt-image-2.5-flare">
   可选。使用 `gpt-image-2.5-flare`、`gpt-image-2.5-sunburst` 或 `gpt-image-2`。实际可用模型以当前 Key 的模型列表为准。
 </ParamField>
@@ -87,11 +89,11 @@ console.log(payload);
 </ParamField>
 
 <ParamField body="size" type="string">
-  `auto` 或 `宽x高`，例如 `1024x1024`、`2048x1152`。省略时交由上游选择。详见[模型与参数](/cn/api-reference/images/models)。
+  `auto` 或 `宽x高`，例如 `1024x1024`。省略时交由上游选择，允许的尺寸由上游校验。不要填写 `1K`、`2K`、`4K`，也不要用 `resolution` 或 `aspect_ratio` 代替此字段。
 </ParamField>
 
 <ParamField body="quality" type="string">
-  2.5 支持 `auto`、`low`、`medium`、`high`、`xhigh`、`max`；旧版 `gpt-image-2` 使用前四种。省略时使用上游默认值。
+  2.5 的可选值为 `auto`、`low`、`medium`、`high`、`xhigh`、`max`；旧版 `gpt-image-2` 使用前四种。取值由上游校验，省略时使用上游默认值。
 </ParamField>
 
 <ParamField body="background" type="string">
@@ -111,7 +113,7 @@ console.log(payload);
 </ParamField>
 
 <ParamField body="stream" type="boolean" default="false">
-  `true` 时使用 SSE 接收图片事件；需要渠道支持。见[流式返回](/cn/api-reference/images/streaming)。
+  `true` 表示请求流式输出。渠道返回 `text/event-stream` 时按 SSE 解析；若仍返回 JSON，则按普通 Images 响应处理。见[流式返回](/cn/api-reference/images/streaming)。
 </ParamField>
 
 <ParamField body="partial_images" type="integer">
@@ -175,4 +177,8 @@ console.log(payload);
 | 429 | 并发、额度或速率限制 | 降低并发，按 `Retry-After`（如有）等待 |
 | 500 / 502 / 503 / 504 | 上游、网关、容量或超时异常 | 保留请求信息排查，避免立即重复生成 |
 
-同步接口不返回任务 ID。需要先提交、后查询时，请改用[异步图像生成](/cn/api-reference/images/async-generation)。
+同步接口不返回任务 ID。当前公共服务未开放图片异步提交，请保持连接等待完整结果；超时后避免立即重复提交。详见[图片常见问题](/cn/faqs/images)。
+
+## 兼容字段
+
+`style` 不作为 GPT Image 2 / 2.5 的风格参数，风格要求写入 `prompt`；生成接口不使用 `input_fidelity`。官方 Images 通道会移除旧版 `gpt-image-2` 的 `background: "transparent"`，需要透明输出时选择 2.5 与 PNG/WebP。模型选择见[图像使用指南](/cn/user-guide/gpt-image-2)。
