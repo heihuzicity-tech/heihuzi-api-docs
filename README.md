@@ -40,6 +40,12 @@ npx mintlify export --output /tmp/heihuzi-docs-export.zip
 - `POST /v1/images/generations`
 - `POST /v1/images/edits`
 
+## 参数表单维护
+
+- Responses 的请求字段由 `openapi/responses.json` 定义，页面 `cn/api-reference/responses.mdx` 引用该文件；`input` 用 `oneOf` 明确区分字符串和消息数组。
+- 其他接口继续使用 MDX `ParamField`。对象和对象数组的子字段必须嵌套在父字段内，不要将 `images[].image_url` 之类的完整路径写成顶层 `body` 名称。
+- 修改字段后除构建校验外，还要打开在线调试表单，验证类型切换和数组项输入；无需发送付费 API 请求。
+
 ## 生产 Base URL
 
 公开示例统一使用 `https://code.heihuzi.ai`。

@@ -1,0 +1,113 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "黑胡子 AI Responses API",
+    "version": "2026-09-10",
+    "description": "Responses 兼容入口的常用字段。具体模型、工具和参数支持以当前 Key 与渠道为准。"
+  },
+  "servers": [
+    {
+      "url": "https://code.heihuzi.ai"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/v1/responses": {
+      "post": {
+        "operationId": "createResponse",
+        "summary": "Responses",
+        "description": "OpenAI Responses 兼容入口，推荐用于 Codex、OpenAI SDK 和新项目。",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "model",
+                  "input"
+                ],
+                "additionalProperties": true,
+                "properties": {
+                  "model": {
+                    "type": "string",
+                    "description": "Responses 文本模型 ID，例如 gpt-5.6-sol、gpt-5.6-luna、gpt-6-astra。以当前 Key 的 /v1/models 及渠道支持范围为准。"
+                  },
+                  "input": {
+                    "description": "输入内容为字符串或消息数组；也可使用 Responses 兼容的多模态消息数组。在线调试时选择 string 后直接填写文字，选择 object[] 后添加 JSON 消息对象。",
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "example": "你好"
+                      },
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "example": [
+                          {
+                            "role": "user",
+                            "content": "你好"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "stream": {
+                    "type": "boolean",
+                    "description": "是否启用流式响应。"
+                  },
+                  "tools": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "description": "OpenAI Responses 兼容工具列表。具体工具是否可用取决于模型、渠道及权限，不能由模型可见性推断。"
+                  },
+                  "temperature": {
+                    "type": "number",
+                    "description": "采样温度。具体支持情况取决于当前模型和渠道。"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "返回 OpenAI Responses 兼容结构。非流式响应为 JSON；stream=true 时按 text/event-stream 的 Responses 事件处理。具体内容随模型与渠道而异。",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "description": "Responses SSE 事件，例如 response.output_text.delta 和 response.completed。"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

@@ -74,20 +74,24 @@ print(payload)
   编辑要求，说明需要保留和修改的内容。
 </ParamField>
 
-<ParamField body="images" type="array" required>
+<ParamField body="images" type="object[]" required>
   JSON 请求必填的参考图数组，至少包含一个有效的 `image_url`。multipart 请求改用文件字段 `image` / `image[]`。
-</ParamField>
 
-<ParamField body="images[].image_url" type="string" required>
-  每张参考图的可访问 URL 或包含 MIME 类型的 base64 Data URL。不能用 `images[].file_id` 替代 `image_url`，这样会返回 400。
+  <Expandable title="参考图字段" defaultOpen>
+    <ParamField body="image_url" type="string" required>
+      每张参考图的可访问 URL 或包含 MIME 类型的 base64 Data URL。不能用 `images[].file_id` 替代 `image_url`，这样会返回 400。
+    </ParamField>
+  </Expandable>
 </ParamField>
 
 <ParamField body="mask" type="object">
   JSON 的可选遮罩对象，使用 `{"image_url": "..."}`；multipart 使用同名文件字段上传遮罩。`mask.file_id` 不受支持。
-</ParamField>
 
-<ParamField body="mask.image_url" type="string">
-  JSON 遮罩的可访问图片 URL 或完整 Data URL；使用 mask 对象时填写。
+  <Expandable title="遮罩字段" defaultOpen>
+    <ParamField body="image_url" type="string" required>
+      JSON 遮罩的可访问图片 URL 或完整 Data URL；使用 mask 对象时填写。
+    </ParamField>
+  </Expandable>
 </ParamField>
 
 <ParamField body="n" type="integer" default="1">

@@ -1,6 +1,6 @@
 ---
 title: "Responses"
-api: "POST /v1/responses"
+openapi: "/openapi/responses.json POST /v1/responses"
 description: "OpenAI Responses 兼容入口，推荐用于 Codex、OpenAI SDK 和新项目。"
 ---
 
@@ -53,35 +53,13 @@ console.log(await response.json());
 ```
 </RequestExample>
 
-## Body
-
-<ParamField body="model" type="string" required>
-  Responses 文本模型 ID，例如 `gpt-5.6-sol`、`gpt-5.6-luna`、`gpt-6-astra`。以当前 Key 的 `/v1/models` 及渠道支持范围为准。
-</ParamField>
-
-<ParamField body="input" type="string | array" required>
-  输入内容。可传字符串，也可传 OpenAI Responses 兼容的多模态 input 结构。
-</ParamField>
-
-<ParamField body="stream" type="boolean">
-  是否启用流式响应。
-</ParamField>
-
-<ParamField body="tools" type="array">
-  OpenAI Responses 兼容工具列表。具体工具是否可用取决于模型、渠道及权限，不能由模型可见性推断。
-</ParamField>
-
-<ParamField body="temperature" type="number">
-  采样温度。具体支持情况取决于当前模型和渠道。
-</ParamField>
-
 ## 图片调用边界
 
 当前 GPT Image 2.5 官方绘图渠道使用 [Images 图像生成](/cn/api-reference/images/gpt-image-2/generation)和[图像编辑](/cn/api-reference/images/gpt-image-2/edits)。拥有图片模型访问权限，不代表同一把 Key 可以调用 Responses 图像工具。
 
 Responses 图像工具需要同时满足原生 Responses 渠道、可用的文本模型和图片生成权限。网关对生图请求会检查原生 Responses 能力，不能依靠文本协议转换补足此能力。因此本页不将 Responses 图像工具列为当前 2.5 官方绘图渠道的接入方式。
 
-## Response
+## 响应读取示例
 
 返回 OpenAI Responses 兼容结构。下面是文本响应的字段示意；实际响应还可能包含工具调用、推理项及用量信息。
 
