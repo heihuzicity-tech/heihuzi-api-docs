@@ -1,24 +1,66 @@
 ---
-title: "图像生成问题"
-description: "GPT Image 2 调用和参数问题排查。"
+title: "GPT Image 2.5 常见问题"
+description: "模型名、参数兼容、图片结果、流式和异步任务排查。"
 ---
+
+## 该写哪个模型名？
+
+日常优先 `gpt-image-2.5-flare`；需要更高编辑精度时使用 `gpt-image-2.5-sunburst`。Images 接口不写 model 时默认 Flare。不要填写通用别名 `gpt-image-2.5`。旧版 `gpt-image-2` 仍保留，以 `/v1/models` 的实际可见列表为准。
+
+## 为什么看得到模型，却提示没有图片权限？
+
+模型可见和图片权限是两项条件。`Image generation is not enabled for this group` 表示分组没有开启图片能力。GPT Image 请求还需要路由到支持该模型的 OpenAI 图像渠道；单有文本调用权限不够。
 
 ## 为什么图片接口返回不支持？
 
-Images 接口只面向 OpenAI-compatible 分组。非 OpenAI-compatible 分组访问图片接口时会返回不支持。
+检查 API Key 所属分组及路由。当前网关的 Images 路由分别处理 OpenAI 和 Grok 平台；本手册中的 GPT Image 2.5 参数适用于 OpenAI 图像渠道，不能直接套到 Grok 或其他平台。
 
-## 为什么提示没有图片权限？
+## 2.5 可以用哪些质量和尺寸？
 
-API Key 所属分组需要开启图片生成能力。先确认 `/v1/models` 能看到 `gpt-image-2`，再检查分组能力。
+quality 支持 `auto`、`low`、`medium`、`high`、`xhigh`、`max`；旧版 2.0 不使用后两档。size 使用 `auto` 或 `宽x高`，例如 `1024x1024`。具体尺寸由上游校验，不要用 `resolution`、`aspect_ratio` 或 `1K` 档位代替 Images API 的 size。
 
-## GPT Image 2 支持哪些尺寸？
+## 怎样获得透明 PNG？
 
-优先使用明确像素尺寸，例如 `1024x1024`、`2048x1152`、`3840x2160`。如果使用 `auto`，最终尺寸由上游和服务端校验共同决定。
+使用 2.5，并同时传 `background: "transparent"`、`output_format: "png"`。也可输出 WebP，不能用 JPEG 保留透明通道。旧版 `gpt-image-2` 不承诺透明背景。
 
-## 为什么不能照搬第三方平台的图像参数？
+## 为什么 response_format=url 仍然没有普通图片链接？
 
-黑胡子AI便利店当前公开的是 OpenAI Images 兼容接口，不是第三方平台的异步任务封装。请以本 API 手册里的图像生成和图像编辑页面为准。
+这是旧客户端兼容字段，官方 Images 通道会移除它。其他兼容通道还可能返回 Data URL。客户端应兼容 `data[].b64_json` 和 `data[].url`，并区分 HTTP URL 与 `data:image/...`。
 
-## 为什么没有异步任务查询？
+## 编辑接口能否直接传 file_id？
 
-当前公开 API 不提供图片任务轮询接口。图片接口按 OpenAI Images 兼容响应返回结果。
+Images JSON 编辑接口不支持 `images[].file_id` 和 `mask.file_id`。使用图片 URL、完整 Data URL 或 multipart 上传。JSON 使用 `images` 数组，multipart 使用 `image` / `image[]`；不要混用。
+
+## style 和 input_fidelity 为什么没有效果？
+
+GPT Image 的风格要求写入 prompt。`style` 不作为 2 / 2.5 的有效风格参数；`input_fidelity` 仅部分编辑通道接受，默认省略。需要提高生成质量时使用 quality。
+
+## 能否异步生成并查询结果？
+
+可以在服务端启用后使用 `/v1/images/generations/async` 或 `/v1/images/edits/async`，再通过 `/v1/images/tasks/{task_id}` 查询。它们是本平台扩展，不是直接向同步请求添加一个 async 字段。详见[异步生成](/cn/api-reference/images/async-generation)。
+
+如果提示 `async image tasks are not enabled`，表示服务端未启用。该情况不影响继续使用同步接口。
+
+## 异步任务返回 HTTP 200，为什么没有图片？
+
+200 仅表示查询成功。查看 status：`processing` 继续等待；`completed` 读取 `result.data[]`；`failed` 读取 error 并停止轮询。异步接收的 HTTP 202 也不代表图片已经生成。
+
+## 为什么任务突然返回 404？
+
+请使用提交任务时的同一把 API Key。任务不存在、已过期或归属不匹配都会返回 404；以 expires_at 判断有效期，完成后及时保存图片。
+
+## 同步接口返回 200，也需要检查 error 吗？
+
+需要。服务端可能先发送空白字符保活并提交 HTTP 200，随后才收到上游失败。因此还应检查完整 JSON 是否包含 `error`，以及 `data[]` 是否有实际图片，不能只检查 HTTP 状态码。
+
+## SSE 返回 200 后为什么仍然失败？
+
+流建立后可能出现 error 事件。必须收到并解析最终图片事件才能认定有生成结果；预览图、保活内容和 HTTP 200 都不能替代完成结果。见[流式返回](/cn/api-reference/images/streaming)。
+
+## 为什么超时后不建议马上重试？
+
+客户端断开不代表上游已取消。重复提交可能产生新的生成和费用。高质量、大图应延长等待时间；异步请求已经拿到 task_id 时，应继续查询同一任务。
+
+## Images 和 Responses 的图片字段有什么不同？
+
+Images 非流式结果在 `data[]`；Responses 的图片在 `output[]` 中 `type: "image_generation_call"` 项的 `result`。Responses 顶层 model 选文本模型，图片模型写在 `tools[].model`，见[完整示例](/cn/api-reference/responses)。

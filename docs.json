@@ -36,10 +36,20 @@
             ]
           },
           {
-            "group": "GPT Image 2",
+            "group": "GPT Image 2.5",
             "pages": [
+              "cn/api-reference/images/models",
               "cn/api-reference/images/gpt-image-2/generation",
-              "cn/api-reference/images/gpt-image-2/edits"
+              "cn/api-reference/images/gpt-image-2/edits",
+              "cn/api-reference/images/streaming"
+            ]
+          },
+          {
+            "group": "图片异步任务",
+            "pages": [
+              "cn/api-reference/images/async-generation",
+              "cn/api-reference/images/async-edits",
+              "cn/api-reference/images/tasks"
             ]
           }
         ]

@@ -1,129 +1,187 @@
 ---
-title: "GPT Image 2 图像编辑"
+title: "GPT Image 2.5 图像编辑"
 api: "POST /v1/images/edits"
-description: "GPT Image 2 图像编辑接口，支持 URL 输入和 multipart 上传。"
+description: "Flare、Sunburst 与 GPT Image 2 的参考图、风格修改、遮罩编辑和文件上传。"
 ---
 
-`/v1/images/edits` 用于图生图、局部编辑和参考图编辑。该接口仅面向 OpenAI-compatible 分组，并受图片生成权限控制。
+使用已有图片生成新结果，可用于参考图创作、风格修改和遮罩编辑。模型及分组权限要求与[图像生成](/cn/api-reference/images/gpt-image-2/generation)一致。省略 `model` 时默认使用 `gpt-image-2.5-flare`。
 
-支持两种输入方式：
+## 两种输入方式
 
-- `application/json`：通过 `images[].image_url` 和 `mask.image_url` 传入公网图片 URL。
-- `multipart/form-data`：通过 `image` / `image[]` 和 `mask` 上传本地文件。
+| Content-Type | 图片字段 | 遮罩字段 |
+| --- | --- | --- |
+| `application/json` | `images: [{"image_url": "..."}]` | `mask: {"image_url": "..."}` |
+| `multipart/form-data` | 文件字段 `image`、`image[]`，或 `image[0]` 等 | 文件字段 `mask` |
+
+JSON 的 `image_url` 可以是可访问的图片 URL，也可以是 `data:image/png;base64,...`。使用远程 URL 时必须能被服务端访问。不要发送裸 base64，也不要把 JSON 的 `images` 与 multipart 的 `image` 字段混用。
 
 <RequestExample>
 ```bash cURL
+# 将示例 URL 替换成自己的可访问图片地址。
 curl --request POST \
   --url https://code.heihuzi.ai/v1/images/edits \
-  --header 'Authorization: Bearer <token>' \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
   --header 'Content-Type: application/json' \
   --data '{
-    "model": "gpt-image-2",
-    "prompt": "把这张照片变成水彩画风格",
-    "images": [
-      {
-        "image_url": "https://assets.heihuzi.ai/photo.jpg"
-      }
-    ],
+    "model": "gpt-image-2.5-sunburst",
+    "prompt": "保留杯子的外形和文字，把背景改成浅蓝色摄影棚",
+    "images": [{"image_url": "https://example.com/reference.png"}],
+    "n": 1,
     "size": "1024x1024",
+    "quality": "high",
     "output_format": "png"
   }'
 ```
 
 ```python Python
+import base64
+import os
+from pathlib import Path
 import requests
 
+image_b64 = base64.b64encode(Path("reference.png").read_bytes()).decode("ascii")
 response = requests.post(
     "https://code.heihuzi.ai/v1/images/edits",
-    headers={
-        "Authorization": "Bearer <token>",
-        "Content-Type": "application/json",
-    },
+    headers={"Authorization": f"Bearer {os.environ['HEIHUZI_API_KEY']}"},
     json={
-        "model": "gpt-image-2",
-        "prompt": "把这张照片变成水彩画风格",
-        "images": [
-            {
-                "image_url": "https://assets.heihuzi.ai/photo.jpg",
-            }
-        ],
+        "model": "gpt-image-2.5-sunburst",
+        "prompt": "保留杯子的外形和文字，把背景改成浅蓝色摄影棚",
+        "images": [{"image_url": f"data:image/png;base64,{image_b64}"}],
+        "n": 1,
         "size": "1024x1024",
+        "quality": "high",
         "output_format": "png",
     },
+    timeout=(15, 600),
 )
-
-print(response.json())
+response.raise_for_status()
+payload = response.json()
+if payload.get("error") or not payload.get("data"):
+    raise RuntimeError(payload)
+print(payload)
 ```
 </RequestExample>
 
-## Body
+## 请求参数
 
-<ParamField body="model" type="string" required>
-  图像编辑模型。推荐固定使用 `gpt-image-2`。
+<ParamField body="model" type="string" default="gpt-image-2.5-flare">
+  可选。使用 `gpt-image-2.5-flare`、`gpt-image-2.5-sunburst` 或 `gpt-image-2`。
 </ParamField>
 
 <ParamField body="prompt" type="string" required>
-  编辑提示词。
+  编辑要求，说明需要保留和修改的内容。
 </ParamField>
 
 <ParamField body="images" type="array" required>
-  JSON 模式下的参考图数组。
+  JSON 请求必填的参考图数组，至少包含一个有效的 `image_url`。multipart 请求改用文件字段 `image` / `image[]`。
 </ParamField>
 
 <ParamField body="images[].image_url" type="string" required>
-  公网可访问图片 URL。
+  每张参考图的可访问 URL 或包含 MIME 类型的 base64 Data URL。`images[].file_id` 不受支持，传入会返回 400。
 </ParamField>
 
 <ParamField body="mask" type="object">
-  可选遮罩对象。
+  JSON 的可选遮罩对象，使用 `{"image_url": "..."}`；multipart 使用同名文件字段上传遮罩。`mask.file_id` 不受支持。
 </ParamField>
 
 <ParamField body="mask.image_url" type="string">
-  JSON 模式下的遮罩图片 URL。
+  JSON 遮罩的可访问图片 URL 或完整 Data URL；使用 mask 对象时填写。
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+  输出张数，使用正整数；上限和多张输出能力由模型及渠道决定，与参考图数量无关。
 </ParamField>
 
 <ParamField body="size" type="string">
-  输出尺寸。支持 `auto` 或具体像素尺寸。
+  `auto` 或 `宽x高`。表示输出尺寸，不是参考图的尺寸；由目标上游校验。
 </ParamField>
 
-<ParamField body="input_fidelity" type="string">
-  编辑场景可传输入保真度参数。
+<ParamField body="quality" type="string">
+  2.5 使用 `auto`、`low`、`medium`、`high`、`xhigh`、`max`；旧版 2.0 不使用 `xhigh` / `max`。
+</ParamField>
+
+<ParamField body="background" type="string">
+  `auto`、`opaque`、`transparent`。需要透明输出时使用 2.5 与 PNG/WebP。
 </ParamField>
 
 <ParamField body="output_format" type="string">
-  输出图片格式，例如 `png`、`jpeg`、`webp`。
+  `png`、`jpeg`、`webp`。
 </ParamField>
 
-## Multipart 上传
+<ParamField body="output_compression" type="integer">
+  JPEG/WebP 的压缩参数，常用范围 `0`–`100`；PNG 请求省略。
+</ParamField>
+
+<ParamField body="moderation" type="string">
+  渠道支持时可传上游审核选项，例如 `auto`、`low`。平台内容审核仍然生效。
+</ParamField>
+
+<ParamField body="stream" type="boolean" default="false">
+  开启后接收 SSE 图片事件，不再是单个 JSON 响应。详见[流式返回](/cn/api-reference/images/streaming)。
+</ParamField>
+
+<ParamField body="partial_images" type="integer">
+  流式预览图数量，使用 `0`–`3`；`0` 只接收最终图片，仅在流式模式及上游支持时有效。
+</ParamField>
+
+<ParamField body="input_fidelity" type="string">
+  仅部分编辑通道接受，例如 `high`；不能保证所有通道生效，新请求默认省略。它不替代 `quality`。
+</ParamField>
+
+<ParamField body="response_format" type="string">
+  旧客户端兼容字段，不能保证强制返回 URL 或 base64，新请求建议省略。
+</ParamField>
+
+## Multipart 多参考图
+
+由 cURL 或 SDK 自动生成带 boundary 的 `Content-Type`，不要手动设置成不带 boundary 的 `multipart/form-data`。
 
 ```bash
 curl --request POST \
   --url https://code.heihuzi.ai/v1/images/edits \
-  --header 'Authorization: Bearer <token>' \
-  --form 'model=gpt-image-2' \
-  --form 'prompt=把这张照片变成水彩画风格' \
-  --form 'image=@photo.png' \
-  --form 'size=1024x1024'
+  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
+  --form 'model=gpt-image-2.5-flare' \
+  --form 'prompt=保留第一张图的杯子造型，采用第二张图的配色' \
+  --form 'image[]=@cup.png' \
+  --form 'image[]=@palette.png' \
+  --form 'n=1' \
+  --form 'size=1024x1024' \
+  --form 'quality=high' \
+  --form 'output_format=png'
 ```
 
-## Response
+参考图的数量、格式和大小还受渠道限制。上传前请将单个 multipart 文件控制在 20 MiB 以内，总请求还受服务端请求体上限约束；大文件优先压缩后上传。
+
+## 遮罩编辑
+
+使用与第一张参考图尺寸一致、带透明通道的 PNG 遮罩；将要修改的区域设为透明。遮罩是编辑引导，不能承诺其他像素完全不变。遮罩能力取决于渠道。
+
+```bash
+curl --request POST \
+  --url https://code.heihuzi.ai/v1/images/edits \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
+  --form 'model=gpt-image-2.5-sunburst' \
+  --form 'prompt=只将背景替换为浅蓝色，保留杯子及其文字' \
+  --form 'image=@cup.png' \
+  --form 'mask=@mask.png' \
+  --form 'quality=high' \
+  --form 'output_format=png'
+```
+
+## 响应
+
+与图像生成相同，处理 `data[]` 中的 `b64_json` 或 `url`。以下 base64 是占位符：
 
 <ResponseExample>
 ```json
 {
-  "created": 1710000000,
-  "data": [
-    {
-      "url": "https://assets.heihuzi.ai/edited-image.png"
-    }
-  ]
+  "created": 1788998400,
+  "data": [{"b64_json": "<base64-image-data>"}],
+  "output_format": "png",
+  "size": "1024x1024",
+  "quality": "high"
 }
 ```
 </ResponseExample>
 
-## 注意事项
-
-- JSON 模式适合已经有公网图片 URL 的场景。
-- Multipart 模式适合直接上传本地文件。
-- 该接口不公开异步任务查询流程。
-- 非 OpenAI-compatible 分组不能调用 Images 接口。
+错误码和超时处理参见[图像生成](/cn/api-reference/images/gpt-image-2/generation)。需要异步查询时，使用[异步图像编辑](/cn/api-reference/images/async-edits)，而不是向本接口添加自定义 `async` 字段。

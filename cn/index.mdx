@@ -1,9 +1,9 @@
 ---
 title: "黑胡子AI便利店 API"
-description: "OpenAI-compatible、Claude Code-compatible 与 GPT Image 2 能力的统一 API 网关。"
+description: "OpenAI-compatible、Claude Code-compatible 与 GPT Image 能力的统一 API 网关。"
 ---
 
-黑胡子AI便利店对外提供三类 API 能力：OpenAI-compatible 调用、Claude Code-compatible 调用，以及 GPT Image 2 图像生成/编辑。文档里的接口契约以当前网关真实支持为准，不复制第三方平台的异步任务封装或私有字段。
+本手册介绍黑胡子AI便利店的 OpenAI-compatible 调用、Claude Code-compatible 调用和 GPT Image 2.5 图像生成/编辑，以及图片异步任务扩展。接口说明以当前网关的路由、参数处理和响应结构为准。
 
 ## 选择入口
 
@@ -12,9 +12,13 @@ description: "OpenAI-compatible、Claude Code-compatible 与 GPT Image 2 能力�
 | Codex / OpenAI 新项目 | `/v1/responses` | 主推荐文本、多模态和工具调用入口。 |
 | 旧版 OpenAI 客户端迁移 | `/v1/chat/completions` | 兼容 `messages` 格式，不作为新项目首选。 |
 | Claude Code | `/v1/messages` | Claude Code / Anthropic Messages-compatible 协议入口。 |
-| 图像生成 | `/v1/images/generations` | GPT Image 2 文生图。 |
-| 图像编辑 | `/v1/images/edits` | GPT Image 2 图生图、局部编辑和参考图编辑。 |
+| 图像生成 | `/v1/images/generations` | GPT Image 2.5 文生图，默认 `gpt-image-2.5-flare`。 |
+| 图像编辑 | `/v1/images/edits` | GPT Image 图生图、局部编辑和参考图编辑。 |
+| 图片异步提交 | `/v1/images/generations/async`、`/v1/images/edits/async` | 服务端启用后可先返回任务 ID。 |
+| 图片任务查询 | `/v1/images/tasks/{task_id}` | 用提交时的同一把 API Key 查询状态和结果。 |
 | 查询模型 | `/v1/models` | 返回当前 API Key 可见模型。 |
+
+模型差异和参数用法见 [GPT Image 2.5 模型与参数](/cn/api-reference/images/models)。
 
 ## 基础信息
 
@@ -28,5 +32,6 @@ description: "OpenAI-compatible、Claude Code-compatible 与 GPT Image 2 能力�
 
 - OpenAI-compatible 不等于支持所有 OpenAI 字段，具体以每个接口页的参数说明为准。
 - Claude Code-compatible 是网关兼容入口，不代表直接调用官方 Anthropic。
-- GPT Image 2 采用当前网关的 OpenAI Images 兼容契约，不使用第三方平台的异步任务模式。
-- 当前文档不公开任务查询、音频或文件上传接口。
+- 同步 Images 返回 `data[]`；异步提交返回任务 ID，查询结果在 `result`；Responses 图像工具返回 `output[]`。
+- 图片异步任务是本平台扩展，需服务端启用，不能直接套用其他平台的任务格式。
+- 本手册中的 GPT Image 参数不代表其他图像、音视频或批处理模型使用相同协议。

@@ -56,7 +56,7 @@ console.log(await response.json());
 ## Body
 
 <ParamField body="model" type="string" required>
-  模型 ID。推荐使用 `gpt-5.5`、`gpt-5.4`、`gpt-5.4-mini`、`gpt-5.3-codex`、`gpt-5.3-codex-spark`。
+  Responses 文本模型 ID，例如 `gpt-5.6-sol`、`gpt-5.6-luna`、`gpt-6-astra`。以当前 Key 的 `/v1/models` 为准；使用图像工具时，图片模型填写在 `tools[].model`。
 </ParamField>
 
 <ParamField body="input" type="string | array" required>
@@ -68,7 +68,7 @@ console.log(await response.json());
 </ParamField>
 
 <ParamField body="tools" type="array">
-  OpenAI Responses 兼容工具列表。需要图像生成时，可以声明 image generation 工具并使用 `gpt-image-2`。
+  OpenAI Responses 兼容工具列表。图像工具使用 `type: "image_generation"`，并将 Flare 或 Sunburst 的完整 ID 放入工具的 `model` 字段。
 </ParamField>
 
 <ParamField body="temperature" type="number">
@@ -77,11 +77,74 @@ console.log(await response.json());
 
 ## 图像工具
 
-Responses 可以通过工具调用触发图像生成。直接生成图片时，仍建议使用 `/v1/images/generations`；需要在一次对话或任务流里组合文本和图片能力时，再使用 Responses 工具模式。
+直接生成图片可用 [Images](/cn/api-reference/images/gpt-image-2/generation)。需要在一次对话中组合文字和图片时，显式指定一个支持 Responses 的文本模型，再在 image_generation 工具里指定图片模型。图片生成权限仍然适用。
+
+```json
+{
+  "model": "gpt-5.6-luna",
+  "input": "生成一张极简蓝色 API 网关图标",
+  "tools": [
+    {
+      "type": "image_generation",
+      "model": "gpt-image-2.5-flare",
+      "action": "generate",
+      "size": "1024x1024",
+      "quality": "low",
+      "output_format": "png"
+    }
+  ],
+  "tool_choice": {"type": "image_generation"},
+  "stream": false
+}
+```
+
+要使用 Sunburst，将工具内的 model 改为 `gpt-image-2.5-sunburst`。不要把 `size`、`quality`、`output_format` 写成 Responses 文本模型的参数，它们应放在图片工具对象内。
+
+参考图输入使用 `input` 的多模态格式，例如：
+
+```json
+{
+  "model": "gpt-5.6-luna",
+  "input": [{
+    "role": "user",
+    "content": [
+      {"type": "input_text", "text": "保留杯子形状，把背景改为浅蓝色"},
+      {"type": "input_image", "image_url": "https://example.com/reference.png"}
+    ]
+  }],
+  "tools": [{
+    "type": "image_generation",
+    "model": "gpt-image-2.5-sunburst",
+    "action": "edit",
+    "quality": "high",
+    "output_format": "png"
+  }],
+  "tool_choice": {"type": "image_generation"},
+  "stream": false
+}
+```
+
+将示例 URL 替换成自己的可访问图片地址或完整 Data URL。客户端与渠道需要支持相应多模态和图像工具能力。
 
 ## Response
 
-返回 OpenAI Responses 兼容结构。具体输出字段会随请求模式、流式设置和上游模型变化。
+返回 OpenAI Responses 兼容结构。图片不在 Images 的 `data[]` 中，应遍历 `output[]`，查找 `type: "image_generation_call"`，对其中的 `result` 进行 base64 解码。
+
+```json
+{
+  "object": "response",
+  "status": "completed",
+  "output": [
+    {
+      "type": "image_generation_call",
+      "status": "completed",
+      "result": "<base64-image-data>"
+    }
+  ]
+}
+```
+
+这是字段示意，真实响应还可能包含文字、推理项、工具 ID 和用量。流式模式使用 Responses 事件，例如 `response.image_generation_call.partial_image` 与 `response.completed`，不能按 Images 的事件名解析。Responses 还涉及主文本模型的用量，不能用图片文件大小直接推算费用。
 
 ## 与 Chat Completions 的关系
 

@@ -1,38 +1,41 @@
 ---
-title: "图像编辑"
-description: "使用 gpt-image-2 编辑已有图片。"
+title: "GPT Image 2.5 图像编辑"
+description: "参考图、文件上传、遮罩及异步编辑的使用方法。"
 ---
 
-图像编辑使用 `/v1/images/edits`，适合图生图、局部编辑、风格转换和参考图编辑。
+使用 `/v1/images/edits` 编辑已有图片。日常优先 `gpt-image-2.5-flare`；对细节保留、编辑精度要求更高时可选择 `gpt-image-2.5-sunburst`。
 
-## URL 输入
+## 提供图片
 
-如果图片已经有公网可访问 URL，可以使用 JSON 请求体，把参考图放入 `images` 数组。
+| 图片在哪里 | 传入方式 |
+| --- | --- |
+| 已有服务端可访问的 URL | JSON：`images: [{"image_url": "https://..."}]` |
+| 已有 base64 | JSON：`images: [{"image_url": "data:image/png;base64,..."}]` |
+| 本地文件 | multipart：`image=@photo.png` |
+| 多张参考图 | JSON 数组或重复的 `image[]` 文件字段；数量由渠道限制 |
 
-```json
-{
-  "model": "gpt-image-2",
-  "prompt": "把这张照片变成水彩画风格",
-  "images": [
-    {
-      "image_url": "https://assets.heihuzi.ai/photo.jpg"
-    }
-  ],
-  "size": "1024x1024"
-}
-```
+JSON 中不能用 `file_id` 代替 `image_url`。图片的 MIME 类型应与真实文件匹配。示例代码见[图像编辑 API](/cn/api-reference/images/gpt-image-2/edits)。
 
-## 文件上传
+## 写清修改范围
 
-如果图片在本地，使用 multipart 上传。该方式适合后台服务直接传文件，不需要先把图片放到公网。
+例如：“保留杯子的形状、Logo 和文字，只把背景改成浅蓝色摄影棚”。参考图数量与输出张数 `n` 是两回事；提交两张参考图并不表示一定生成两张结果。
 
-## 遮罩
+`size` 和 `quality` 控制输出图片。2.5 可使用 `xhigh`、`max`，旧版 2.0 不使用这两个档位。`input_fidelity` 只在部分编辑通道有效，不应依赖它保证保真。
 
-局部编辑可以传遮罩图。遮罩图需要和原图编辑区域语义一致，否则上游可能无法得到稳定结果。
+## 局部编辑
 
-## 排查
+渠道支持遮罩时，可用 `mask.image_url` 或 multipart 文件字段 `mask`。使用与第一张参考图尺寸一致、带透明通道的 PNG，把要修改的区域设为透明。遮罩帮助模型定位编辑区域，不保证其他像素完全不变。
 
-- 图片 URL 必须公网可访问。
-- 本地文件上传需要使用 multipart。
-- 权限错误先检查图片生成能力。
-- 参数错误先对照 API 手册里的图像编辑接口。
+## 取回结果
+
+同步调用读取 `data[]` 中的 `b64_json` 或 `url`，保存方法与图像生成一致。
+
+需要后台处理时，改用[异步图像编辑](/cn/api-reference/images/async-edits)，保存返回的 `task_id`，再用同一把 Key [查询结果](/cn/api-reference/images/tasks)。异步提交不能设置 `stream: true`。
+
+## 常见问题
+
+- URL 不可访问：改为 Data URL 或直接上传文件。
+- JSON 提示缺少图片：检查字段是否为 `images[].image_url`。
+- multipart 解析失败：让 SDK/cURL 自动设置带 boundary 的 Content-Type。
+- 透明背景没有保留：选择 2.5，输出格式使用 PNG/WebP。
+- 权限或模型错误：检查当前 Key、分组图片权限和模型列表。

@@ -1,13 +1,13 @@
 ---
 title: "模型选择"
-description: "如何在 GPT / Codex、Claude Code-compatible 和 GPT Image 2 之间选择。"
+description: "如何在 GPT / Codex、Claude Code-compatible 和 GPT Image 之间选择。"
 ---
 
 先按客户端协议选择模型族，再用 `/v1/models` 确认当前 API Key 是否可见。
 
 ## GPT / Codex
 
-适合 Codex、OpenAI SDK、Responses 和 Chat Completions 兼容调用。常用模型包括 `gpt-5.5`、`gpt-5.4`、`gpt-5.4-mini`、`gpt-5.3-codex`、`gpt-5.3-codex-spark`。
+适合 Codex、OpenAI SDK、Responses 和 Chat Completions 兼容调用。当前模型包括 `gpt-6-astra`、`gpt-5.6-sol`、`gpt-5.6-terra`、`gpt-5.6-luna`，以及仍可见的兼容型号；以当前 Key 的模型列表为准。
 
 ## Claude Code-compatible
 
@@ -15,7 +15,7 @@ description: "如何在 GPT / Codex、Claude Code-compatible 和 GPT Image 2 之
 
 ## 图像
 
-图像生成和图像编辑优先使用 `gpt-image-2`。图片接口需要分组开启图片生成能力。
+图像生成和图像编辑优先使用 `gpt-image-2.5-flare`。要更高画质时改成 `gpt-image-2.5-sunburst`。上一版 `gpt-image-2` 仍然可用。图片接口需要分组开启图片生成能力。2.5 可用 `xhigh` / `max` 和透明输出；旧版参数边界见[模型与参数](/cn/api-reference/images/models)。
 
 ## 判断标准
 

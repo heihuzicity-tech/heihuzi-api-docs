@@ -1,0 +1,40 @@
+---
+title: "提交异步图像编辑"
+api: "POST /v1/images/edits/async"
+description: "上传参考图或遮罩，提交后通过 task_id 查询编辑结果。"
+---
+
+请求参数与[图像编辑](/cn/api-reference/images/gpt-image-2/edits)一致，支持 JSON 的 `images[].image_url` 和 multipart 文件上传。省略 `stream` 或设置为 `false`。
+
+服务端需要启用图片异步任务。权限、202 接收响应、过期时间和重复提交规则见[异步图像生成](/cn/api-reference/images/async-generation)。
+
+<RequestExample>
+```bash cURL
+curl --include --request POST \
+  --url https://code.heihuzi.ai/v1/images/edits/async \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
+  --form 'model=gpt-image-2.5-sunburst' \
+  --form 'prompt=保留杯子造型，将背景改成浅蓝色' \
+  --form 'image=@cup.png' \
+  --form 'quality=high' \
+  --form 'output_format=png'
+```
+</RequestExample>
+
+## 接收响应
+
+<ResponseExample>
+```json
+{
+  "id": "imgtask_example",
+  "task_id": "imgtask_example",
+  "object": "image.generation.task",
+  "status": "processing",
+  "created_at": 1788998400,
+  "expires_at": 1789084800,
+  "poll_url": "/v1/images/tasks/imgtask_example"
+}
+```
+</ResponseExample>
+
+编辑任务也使用 `object: "image.generation.task"`。收到 202 后，使用同一把 Key 访问[查询图片任务](/cn/api-reference/images/tasks)。此时尚未返回编辑结果。

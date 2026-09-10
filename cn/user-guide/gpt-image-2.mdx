@@ -1,24 +1,38 @@
 ---
-title: "GPT Image 2 图像生成"
-description: "使用 gpt-image-2 生成图片时的选择和限制。"
+title: "GPT Image 2.5 图像生成"
+description: "选模型、调质量、生成透明图，并正确保存图片结果。"
 ---
 
-GPT Image 2 使用 `/v1/images/generations`。它适合把文本提示词直接生成图片。
+日常创作先选 `gpt-image-2.5-flare`；更重视细节和编辑精度时选 `gpt-image-2.5-sunburst`。旧版 `gpt-image-2` 仍保留，实际可用性以当前 API Key 的[模型列表](/cn/models)为准。
 
-## 尺寸
+## 第一次调用
 
-优先使用明确像素尺寸，例如 `1024x1024`、`2048x1152`、`3840x2160`。如果不确定尺寸，可以使用 `auto`，但最终效果取决于上游模型和服务端校验。
+使用[快速验证](/cn/quickstart)中的图片请求：`n: 1`、`size: "1024x1024"`、`quality: "low"`。成功后再调整参数。
 
-## 输出
+## 按需求调整
 
-响应通常返回 OpenAI Images 兼容结构。图片可能以 URL 或 base64 形式返回，取决于上游能力和渠道配置；不要依赖 `response_format` 强制指定 GPT Image 2 的返回形态。
+| 目标 | 调整方式 |
+| --- | --- |
+| 更细致的画面 | 逐步提高 quality；2.5 支持 `xhigh`、`max`，耗时可能增加 |
+| 横图或竖图 | 用 size 的宽高表达，例如 `1536x1024` 或 `1024x1536` |
+| 更高分辨率 | 使用目标渠道接受的像素尺寸，以返回图片实际像素为准 |
+| 透明背景 | 2.5 + `background: "transparent"` + PNG/WebP |
+| 更小的文件 | JPEG/WebP + output_compression；不要把它当作生成质量开关 |
+| 修改现有图片 | 改用[图像编辑](/cn/user-guide/image-edits) |
+| 提交后离开页面，稍后取图 | 使用已启用的[异步任务](/cn/api-reference/images/async-generation) |
 
-## 权限
+`1K`、`2K`、`4K` 是创作页面的档位概念。直接调用 Images API 时填写 `size`，不要照搬页面内部的 `resolution` 或 `aspect_ratio` 参数。
 
-如果返回 403，通常是 API Key 所属分组没有开启图片生成能力。先确认 `/v1/models` 能看到 `gpt-image-2`，再检查分组能力。
+## 保存结果
 
-## 不适合的场景
+同步响应的 `data[]` 包含实际输出。优先读取非空 `b64_json` 并解码；若返回 `url`，先判断是 HTTP 下载地址还是 Data URL。遍历所有元素，不要只保存第一张。
 
-- 需要编辑已有图片时，应使用图像编辑接口。
-- 需要 Claude Code 协议时，不应调用 Images。
-- 当前公开文档不提供异步任务轮询流程。
+详见 [SDK 保存示例](/cn/integrations/openai-sdk)。`response_format` 是兼容字段，不能保证每个渠道都按它返回。图片尺寸、质量和用量元信息可能因渠道而异。
+
+## 耗时和费用
+
+同一费率不等于相同单张费用。最终扣费受实际用量、模型及分组配置影响；不要直接套用旧版 2.0 的估价。
+
+高质量或大图应给客户端更长的等待时间。连接中断不代表生成已取消；重复提交可能再次生成并产生费用。需要重连后查询进度时，优先使用异步任务并保留 `task_id`。
+
+完整字段与兼容边界见[模型与参数](/cn/api-reference/images/models)和[图像生成 API](/cn/api-reference/images/gpt-image-2/generation)。

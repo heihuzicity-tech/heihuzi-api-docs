@@ -1,6 +1,6 @@
 ---
 title: "快速验证"
-description: "用最短路径验证 API Key、文本接口、Claude Code 入口和 GPT Image 2。"
+description: "用最短路径验证 API Key、文本接口、Claude Code 入口和图像生成。"
 ---
 
 Base URL：`https://code.heihuzi.ai`
@@ -53,7 +53,7 @@ curl --request POST \
 
 Claude Code 使用这个入口，不使用 `/v1/responses`。
 
-## 4. 验证 GPT Image 2
+## 4. 验证图像生成
 
 ```bash
 curl --request POST \
@@ -61,10 +61,15 @@ curl --request POST \
   --header 'Authorization: Bearer <token>' \
   --header 'Content-Type: application/json' \
   --data '{
-    "model": "gpt-image-2",
+    "model": "gpt-image-2.5-flare",
     "prompt": "一张极简风格的蓝色 API 网关图标",
-    "size": "1024x1024"
+    "size": "1024x1024",
+    "quality": "low",
+    "output_format": "png",
+    "n": 1
   }'
 ```
 
-如果返回权限错误，检查 API Key 分组是否开启图片生成能力。
+如果返回权限错误，检查 API Key 分组是否开启图片生成能力。成功后处理 `data[]` 的 `b64_json` 或 `url`；Python 保存示例见 [OpenAI SDK](/cn/integrations/openai-sdk)。
+
+需要更高编辑精度时选 `gpt-image-2.5-sunburst`；2.5 的 `xhigh` / `max` 和透明输出见[模型与参数](/cn/api-reference/images/models)。需要提交后轮询时，使用已启用的[异步接口](/cn/api-reference/images/async-generation)。

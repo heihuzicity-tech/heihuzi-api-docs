@@ -45,7 +45,7 @@ curl --request POST \
   }'
 ```
 
-## GPT Image 2
+## GPT Image 2.5
 
 ```bash
 curl --request POST \
@@ -53,8 +53,26 @@ curl --request POST \
   --header 'Authorization: Bearer <token>' \
   --header 'Content-Type: application/json' \
   --data '{
-    "model": "gpt-image-2",
+    "model": "gpt-image-2.5-flare",
     "prompt": "一张极简风格的蓝色 API 网关图标",
-    "size": "1024x1024"
+    "size": "1024x1024",
+    "quality": "low",
+    "output_format": "png",
+    "n": 1
   }'
 ```
+
+## 上传参考图编辑
+
+```bash
+curl --request POST \
+  --url https://code.heihuzi.ai/v1/images/edits \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
+  --form 'model=gpt-image-2.5-sunburst' \
+  --form 'prompt=保留杯子形状，把背景改为浅蓝色' \
+  --form 'image=@cup.png' \
+  --form 'quality=high' \
+  --form 'output_format=png'
+```
+
+JSON 参考图、遮罩和多图示例见[图像编辑](/cn/api-reference/images/gpt-image-2/edits)；先提交后查询见[异步接口](/cn/api-reference/images/async-generation)。SSE 请求使用 `--no-buffer`，见[流式返回](/cn/api-reference/images/streaming)。

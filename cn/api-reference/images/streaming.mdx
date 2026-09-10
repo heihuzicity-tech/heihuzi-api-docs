@@ -1,0 +1,52 @@
+---
+title: "图片流式返回"
+description: "Images SSE 的预览图、完成事件与错误处理。"
+---
+
+同步 Images 接口传入 `stream: true` 时，可以在渠道支持的情况下接收 SSE。流式连接与[异步任务](/cn/api-reference/images/async-generation)是两种用法：SSE 需要保持连接，异步任务返回 ID 后另行查询。
+
+```bash
+curl --no-buffer --request POST \
+  --url https://code.heihuzi.ai/v1/images/generations \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "model": "gpt-image-2.5-flare",
+    "prompt": "一只坐在窗台上的橘猫",
+    "size": "1024x1024",
+    "quality": "low",
+    "stream": true,
+    "partial_images": 1
+  }'
+```
+
+`partial_images` 使用 `0`–`3`，`0` 表示只接收最终图片。此参数描述预览数量，最终输出张数由 `n` 指定。
+
+## 事件
+
+| 场景 | 预览事件 | 完成事件 |
+| --- | --- | --- |
+| 图像生成 | `image_generation.partial_image` | `image_generation.completed` |
+| 图像编辑 | `image_edit.partial_image` | `image_edit.completed` |
+
+下面展示兼容 Images 的事件结构，base64 为占位符；直连上游渠道可能带有额外字段，应按实际 `event` / `type` 解析。
+
+```text
+event: image_generation.partial_image
+data: {"type":"image_generation.partial_image","partial_image_index":0,"b64_json":"<preview-base64>"}
+
+event: image_generation.completed
+data: {"type":"image_generation.completed","created_at":1788998400,"b64_json":"<final-base64>","output_format":"png","size":"1024x1024"}
+```
+
+客户端应按 SSE 空行分隔事件，再解析 `data:` 中的 JSON。不要对整个流调用一次 `response.json()`，也不要把某一次网络读取当作一个完整事件。
+
+- 预览图不是最终结果；实际预览数可能少于 `partial_images`。
+- 多张输出可能出现多个完成事件，不能在收到第一张后直接丢弃剩余流。
+- 忽略 SSE 注释和保活内容；不要强制依赖某个渠道一定发送 `[DONE]`。
+- 流建立后仍可能收到 `error` 事件；HTTP 200 不等于生成成功。
+- 连接中断且没有最终结果时，不应直接认定任务失败并无限重试。
+
+## 与 Responses 的区别
+
+`/v1/responses` 的图像工具使用 Responses 事件，例如 `response.image_generation_call.partial_image`，字段可为 `partial_image_b64`；不要与本页 Images 事件混用。非流式 Responses 的最终图片从 `output[]` 中 `type: "image_generation_call"` 的 `result` 读取。
