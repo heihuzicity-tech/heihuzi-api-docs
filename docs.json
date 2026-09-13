@@ -49,29 +49,9 @@
         "tab": "集成指南",
         "groups": [
           {
-            "group": "开始集成",
+            "group": "安装与使用",
             "pages": [
-              "cn/quickstart",
-              "cn/integrations/index"
-            ]
-          },
-          {
-            "group": "Codex",
-            "pages": [
-              "cn/integrations/codex-cli"
-            ]
-          },
-          {
-            "group": "Claude Code",
-            "pages": [
-              "cn/integrations/claude-code"
-            ]
-          },
-          {
-            "group": "SDK 和工具",
-            "pages": [
-              "cn/integrations/openai-sdk",
-              "cn/integrations/curl"
+              "cn/integrations/lazy-installer"
             ]
           }
         ]

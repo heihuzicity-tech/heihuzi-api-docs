@@ -1,0 +1,149 @@
+---
+title: "懒人安装包使用说明"
+description: "按图完成 Windows 安装包下载、API Key 配置、中文界面切换和首次对话。"
+---
+
+本文根据[飞书原文](https://vxocfks1smx.feishu.cn/wiki/RcN8w8l28ipLBnkK7H2c1jYnnNB)整理，保留完整的 11 个步骤和操作截图。
+
+<Note>
+  本教程演示 Windows x64 安装流程。截图中的懒人安装器版本为 `0.3.2`，桌面应用安装包版本为 `26.814.5167.0`；文件名和界面请以实际下载的版本为准。
+</Note>
+
+## 第一步：注册黑胡子便利店账号
+
+用电脑浏览器打开[黑胡子便利店注册页面](https://code.heihuzi.ai/register)，填写邮箱和密码，按页面提示完成注册。优惠码为选填项，没有优惠码可以留空。
+
+![打开黑胡子便利店注册页面，填写邮箱和密码](/images/lazy-installer/01-register.png)
+
+## 第二步：创建 API Key
+
+登录后，打开 [API 密钥](https://code.heihuzi.ai/keys)，点击「创建密钥」。
+
+![在 API 密钥页面点击创建密钥](/images/lazy-installer/02-create-key.png)
+
+填写一个方便自己识别的名称，例如 `codex`，分组选择「Codex-企业分组（长期稳定）」，其他选项保持默认，然后点击「创建」。分组名称和倍率以便利店当前页面为准。
+
+![填写密钥名称并选择 Codex 企业分组](/images/lazy-installer/03-select-group.png)
+
+创建完成后，可以在列表中看到刚才的密钥。
+
+![创建成功后的 API 密钥列表](/images/lazy-installer/04-key-created.png)
+
+## 第三步：充值余额
+
+在便利店侧边栏打开「余额充值」，根据自己的使用需求充值。原文对参加线下会的用户建议至少充值 100 元；具体充值金额和赠送活动以当前充值页面为准。
+
+![余额充值页面示例，金额和赠送活动以实际页面为准](/images/lazy-installer/05-recharge.png)
+
+## 第四步：下载软件安装包
+
+打开[百度网盘下载入口：Codex 安装宝](https://pan.baidu.com/s/5bQlo6U-NG-UPLTb1ezhAYw)，将两个文件都下载到本地：
+
+- 黑胡子懒人安装器，文件扩展名为 `.exe`。
+- 配套的 ChatGPT / Codex 桌面应用安装包，文件扩展名为 `.msix`。
+
+<Warning>
+  **两个文件都必须下载，并且放在同一个文件夹中。** 后续从这个文件夹打开懒人安装器。
+</Warning>
+
+![网盘中的两个配套安装文件，需要一起下载](/images/lazy-installer/06-download-files.png)
+
+## 第五步：打开黑胡子懒人安装器
+
+双击打开黑胡子懒人安装器的 `.exe` 文件。截图中的文件名为 `Heihuzi-Codex-Offline-Installer_0.3.2_x64.exe`。
+
+![双击打开黑胡子懒人安装器 exe 文件](/images/lazy-installer/07-open-installer.png)
+
+## 第六步：填写 API Key
+
+回到便利店的「API 密钥」页面，点击第二步创建的密钥旁边的复制按钮。
+
+![点击密钥旁边的复制按钮](/images/lazy-installer/08-copy-key.png)
+
+这张截图仅演示复制按钮的位置，使用的分组按第二步选择。
+
+将复制的 Key 粘贴到懒人安装器的「API Key」输入框中，点击「保存并继续」。请使用自己的完整 Key，截图中的省略形式不能用于配置。
+
+![将完整 API Key 粘贴到安装器并保存](/images/lazy-installer/09-save-key.png)
+
+## 第七步：安装 ChatGPT
+
+保存 API Key 后，安装器会进入「应用管理」。再次确认懒人安装器和配套的 `.msix` 安装包位于同一个文件夹中。
+
+![两个安装文件位于同一个本地文件夹](/images/lazy-installer/10-same-folder.png)
+
+点击「安装 ChatGPT」。
+
+![点击安装 ChatGPT 按钮](/images/lazy-installer/11-install.png)
+
+等待安装进度完成。
+
+![等待 ChatGPT 安装进度完成](/images/lazy-installer/12-installing.png)
+
+安装完成后，安装器会显示「已安装」并启动桌面应用。
+
+![安装完成并启动桌面应用](/images/lazy-installer/13-installed.png)
+
+<Note>
+  本教程截图中，安装器将桌面应用标为「ChatGPT」，部分窗口、按钮和安装文件名仍显示「Codex」。按对应界面继续操作即可。
+</Note>
+
+## 第八步：切换为中文界面
+
+如果启动后的界面仍然是英文，回到黑胡子懒人安装器，点击「切换为中文」。
+
+![在应用管理中点击切换为中文](/images/lazy-installer/14-switch-chinese.png)
+
+阅读弹窗说明后，点击「开始切换」。弹窗提示该过程会临时调整系统代理并重启 ChatGPT，流程结束后恢复原来的网络设置。
+
+![阅读临时网络调整说明并开始切换](/images/lazy-installer/15-confirm-language.png)
+
+耐心等待切换完成，期间按安装器提示操作。
+
+![等待中文界面切换流程完成](/images/lazy-installer/16-switching.png)
+
+看到「切换流程已完成」后，检查重新启动的 ChatGPT 是否已经显示中文，再点击「完成」。
+
+![检查中文界面并完成切换流程](/images/lazy-installer/17-language-complete.png)
+
+## 第九步：完成首次设置
+
+如果出现「完成 Windows 设置」页面，点击「完成设置」，按系统提示继续。
+
+![在首次启动页面点击完成设置](/images/lazy-installer/18-windows-setup.png)
+
+如果提示 `setup_failed`、Windows 安装未完成，按原文演示点击「继续受限访问」，进入应用。
+
+![Windows 设置失败时继续受限访问](/images/lazy-installer/19-restricted-access.png)
+
+如果出现 GPT-5.6 Sol 介绍弹窗，点击「立即试用 GPT-5.6 Sol」。
+
+![在模型介绍弹窗中选择 GPT-5.6 Sol](/images/lazy-installer/20-select-model.png)
+
+## 第十步：设置权限
+
+原文演示使用「完全访问权限」。该权限允许应用访问电脑上的文件、运行命令和使用互联网，开启前请阅读应用显示的权限说明，并根据自己的任务需要决定是否启用。
+
+点击应用**左下角**的账户菜单，再点击「设置」。
+
+![从左下角账户菜单打开设置](/images/lazy-installer/21-open-settings.png)
+
+进入「常规」，找到权限设置，打开「完整访问权限」开关。
+
+![在常规设置中打开完整访问权限开关](/images/lazy-installer/22-enable-permission.png)
+
+返回对话页面，点击输入框下方的权限菜单，选择最后一项「完全访问权限」。
+
+![在对话权限菜单中选择最后一项完全访问权限](/images/lazy-installer/23-select-full-access.png)
+
+阅读确认弹窗中的权限范围，确认需要后点击「确认」。
+
+![阅读完整访问权限的范围并确认](/images/lazy-installer/24-confirm-permission.png)
+
+## 第十一步：测试对话
+
+在对话框输入「你好」并发送，等待模型返回正常的文字回复。
+
+![发送你好并收到模型的正常文字回复](/images/lazy-installer/25-test-chat.png)
+
+收到正常回复，说明这次基础对话已经连通。若出现错误，可先查看[认证与权限排查](/cn/faqs/auth-and-permissions)和[模型问题排查](/cn/faqs/models)。
