@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "黑胡子 AI Responses API",
-    "version": "2026-09-10",
-    "description": "2026-09-10 生产接口实际验证的 Responses 输入。"
+    "version": "2026-09-13",
+    "description": "2026-09-13 当前生产接口实际验证的 Responses 输入。"
   },
   "servers": [
     {
@@ -39,24 +39,16 @@
                     "example": "gpt-5.5"
                   },
                   "input": {
-                    "description": "字符串，或消息 / 函数结果数组。本页已测消息内容为字符串、input_text + input_image Data URL，以及 function_call_output。",
-                    "oneOf": [
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "description": "消息和函数结果数组。已验证文本消息、input_text + input_image Data URL、完整对话历史和 function_call_output。gpt-5.5 字符串 input 实测返回 400。",
+                    "example": [
                       {
-                        "type": "string",
-                        "example": "Reply with exactly API_OK."
-                      },
-                      {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "additionalProperties": true
-                        },
-                        "example": [
-                          {
-                            "role": "user",
-                            "content": "Reply with exactly API_OK."
-                          }
-                        ]
+                        "role": "user",
+                        "content": "Reply with exactly API_OK."
                       }
                     ]
                   },
@@ -84,7 +76,7 @@
         },
         "responses": {
           "200": {
-            "description": "JSON 文本位于 output 消息的 content；SSE 实测事件包括 response.output_text.delta 和 response.completed。",
+            "description": "JSON 文本位于 output 消息的 content；SSE 须检查 response.completed，收到 response.failed 应按失败处理。",
             "content": {
               "application/json": {
                 "schema": {
@@ -96,7 +88,7 @@
                   "status": "completed",
                   "output": [
                     {
-                      "id": "msg_0e0caf29cbdbf6a6016aa2370876a087d08ec5232de4e272aa",
+                      "id": "msg_063f82d40163fb4f016aa62e62e2e887d195ea8f0014a05b61",
                       "type": "message",
                       "status": "completed",
                       "content": [

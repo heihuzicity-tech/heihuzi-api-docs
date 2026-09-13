@@ -1,10 +1,12 @@
 ---
 title: "Responses"
-description: "实测文本、消息数组、图片输入、函数调用和 SSE。"
+description: "文本、流式、图片识别、多轮对话和函数调用的完整实测示例。"
 openapi: "/openapi/responses.json POST /v1/responses"
 ---
 
-`POST https://code.heihuzi.ai/v1/responses` 已验证文本生成。五个文本模型见 [Models](/cn/models)；本页扩展输入及流式测试使用 `gpt-5.5`。
+`POST https://code.heihuzi.ai/v1/responses` 已验证文本生成。五个文本模型见 [Models](/cn/models)；本页扩展输入及流式测试使用 `gpt-5.5`。验证日期：**2026-09-13**。
+
+运行示例前设置环境变量 `HEIHUZI_API_KEY`，使用具有对应文本模型权限的 Key。Python 示例使用已验证的 OpenAI Python SDK **2.32.0**。
 
 <RequestExample>
 ```bash
@@ -15,7 +17,7 @@ curl --fail-with-body --silent --show-error --max-time 600 \
   --header 'Content-Type: application/json' \
   --data '{
   "model": "gpt-5.5",
-  "input": "Reply with exactly API_OK."
+  "input": [{"role": "user", "content": "Reply with exactly API_OK."}]
 }' \
   --output responses.json
 ```
@@ -23,11 +25,13 @@ curl --fail-with-body --silent --show-error --max-time 600 \
 
 ## 已验证的输入
 
+`input` 使用消息数组，例如 `[{"role":"user","content":"Reply with exactly API_OK."}]`。2026-09-13 复核时，`gpt-5.5` 的字符串 `input` 返回 400，提示必须使用数组；本页与 SDK/cURL 示例已统一使用数组。
+
 | 请求形式 | 实际验证 |
 | --- | --- |
-| `input` 字符串 | 五个文本模型均返回文本 |
-| `input` 消息数组 | `[{"role":"user","content":"Reply with exactly API_OK."}]` 搭配 `stream: true` 返回 SSE 文本 |
+| `input` 消息数组 | 五个文本模型分别返回文本；`gpt-5.5` 搭配 `stream: true` 返回 SSE 文本 |
 | 图片输入 | `gpt-5.5` 的 `input_text` + `input_image` Data URL 正确识别蓝色杯子 |
+| 连续对话 | 客户端提交第一轮输入与输出，再追加新问题，模型正确回答前一轮给出的项目代码 |
 | 自定义函数 | `gpt-5.5` 调用 `add`，客户端回传函数结果后模型回答 `5` |
 
 ## 真实响应节选
@@ -41,7 +45,7 @@ curl --fail-with-body --silent --show-error --max-time 600 \
   "status": "completed",
   "output": [
     {
-      "id": "msg_0e0caf29cbdbf6a6016aa2370876a087d08ec5232de4e272aa",
+      "id": "msg_063f82d40163fb4f016aa62e62e2e887d195ea8f0014a05b61",
       "type": "message",
       "status": "completed",
       "content": [
@@ -60,9 +64,108 @@ curl --fail-with-body --silent --show-error --max-time 600 \
 ```
 </ResponseExample>
 
-非流式文本读取 `output[]` 中 `type: "message"` 的 `content[]`，其中 `type: "output_text"` 的 `text` 为文字。OpenAI SDK 也可使用 `output_text`，见[SDK 示例](/cn/integrations/openai-sdk)。
+非流式文本读取 `output[]` 中 `type: "message"` 的 `content[]`，其中 `type: "output_text"` 的 `text` 为文字。Python OpenAI SDK 也可使用 `output_text`，见[SDK 示例](/cn/integrations/openai-sdk)。
 
 `stream: true` 的实测事件包括 `response.output_text.delta` 和 `response.completed`。缺少 `model` 或 `input` 的请求已验证返回 400。
+
+当前复核发现部分非流式响应的正文为 JSON、Content-Type 却为 `text/event-stream`。JavaScript SDK 示例使用 `.asResponse()` 后显式解析 JSON，完整代码见[SDK 示例](/cn/integrations/openai-sdk)。
+
+## 文本流式返回
+
+下面的完整代码读取 `response.output_text.delta` 并输出文字，以 `response.completed` 确认结束。实测输出为 `API_OK`。
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["HEIHUZI_API_KEY"],
+    base_url="https://code.heihuzi.ai/v1",
+    timeout=600.0,
+    max_retries=0,
+)
+
+completed = False
+with client.responses.create(
+    model="gpt-5.5",
+    input=[{"role": "user", "content": "Reply with exactly API_OK."}],
+    stream=True,
+) as events:
+    for event in events:
+        if event.type == "response.output_text.delta":
+            print(event.delta, end="", flush=True)
+        elif event.type == "response.failed":
+            error = event.response.error
+            if error:
+                raise RuntimeError(f"Response failed: {error.code}: {error.message}")
+            raise RuntimeError("Response failed")
+        elif event.type == "response.completed":
+            completed = True
+print()
+if not completed:
+    raise RuntimeError("Stream ended without response.completed")
+```
+
+2026-09-10 实测还捕获过 HTTP 200 后收到 `response.failed`、错误码为 `server_error` 的请求。代码会抛出该错误；不要仅凭 HTTP 状态判断流式调用成功。连接结束却没有完成事件时，同样按失败处理。2026-09-13 并行测试还触发了 `gateway_concurrency_limit`：非流式请求返回 HTTP 429，流式请求收到 `response.failed`。降低并发后再发起请求。
+
+## 参考图识别
+
+下载[蓝色杯子 reference.png](/images/reference.png)到运行目录。此示例将图片编码为 Data URL，搭配 `input_text` 提问，实测回答 `Blue`。
+
+```python
+import base64
+from pathlib import Path
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["HEIHUZI_API_KEY"],
+    base_url="https://code.heihuzi.ai/v1",
+    timeout=600.0,
+    max_retries=0,
+)
+
+encoded = base64.b64encode(Path("reference.png").read_bytes()).decode("ascii")
+response = client.responses.create(
+    model="gpt-5.5",
+    input=[{
+        "role": "user",
+        "content": [
+            {"type": "input_text", "text": "What is the color of the cup in this image? Answer with the color only."},
+            {"type": "input_image", "image_url": f"data:image/png;base64,{encoded}"},
+        ],
+    }],
+)
+print(response.output_text)
+```
+
+## 连续对话
+
+此示例由客户端保存并提交完整历史：将上一轮的输入、`output` 和新的用户消息一起放入下一次 `input`。两次真实调用依次回答 `READY`、`BLUE_CUP_29`。
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["HEIHUZI_API_KEY"],
+    base_url="https://code.heihuzi.ai/v1",
+    timeout=600.0,
+    max_retries=0,
+)
+
+history = [{
+    "role": "user",
+    "content": "Remember the project code BLUE_CUP_29 for this conversation. Reply exactly READY.",
+}]
+first = client.responses.create(model="gpt-5.5", input=history)
+print(first.output_text)
+
+history.extend(item.model_dump() for item in first.output)
+history.append({"role": "user", "content": "What is the project code? Reply with the code only."})
+second = client.responses.create(model="gpt-5.5", input=history)
+print(second.output_text)
+```
 
 ## 自定义函数完整示例
 

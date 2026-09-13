@@ -17,6 +17,8 @@ curl --fail-with-body --silent --show-error --max-time 600 \
 
 ## Responses 文本
 
+Responses 示例已于 **2026-09-13** 在当前生产接口复核，`input` 使用消息数组。
+
 ```bash
 curl --fail-with-body --silent --show-error --max-time 600 \
   --request POST \
@@ -25,7 +27,7 @@ curl --fail-with-body --silent --show-error --max-time 600 \
   --header 'Content-Type: application/json' \
   --data '{
   "model": "gpt-5.5",
-  "input": "Reply with exactly API_OK."
+  "input": [{"role": "user", "content": "Reply with exactly API_OK."}]
 }' \
   --output responses.json
 ```

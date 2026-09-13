@@ -9,7 +9,7 @@ description: "已实际运行的 Python 和 JavaScript SDK 示例。"
 
 ## JavaScript 文本
 
-保存为 `.mjs` 文件运行，实际返回 `API_OK`。
+保存为 `.mjs` 文件运行，2026-09-13 实测返回 `API_OK`。示例使用 `.asResponse()` 取得原始响应，再显式解析 JSON。本次测试发现部分非流式 JSON 响应的 Content-Type 为 `text/event-stream`，JavaScript SDK 的自动解析会因此失败，故使用下面已通过的读取方式。
 
 ```javascript
 import OpenAI from "openai";
@@ -20,12 +20,22 @@ const client = new OpenAI({
   timeout: 600000,
   maxRetries: 0
 });
-const response = await client.responses.create({
+const raw = await client.responses.create({
   model: "gpt-5.5",
-  input: "Reply with exactly API_OK."
-});
-if (!response.output_text) throw new Error("No text returned");
-console.log(response.output_text);
+  input: [{ role: "user", content: "Reply with exactly API_OK." }]
+}).asResponse();
+const response = await raw.json();
+if (response.error || response.status !== "completed") {
+  throw new Error(JSON.stringify(response.error ?? { status: response.status }));
+}
+const text = (response.output ?? [])
+  .filter(item => item.type === "message")
+  .flatMap(item => item.content ?? [])
+  .filter(item => item.type === "output_text")
+  .map(item => item.text)
+  .join("");
+if (!text) throw new Error("No text returned");
+console.log(text);
 ```
 
 ## Python 生成并保存 PNG
