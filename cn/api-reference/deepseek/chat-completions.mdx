@@ -1,0 +1,136 @@
+---
+title: "DeepSeek Chat Completions"
+description: "已实测的 JSON、普通文本和流式调用。"
+api: "POST /v1/chat/completions"
+---
+
+调用 `POST https://code.heihuzi.ai/v1/chat/completions`。实测日期：**2026-09-19**。先准备[DeepSeek Key 和 SDK](/cn/api-reference/deepseek/index)。
+
+## 请求参数
+
+<ParamField body="model" type="string" required>
+`deepseek-flash` 或 `deepseek-v4-pro`；两者均完成普通文本调用。以下 JSON 与流式组合使用 Flash。
+</ParamField>
+
+<ParamField body="messages" type="object[]" required>
+消息历史，使用 `role` 和 `content`。工具结果还需 `tool_call_id`；图片输入使用内容数组，见对应专题。
+</ParamField>
+
+<ParamField body="max_tokens" type="integer">
+本页实际使用 `1024`。示例只验证短输出，不代表最大可用值。
+</ParamField>
+
+<ParamField body="reasoning_effort" type="string">
+本次请求使用 `low`，Pro 普通文本示例使用 `none`。收到正常文本不代表强度参数准确生效；当前 `none` 也不能视作可靠关闭思考。
+</ParamField>
+
+<ParamField body="response_format" type="object">
+本次验证 `{"type":"json_object"}`，并对返回内容执行 JSON 解析和字段断言。
+</ParamField>
+
+<ParamField body="stream" type="boolean">
+`true` 返回 SSE；完整示例核对最终 `finish_reason`。`stream_options.include_usage: true` 的测试收到了用量。
+</ParamField>
+
+## 非流式 JSON 示例
+
+此完整示例已通过便利店执行，返回对象为 `{"name":"Heihuzi","count":4}`。提示词明确要求 JSON，客户端仍需检查终止原因并解析内容。
+
+<RequestExample>
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["HEIHUZI_API_KEY"],
+    base_url="https://code.heihuzi.ai/v1",
+    timeout=120.0,
+    max_retries=0,
+)
+import json
+
+result = client.chat.completions.create(
+    model="deepseek-flash",
+    messages=[{"role": "user", "content": 'Return only a JSON object with name="Heihuzi" and count=4.'}],
+    response_format={"type": "json_object"},
+    reasoning_effort="low",
+    max_tokens=1024,
+)
+assert result.choices[0].finish_reason == "stop"
+value = json.loads(result.choices[0].message.content)
+assert value == {"name": "Heihuzi", "count": 4}
+print(value)
+```
+</RequestExample>
+
+## 流式文本与思考内容
+
+本次收到答案 `42`、非空 `reasoning_content`、`finish_reason: "stop"` 和用量，原始事件流以 `data: [DONE]` 结束。最后的用量块可能没有 choices，代码按数组遍历处理。
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["HEIHUZI_API_KEY"],
+    base_url="https://code.heihuzi.ai/v1",
+    timeout=120.0,
+    max_retries=0,
+)
+events = client.chat.completions.create(
+    model="deepseek-flash",
+    messages=[{"role": "user", "content": "What is 19 + 23? Reply with the number only."}],
+    reasoning_effort="low",
+    max_tokens=1024,
+    stream=True,
+    stream_options={"include_usage": True},
+    extra_body={"thinking": {"type": "enabled"}},
+)
+answer, reasoning = "", ""
+finish_reason, usage = None, None
+for event in events:
+    if event.usage:
+        usage = event.usage
+    for choice in event.choices:
+        answer += choice.delta.content or ""
+        reasoning += getattr(choice.delta, "reasoning_content", None) or ""
+        finish_reason = choice.finish_reason or finish_reason
+print(answer)
+print("finish_reason", finish_reason, "reasoning_chars", len(reasoning))
+print("usage", usage)
+assert answer.strip() == "42" and finish_reason == "stop"
+assert reasoning, "No reasoning_content returned"
+```
+
+## Pro 普通文本
+
+以下完整请求返回 `HEIHUZI_OK`。本次 `reasoning_effort="none"` 仍返回了思考内容，因此该示例只证明普通文本调用成功。
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["HEIHUZI_API_KEY"],
+    base_url="https://code.heihuzi.ai/v1",
+    timeout=120.0,
+    max_retries=0,
+)
+result = client.chat.completions.create(
+    model="deepseek-v4-pro",
+    messages=[{"role": "user", "content": "Reply exactly HEIHUZI_OK."}],
+    reasoning_effort="none", max_tokens=1024,
+)
+print(result.choices[0].message.content)
+assert result.choices[0].finish_reason == "stop"
+assert result.choices[0].message.content.strip() == "HEIHUZI_OK"
+```
+
+## 响应与限制
+
+正文在 `choices[].message.content`，思考内容可能在同级 `reasoning_content`；流式读取对应 `delta`。本次用量返回 `prompt_tokens`、`completion_tokens`、`total_tokens`，没有返回完整缓存及推理细分字段。
+
+需要工具时见[完整工具闭环](/cn/api-reference/deepseek/tools)，需要图片时见[图片理解](/cn/api-reference/deepseek/vision)。不要直接套用官方 `thinking.disabled`：便利店本次仍返回思考内容，见[差异说明](/cn/api-reference/deepseek/compatibility)。
+
+格式参考：[DeepSeek Chat Completions](https://api-docs.deepseek.com/zh-cn/api/create-chat-completion)、[JSON Output](https://api-docs.deepseek.com/zh-cn/guides/json_mode/)。本页承诺范围以便利店实测为准。

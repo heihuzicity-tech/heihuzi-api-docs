@@ -57,3 +57,7 @@ curl --fail-with-body --silent --show-error --max-time 600 \
 </ResponseExample>
 
 示例中的模型不能替代自己 Key 的查询结果。模型列表用于发现模型，具体请求仍需验证；例如本次旧模型 `claude-sonnet-4-6` 实际返回 404，文档示例已改用测通的 `claude-sonnet-5`。
+
+## DeepSeek 模型（2026-09-19 实测）
+
+DeepSeek Key 的 `/v1/models` 本次返回 `deepseek-flash` 与 `deepseek-v4-pro`；两个模型均完成 Chat Completions、Responses、Messages 普通文本调用。Flash 的流式、JSON、工具闭环及图片输入范围见 [DeepSeek 接入](/cn/api-reference/deepseek/index)。模型列表不会自动证明每种参数或协议组合均受支持。

@@ -1,24 +1,16 @@
 ---
-title: "GPT Image 2.5 图像编辑"
-description: "参考图上传、Data URL、公开 URL、多图、遮罩和流式编辑的完整实测示例。"
+title: "GPT Image 2 图像编辑"
+description: "gpt-image-2 的单图文件上传、JSON Data URL 和已测编辑参数。"
 api: "POST /v1/images/edits"
 ---
 
-通过 `POST https://code.heihuzi.ai/v1/images/edits` 上传参考图并描述修改要求。验证日期：**2026-09-13**。请使用具有图片权限的 API Key，并设置环境变量 `HEIHUZI_API_KEY`。本页 SDK 示例使用已验证的 OpenAI Python SDK **2.32.0**。
+使用 `POST https://code.heihuzi.ai/v1/images/edits`，并显式指定 `model: "gpt-image-2"`。请使用具有图片权限的 API Key。
 
-## 输入方式
+本页依据 **2026-09-13** 的该模型实际请求与图片结果整理，已验证单图 JSON Data URL 和 multipart 文件上传。GPT Image 2.5 Flare / Sunburst 请查看 [2.5 图像编辑](/cn/api-reference/images/gpt-image-2.5/edits)。
 
-| 输入方式 | 本次验证的字段 | 模型 |
-| --- | --- | --- |
-| JSON Data URL | `images: [{"image_url": "data:image/png;base64,..."}]` | Flare、Sunburst、GPT Image 2 |
-| JSON 远程 URL | `images` 对象中的 `image_url` 为公开 HTTPS PNG URL | Flare、Sunburst |
-| 单文件上传 | multipart 文件字段 `image` | Flare、Sunburst、GPT Image 2 |
-| 两张参考图 | JSON `images` 两个对象，或重复上传两个 `image[]` 字段 | Flare、Sunburst |
-| 遮罩 | JSON `mask.image_url` Data URL，或 multipart 文件字段 `mask` | Flare、Sunburst |
+## 文件上传示例
 
-Flare、Sunburst 的远程 URL 测试使用公开 PNG 图片；下方 Flare 完整示例另已验证本站的参考图 URL。JSON 参考图和遮罩都填写完整 Data URL。`images[].file_id`、`mask.file_id` 均实测返回 400。
-
-下载[参考图 reference.png](/images/reference.png)到运行目录后，可以直接运行下面的单图编辑示例。
+下载[参考图 reference.png](/images/reference.png)，设置 `HEIHUZI_API_KEY` 后运行。字段与历史单文件实测一致，将蓝色杯子改为红色，响应保存到 `edits-multipart.json`。
 
 <RequestExample>
 ```bash
@@ -26,7 +18,7 @@ curl --fail-with-body --silent --show-error --max-time 600 \
   --request POST \
   --url https://code.heihuzi.ai/v1/images/edits \
   --header "Authorization: Bearer $HEIHUZI_API_KEY" \
-  --form 'model=gpt-image-2.5-sunburst' \
+  --form 'model=gpt-image-2' \
   --form 'prompt=Change the blue cup to a bright red cup. Keep the cup shape and the white background.' \
   --form 'image=@reference.png' \
   --form 'n=1' \
@@ -37,257 +29,89 @@ curl --fail-with-body --silent --show-error --max-time 600 \
 ```
 </RequestExample>
 
-单文件示例将响应保存为 `edits-multipart.json`；JSON 中的 `data[].b64_json` 是输出图片。
+## JSON Data URL 请求体
 
-## JSON 编辑并保存图片
+请求头使用 `Content-Type: application/json` 和 Bearer 认证。将参考图编码为 base64 并填入完整 Data URL；下面的省略号必须替换为实际图片数据。
 
-```python
-import base64
-import os
-from pathlib import Path
-import requests
-
-encoded = base64.b64encode(Path("reference.png").read_bytes()).decode("ascii")
-response = requests.post(
-    "https://code.heihuzi.ai/v1/images/edits",
-    headers={"Authorization": f"Bearer {os.environ['HEIHUZI_API_KEY']}"},
-    json={
-        "model": "gpt-image-2.5-flare",
-        "prompt": "Change the blue cup to a bright red cup. Keep the cup shape and the white background.",
-        "images": [{"image_url": f"data:image/png;base64,{encoded}"}],
-        "n": 1,
-        "size": "1024x1024",
-        "quality": "low",
-        "output_format": "png",
-    },
-    timeout=(15, 600),
-)
-response.raise_for_status()
-payload = response.json()
-if payload.get("error") or not payload.get("data"):
-    raise RuntimeError(payload.get("error", "No image returned"))
-for index, item in enumerate(payload["data"], 1):
-    Path(f"edited-json-{index}.png").write_bytes(base64.b64decode(item["b64_json"]))
-print("Saved", len(payload["data"]), "image(s)")
-```
-
-## 公开 URL 参考图
-
-此示例直接传入公开图片 URL，将蓝色杯子改为红色，响应保存到 `edited-url.json`。
-
-```bash
-curl --fail-with-body --silent --show-error --max-time 600 \
-  --request POST \
-  --url https://code.heihuzi.ai/v1/images/edits \
-  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
-  --header 'Content-Type: application/json' \
-  --data '{
-    "model": "gpt-image-2.5-flare",
-    "prompt": "Change the blue cup to a bright red cup. Keep the cup shape and the white background.",
-    "images": [{"image_url": "https://docs.heihuzi.ai/images/reference.png"}],
-    "n": 1,
-    "size": "1024x1024",
-    "quality": "low",
-    "output_format": "png"
-  }' \
-  --output edited-url.json \
-  --write-out '%{http_code}\n'
+```json
+{
+  "model": "gpt-image-2",
+  "prompt": "Change the blue cup to a bright red cup. Keep the cup shape and the white background.",
+  "images": [{"image_url": "data:image/png;base64,..."}],
+  "n": 1,
+  "size": "1024x1024",
+  "quality": "low",
+  "output_format": "png"
+}
 ```
 
 ## 请求参数
 
-<ParamField body="model" type="string" default="gpt-image-2.5-flare">
-使用 `gpt-image-2.5-flare`、`gpt-image-2.5-sunburst` 或 `gpt-image-2`。建议显式填写；省略模型的请求及实际调度记录已确认使用 Flare。
+<ParamField body="model" type="string" required>
+填写 `gpt-image-2`。调用此模型时必须显式指定，省略模型会使用 GPT Image 2.5 Flare。
 </ParamField>
 
 <ParamField body="prompt" type="string" required>
-描述图片内容或编辑要求。缺少提示词的请求返回 400。
+描述要生成的画面或对参考图的修改要求。
 </ParamField>
 
 <ParamField body="n" type="integer" default="1">
-返回图片张数。三个模型省略时均返回一张；Flare、Sunburst 已验证 `1`、`2`。客户端遍历实际返回的 `data` 数组。
+本页已测单张输出 `1`；省略时也返回一张图片。
 </ParamField>
 
 <ParamField body="size" type="string">
-Flare、Sunburst 已验证 `1024x1024`、`1536x1024`、`1024x1536`、`auto`。省略尺寸的测试返回 `1254x1254`，因此需要固定尺寸时请显式填写。GPT Image 2 本页固定尺寸测试使用 `1024x1024`。
+本页已测固定尺寸 `1024x1024`。省略尺寸的历史测试返回 1254×1254；需要固定尺寸时请显式填写。
 </ParamField>
 
 <ParamField body="quality" type="string">
-Flare、Sunburst 已验证 `low`、`medium`、`high`、`xhigh`、`max`、`auto`；GPT Image 2 已验证 `low`、`medium`、`high`、`auto`。质量测试使用一张 `1024x1024` PNG。
-</ParamField>
-
-<ParamField body="background" type="string">
-Flare、Sunburst 已验证 `transparent` 搭配 PNG/WebP、`opaque` 搭配 JPEG、`auto` 搭配 WebP。透明输出文件已检查实际 alpha 通道，具体组合见下表。
+已分别验证 `low`、`medium`、`high`、`auto`，测试使用单张 1024×1024 PNG。
 </ParamField>
 
 <ParamField body="output_format" type="string">
-Flare、Sunburst 已验证 `png`、`jpeg`、`webp`，返回内容解码后与所请求的编码一致。GPT Image 2 本页示例使用 PNG。
+本页已测 `png`，响应图片经解码确认为 PNG。
 </ParamField>
 
-<ParamField body="output_compression" type="integer">
-JPEG 已验证 `0`、`100`；WebP 已验证 `50`。PNG 示例省略此字段。
-</ParamField>
-
-<ParamField body="stream" type="boolean" default="false">
-Flare、Sunburst 设置 `true` 后实际返回 SSE；省略时返回 JSON。见[图片流式返回](/cn/api-reference/images/streaming)。
-</ParamField>
-
-<ParamField body="partial_images" type="integer">
-流式模式已验证 `0`、`1`、`2`、`3`；`-1`、`4` 返回 400。实际预览数可以少于请求值，最终图片以完成事件为准。此参数与最终图片张数 `n` 分开使用。
+<ParamField body="image" type="file">
+multipart 请求上传单张参考图，与 JSON 的 `images` 二选一。本页素材为 1024×1024 PNG。
 </ParamField>
 
 <ParamField body="images" type="object[]">
-JSON 参考图数组；本页验证了一张和两张参考图。multipart 改用 `image` 或 `image[]` 文件字段。缺少参考图返回 400。
-<Expandable title="JSON 参考图字段" defaultOpen>
-<ParamField body="image_url" type="string">完整图片 Data URL 或本页测试使用的公开图片 URL。</ParamField>
-</Expandable>
+JSON 请求传入单张参考图：`[{"image_url": "data:image/png;base64,..."}]`。`image_url` 填写完整 Data URL。
 </ParamField>
 
-<ParamField body="mask" type="object">
-JSON 遮罩对象；multipart 改用 `mask` 文件字段。
-<Expandable title="JSON 遮罩字段" defaultOpen>
-<ParamField body="image_url" type="string">本页验证 PNG 遮罩的完整 Data URL。</ParamField>
-</Expandable>
-</ParamField>
+## 响应示例
 
-## 已验证的输出组合
-
-编辑测试使用同一张蓝色杯子参考图，提示词要求改为红色杯子；透明组合额外要求透明背景。
-
-以下每行分别经过 Flare 和 Sunburst 实际调用。基准为 `n: 1`、`size: "1024x1024"`、`quality: "low"`、`output_format: "png"`；每行仅替换列出的参数。表格说明这些已测组合。
-
-| 场景 | 在基准请求上替换的参数 | 实际结果 |
-| --- | --- | --- |
-| 质量档位 | `quality` 分别为 `medium`、`high`、`xhigh`、`max`、`auto` | 均返回有效 PNG；非 auto 档位在响应中对应返回 |
-| 横图 | `size: "1536x1024"` | 1536×1024 PNG |
-| 竖图 | `size: "1024x1536"` | 1024×1536 PNG |
-| 自动尺寸 | `size: "auto"` | 返回可解码图片，读取响应 `size` |
-| 两张图片 | `n: 2` | `data` 中两张有效图片 |
-| 透明 PNG | `background: "transparent"` | 含透明像素的 PNG |
-| 透明 WebP | `background: "transparent"`、`output_format: "webp"`、`output_compression: 50` | 含透明像素的 WebP |
-| JPEG | `background: "opaque"`、`output_format: "jpeg"`，`output_compression` 分别为 `0`、`100` | 均为有效 JPEG |
-| WebP | `background: "auto"`、`output_format: "webp"`、`output_compression: 50` | 有效 WebP |
-
-透明输出的提示词也明确要求透明背景。跨行叠加参数会形成新的组合，应先在业务中验证再采用。
-
-## 两张参考图
-
-下载[蓝色杯子 reference.png](/images/reference.png)和[红色色板 palette.png](/images/palette.png)到运行目录。重复上传两个 `image[]` 字段，提示词要求保留第一张图的杯形并采用第二张图的红色。完整示例已返回红色杯子，响应保存到 `edited-multi.json`。
-
-```bash
-curl --fail-with-body --silent --show-error --max-time 600 \
-  --request POST \
-  --url https://code.heihuzi.ai/v1/images/edits \
-  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
-  --form 'model=gpt-image-2.5-flare' \
-  --form 'prompt=Use the shape of the cup from the first image and the red color from the second image. White background.' \
-  --form 'image[]=@reference.png' \
-  --form 'image[]=@palette.png' \
-  --form 'n=1' \
-  --form 'size=1024x1024' \
-  --form 'quality=low' \
-  --form 'output_format=png' \
-  --output edited-multi.json \
-  --write-out '%{http_code}\n'
-```
-
-## 遮罩编辑
-
-下载[mask.png](/images/mask.png)到运行目录。遮罩与参考图同为 1024×1024，右侧带透明区域。下面完整示例在右侧添加红苹果并保留蓝色杯子，响应保存到 `edited-mask.json`。Flare、Sunburst 的 JSON / multipart 遮罩测试也已返回对应内容，并经过目视检查。输出图片请另存。
-
-```bash
-curl --fail-with-body --silent --show-error --max-time 600 \
-  --request POST \
-  --url https://code.heihuzi.ai/v1/images/edits \
-  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
-  --form 'model=gpt-image-2.5-sunburst' \
-  --form 'prompt=Add a small red apple on the right side of the blue cup, inside the transparent masked region. Keep the blue cup.' \
-  --form 'image=@reference.png' \
-  --form 'mask=@mask.png' \
-  --form 'n=1' \
-  --form 'size=1024x1024' \
-  --form 'quality=low' \
-  --form 'output_format=png' \
-  --output edited-mask.json \
-  --write-out '%{http_code}\n'
-```
-
-## Python 流式编辑
-
-编辑接口使用 `image_edit.partial_image` 和 `image_edit.completed` 事件。下面代码已真实读取预览和完成事件，并将最终红色杯子保存为 `edited-final-1.png`。
-
-```python
-import base64
-from pathlib import Path
-import os
-from openai import OpenAI
-
-client = OpenAI(
-    api_key=os.environ["HEIHUZI_API_KEY"],
-    base_url="https://code.heihuzi.ai/v1",
-    timeout=600.0,
-    max_retries=0,
-)
-
-completed = 0
-with open("reference.png", "rb") as image:
-    events = client.images.edit(
-        model="gpt-image-2.5-sunburst",
-        image=image,
-        prompt="Change the blue cup to a bright red cup. Keep the cup shape and the white background.",
-        n=1,
-        size="1024x1024",
-        quality="low",
-        output_format="png",
-        stream=True,
-        partial_images=1,
-    )
-    for event in events:
-        print(event.type, flush=True)
-        if event.type == "image_edit.partial_image":
-            Path(f"edited-preview-{event.partial_image_index}.png").write_bytes(
-                base64.b64decode(event.b64_json)
-            )
-        elif event.type == "image_edit.completed":
-            completed += 1
-            Path(f"edited-final-{completed}.png").write_bytes(base64.b64decode(event.b64_json))
-if completed != 1:
-    raise RuntimeError(f"Expected 1 final image, got {completed}")
-```
-
-`partial_images: 1` 不保证返回预览；代码以最终完成事件为成功依据。更多已测取值和事件记录见[图片流式返回](/cn/api-reference/images/streaming)。
-
-## 真实响应节选
-
-以下取自上方公开 URL 编辑示例的实际响应，仅省略图片 base64。图片从 `data[].b64_json` 解码；固定 PNG 输出可按前面的 Python 示例保存文件。
+以下为 2026-09-13 该模型的实际响应节选，仅省略图片 base64。`data[].b64_json` 解码后得到图片；客户端应检查 HTTP 状态、错误字段和实际返回图片。
 
 <ResponseExample>
 ```json
 {
-  "created": 1789276368,
+  "created": 1789275715,
   "background": "opaque",
   "data": [
     {
       "b64_json": "<此处省略真实图片的 base64>",
-      "generation_id": "2184c2a7-7f6f-4a92-a676-680e900ca1ee"
+      "generation_id": "5fa6c7fb-a3e2-4648-b954-b59ef64928ff"
     }
   ],
   "output_format": "png",
   "quality": "low",
   "size": "1024x1024",
   "usage": {
-    "input_tokens": 1059,
+    "input_tokens": 1049,
     "input_tokens_details": {
       "image_tokens": 1024,
-      "text_tokens": 35
+      "text_tokens": 25
     },
     "output_tokens": 196,
     "output_tokens_details": {
       "image_tokens": 196,
       "text_tokens": 0
     },
-    "total_tokens": 1255
+    "total_tokens": 1245
   }
 }
 ```
 </ResponseExample>
+
+质量档位的历史矩阵使用 JSON 单图输入；multipart 单文件示例使用 `low`。本页不将 2.5 的远程 URL、多图、遮罩、透明输出和流式结果作为 GPT Image 2 的验证证据。

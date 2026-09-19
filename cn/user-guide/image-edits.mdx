@@ -17,6 +17,6 @@ description: "已测单图、两张参考图和局部添加物体的编辑流程
 | 两张参考图 | reference.png + palette.png | 使用第一张杯形和第二张红色，输出红色杯子 |
 | 遮罩编辑 | reference.png + mask.png | 在右侧透明区域添加红苹果，输出保留蓝色杯子并新增右侧苹果 |
 
-Flare、Sunburst 的三种场景均已使用 JSON 和 multipart 实测。GPT Image 2 已测试单图 JSON 和文件上传改色。下载参考图后，直接运行[图像编辑 API](/cn/api-reference/images/gpt-image-2/edits)中的完整代码。
+Flare、Sunburst 的三种场景均已使用 JSON 和 multipart 实测。GPT Image 2 已测试单图 JSON 和文件上传改色，见 [GPT Image 2 编辑](/cn/api-reference/images/gpt-image-2/edits)。下载参考图后，直接运行[图像编辑 API](/cn/api-reference/images/gpt-image-2.5/edits)中的完整代码。
 
 JSON 使用 `images[].image_url`，multipart 单图使用 `image`、两图重复使用 `image[]`。JSON 遮罩使用 `mask.image_url`，文件遮罩使用 `mask`。请将返回图片另存，以便和参考图比较。

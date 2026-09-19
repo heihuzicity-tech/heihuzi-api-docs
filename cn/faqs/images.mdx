@@ -5,7 +5,7 @@ description: "图片权限、流式预览、编辑输入和异步接口的实测
 
 ## 为什么提交异步任务返回 404？
 
-2026-09-10 对 `/v1/images/generations/async` 和 `/v1/images/edits/async` 的真实请求均返回 404，错误为 `async image tasks are not enabled`。当前文档提供[同步生成](/cn/api-reference/images/gpt-image-2/generation)、[同步编辑](/cn/api-reference/images/gpt-image-2/edits)和[连接内流式返回](/cn/api-reference/images/streaming)。
+2026-09-10 对 `/v1/images/generations/async` 和 `/v1/images/edits/async` 的真实请求均返回 404，错误为 `async image tasks are not enabled`。当前文档提供[同步生成](/cn/api-reference/images/gpt-image-2.5/generation)、[同步编辑](/cn/api-reference/images/gpt-image-2.5/edits)和[连接内流式返回](/cn/api-reference/images/gpt-image-2.5/streaming)。
 
 ## 开启流式为什么没有预览图？
 
@@ -17,11 +17,11 @@ description: "图片权限、流式预览、编辑输入和异步接口的实测
 
 ## 为什么编辑返回 400？
 
-已复现缺少参考图、`images[].file_id`、`mask.file_id` 的错误。JSON 使用 `images[].image_url`；文件上传使用 `image` 或 `image[]`，示例见[图像编辑](/cn/api-reference/images/gpt-image-2/edits)。
+已复现缺少参考图、`images[].file_id`、`mask.file_id` 的错误。JSON 使用 `images[].image_url`；文件上传使用 `image` 或 `image[]`，示例见[图像编辑](/cn/api-reference/images/gpt-image-2.5/edits)。
 
 ## 怎样确认透明图片有效？
 
-本次 Flare、Sunburst 的 PNG 和 WebP 透明组合均检查到 alpha 通道中的透明像素。按[已测参数组合](/cn/api-reference/images/gpt-image-2/generation)填写，并保存 base64 解码后的原文件。
+本次 Flare、Sunburst 的 PNG 和 WebP 透明组合均检查到 alpha 通道中的透明像素。按[已测参数组合](/cn/api-reference/images/gpt-image-2.5/generation)填写，并保存 base64 解码后的原文件。
 
 ## 默认尺寸是 1024×1024 吗？
 

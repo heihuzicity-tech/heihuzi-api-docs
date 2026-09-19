@@ -1,5 +1,5 @@
 ---
-title: "图片流式返回"
+title: "GPT Image 2.5 流式返回"
 description: "生成和编辑均经过真实 SSE 调用、预览与最终图片检查。"
 ---
 
@@ -87,6 +87,6 @@ if completed != 1:
 
 ## 编辑流式
 
-在[JSON 编辑请求](/cn/api-reference/images/gpt-image-2/edits)中加入 `stream: true` 和 `partial_images: 1`，保留参考图数组。Flare、Sunburst 的这组请求均已验证。
+在[JSON 编辑请求](/cn/api-reference/images/gpt-image-2.5/edits)中加入 `stream: true` 和 `partial_images: 1`，保留参考图数组。Flare、Sunburst 的这组请求均已验证。
 
 编辑使用 `image_edit.partial_image` / `image_edit.completed`，生成使用 `image_generation.partial_image` / `image_generation.completed`。原始 SSE 以空行分隔事件，`data:` 为事件 JSON；接收端应持续读取到流结束并保存最终图片。未收到完成图片时，应记录响应并排查。

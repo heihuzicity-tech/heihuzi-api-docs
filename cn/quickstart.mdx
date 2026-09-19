@@ -19,7 +19,11 @@ curl --fail-with-body --silent --show-error --max-time 600 \
 | --- | --- |
 | GPT 文本 | [Responses](/cn/api-reference/responses) |
 | Messages 文本 | [Claude Code Messages](/cn/api-reference/messages) |
-| 生成图片 | [GPT Image 2.5 图像生成](/cn/api-reference/images/gpt-image-2/generation) |
-| 修改参考图 | [GPT Image 2.5 图像编辑](/cn/api-reference/images/gpt-image-2/edits) |
+| 生成图片 | [GPT Image 2.5 图像生成](/cn/api-reference/images/gpt-image-2.5/generation) |
+| 修改参考图 | [GPT Image 2.5 图像编辑](/cn/api-reference/images/gpt-image-2.5/edits) |
 
 图片返回的是 base64 数据，使用 [SDK 示例](/cn/integrations/openai-sdk)保存为 PNG 文件；流式示例会保存预览和最终图片。
+
+## 调用 DeepSeek
+
+使用具有 DeepSeek 分组权限的便利店 Key。OpenAI SDK 地址为 `https://code.heihuzi.ai/v1`，Anthropic SDK 地址为 `https://code.heihuzi.ai`。已执行的完整代码见 [DeepSeek 接入](/cn/api-reference/deepseek/index)。

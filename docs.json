@@ -29,6 +29,18 @@
             ]
           },
           {
+            "group": "DeepSeek",
+            "pages": [
+              "cn/api-reference/deepseek/index",
+              "cn/api-reference/deepseek/chat-completions",
+              "cn/api-reference/deepseek/responses",
+              "cn/api-reference/deepseek/messages",
+              "cn/api-reference/deepseek/tools",
+              "cn/api-reference/deepseek/vision",
+              "cn/api-reference/deepseek/compatibility"
+            ]
+          },
+          {
             "group": "Claude Code 原生调用",
             "pages": [
               "cn/api-reference/messages",
@@ -38,9 +50,16 @@
           {
             "group": "GPT Image 2.5",
             "pages": [
+              "cn/api-reference/images/gpt-image-2.5/generation",
+              "cn/api-reference/images/gpt-image-2.5/edits",
+              "cn/api-reference/images/gpt-image-2.5/streaming"
+            ]
+          },
+          {
+            "group": "GPT Image 2",
+            "pages": [
               "cn/api-reference/images/gpt-image-2/generation",
-              "cn/api-reference/images/gpt-image-2/edits",
-              "cn/api-reference/images/streaming"
+              "cn/api-reference/images/gpt-image-2/edits"
             ]
           }
         ]
@@ -111,6 +130,10 @@
       "source": "/cn/api-reference/images/tasks",
       "destination": "/cn/faqs/images",
       "permanent": false
+    },
+    {
+      "source": "/cn/api-reference/images/streaming",
+      "destination": "/cn/api-reference/images/gpt-image-2.5/streaming"
     }
   ],
   "api": {

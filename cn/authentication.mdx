@@ -29,3 +29,7 @@ description: "三种实测鉴权头，以及实际触发的错误。"
 URL 参数测试使用无效占位值，同时提供有效请求头，仍返回 400；认证信息请放在请求头中。
 
 排查时保留状态码、`error.type` / `error.message`、响应头 `X-Client-Request-Id` 和请求时间。分享排查信息前删除真实 Key。
+
+## DeepSeek Key
+
+2026-09-19 使用 DeepSeek 分组 Key 完成三种协议调用：OpenAI SDK 使用 Bearer 认证，Anthropic SDK 使用 `x-api-key`。请将便利店 Key 与便利店 Base URL 配对，具体配置见 [DeepSeek 接入](/cn/api-reference/deepseek/index)。

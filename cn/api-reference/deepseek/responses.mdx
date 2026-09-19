@@ -1,0 +1,125 @@
+---
+title: "DeepSeek Responses"
+description: "普通响应、无状态多轮上下文和 SSE 完成处理。"
+api: "POST /v1/responses"
+---
+
+调用 `POST https://code.heihuzi.ai/v1/responses`。实测日期：**2026-09-19**。OpenAI SDK 的 Base URL 为 `https://code.heihuzi.ai/v1`。
+
+## 请求参数
+
+<ParamField body="model" type="string" required>
+`deepseek-flash` 或 `deepseek-v4-pro`。多轮、流式、工具和图片输入的本次组合使用 Flash。
+</ParamField>
+
+<ParamField body="input" type="string | object[]" required>
+单轮可传字符串，多轮传完整消息及输出条目。工具回传使用 `function_call_output`，图片使用 `input_image`。
+</ParamField>
+
+<ParamField body="reasoning" type="object">
+本次发送过 `{"effort":"none"}` 和 `{"effort":"low"}`。`none` 请求仍出现 reasoning 输出条目，本页不保证它关闭思考。
+</ParamField>
+
+<ParamField body="max_output_tokens" type="integer">
+本页使用 `1024`，成功终态应为 `completed`。截断或失败都不能作为完整结果处理。
+</ParamField>
+
+<ParamField body="stream" type="boolean">
+开启后读取 SSE，必须看到 `response.completed`；`response.incomplete` 和 `response.failed` 应按未完成处理。
+</ParamField>
+
+## 普通调用与多轮上下文
+
+下面两次真实请求依次返回 `READY` 和 `MAPLE-731`。第二轮显式回传第一轮输出，没有依赖服务端会话。示例末尾对可选 `store` 字段做容错读取；该客户端修正已用这两次真实响应离线回放验证，请求内容未改。
+
+<RequestExample>
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["HEIHUZI_API_KEY"],
+    base_url="https://code.heihuzi.ai/v1",
+    timeout=120.0,
+    max_retries=0,
+)
+history = [{"role": "user", "content": "Remember the code MAPLE-731. Reply READY."}]
+first = client.responses.create(
+    model="deepseek-flash", input=history,
+    reasoning={"effort": "none"}, max_output_tokens=1024,
+)
+assert first.status == "completed" and first.output_text.strip() == "READY"
+history.extend(item.model_dump(exclude_none=True) for item in first.output)
+history.append({"role": "user", "content": "What code did I give you? Reply with the code only."})
+second = client.responses.create(
+    model="deepseek-flash", input=history,
+    reasoning={"effort": "none"}, max_output_tokens=1024,
+)
+assert second.status == "completed" and second.output_text.strip() == "MAPLE-731"
+print(first.output_text, second.output_text)
+print("store", getattr(second, "store", None))
+```
+</RequestExample>
+
+不要依赖 `previous_response_id` 自动恢复上下文。当前后端在 DeepSeek 原生 Responses 路径清除这个字段并设置 `store=false`；官方同样按无状态接口说明。多轮携带完整历史是本次实际验证过的做法。[官方 Responses 兼容说明](https://api-docs.deepseek.com/zh-cn/guides/responses_api/)
+
+## 流式输出
+
+本次收到 `response.output_text.delta` 和 `response.completed`，最终答案为 `42`；没有 `data: [DONE]`。思考摘要使用 `response.reasoning_summary_text.delta` / `.done`，与官方示例列出的事件名称有差异。
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["HEIHUZI_API_KEY"],
+    base_url="https://code.heihuzi.ai/v1",
+    timeout=120.0,
+    max_retries=0,
+)
+events = client.responses.create(
+    model="deepseek-flash", input="What is 19 + 23? Reply with the number only.",
+    reasoning={"effort": "low"}, max_output_tokens=1024, stream=True,
+)
+answer, completed = "", False
+for event in events:
+    if event.type == "response.output_text.delta":
+        answer += event.delta
+    elif event.type == "response.completed":
+        assert event.response.status == "completed"
+        completed = True
+        print("usage", event.response.usage)
+    elif event.type in ("response.failed", "response.incomplete", "error"):
+        raise RuntimeError(event.model_dump_json())
+print(answer)
+assert completed and answer.strip() == "42"
+```
+
+## Pro 单轮调用
+
+以下完整示例已返回 `HEIHUZI_OK`，状态为 `completed`。
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["HEIHUZI_API_KEY"],
+    base_url="https://code.heihuzi.ai/v1",
+    timeout=120.0,
+    max_retries=0,
+)
+result = client.responses.create(
+    model="deepseek-v4-pro", input="Reply exactly HEIHUZI_OK.",
+    reasoning={"effort": "none"}, max_output_tokens=1024,
+)
+print(result.output_text)
+assert result.status == "completed" and result.output_text.strip() == "HEIHUZI_OK"
+```
+
+## 返回字段
+
+本次原始非流式响应包含 `id`、`model`、`object`、`output`、`status`、`usage`。SDK 的 `output_text` 是提取正文的便捷属性。`store`、`reasoning`、`input_tokens_details`、`output_tokens_details` 等可选字段可能缺失；不要不加判断地访问嵌套属性。
+
+[工具调用](/cn/api-reference/deepseek/tools)和[图片理解](/cn/api-reference/deepseek/vision)各有完整实测示例。文件上传、内置搜索、后台任务及长上下文没有纳入此次验证。

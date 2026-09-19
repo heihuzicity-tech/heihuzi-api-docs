@@ -1,0 +1,109 @@
+---
+title: "DeepSeek 图片理解"
+description: "Flash 在三种协议下的单张 PNG 图片识别示例。"
+---
+
+实测日期：**2026-09-19**。本页使用 `deepseek-flash`，通过三种协议发送同一张 PNG 参考图，三次均返回 **“A blue mug.”**，并收到正常完成标记。
+
+先下载[参考图 reference.png](/images/reference.png)到代码运行目录。它是一张 1024×1024 的蓝色杯子图片。代码从本地文件编码图片内容，**测试没有把杯子的颜色或物体名称写进问题**。
+
+## Chat Completions
+
+图片放在 `image_url.url` 中，使用完整 Data URL。
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["HEIHUZI_API_KEY"],
+    base_url="https://code.heihuzi.ai/v1",
+    timeout=120.0,
+    max_retries=0,
+)
+import base64
+from pathlib import Path
+
+# Download https://docs.heihuzi.ai/images/reference.png to the working directory.
+encoded = base64.b64encode(Path("reference.png").read_bytes()).decode("ascii")
+result = client.chat.completions.create(
+    model="deepseek-flash",
+    messages=[{"role": "user", "content": [
+        {"type": "text", "text": "What is the main object and its color? Answer briefly in English."},
+        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{encoded}"}},
+    ]}], reasoning_effort="low", max_tokens=1024,
+)
+text = result.choices[0].message.content
+print(text)
+assert result.choices[0].finish_reason == "stop"
+assert "blue" in text.lower() and ("cup" in text.lower() or "mug" in text.lower())
+```
+
+## Responses
+
+图片使用 `input_image.image_url`，文本使用 `input_text`。
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    api_key=os.environ["HEIHUZI_API_KEY"],
+    base_url="https://code.heihuzi.ai/v1",
+    timeout=120.0,
+    max_retries=0,
+)
+import base64
+from pathlib import Path
+
+# Download https://docs.heihuzi.ai/images/reference.png to the working directory.
+encoded = base64.b64encode(Path("reference.png").read_bytes()).decode("ascii")
+result = client.responses.create(
+    model="deepseek-flash",
+    input=[{"role": "user", "content": [
+        {"type": "input_text", "text": "What is the main object and its color? Answer briefly in English."},
+        {"type": "input_image", "image_url": f"data:image/png;base64,{encoded}"},
+    ]}], reasoning={"effort": "low"}, max_output_tokens=1024,
+)
+print(result.output_text)
+assert result.status == "completed"
+assert "blue" in result.output_text.lower() and any(x in result.output_text.lower() for x in ("cup", "mug"))
+```
+
+## Messages
+
+图片使用 `source.type="base64"`、`media_type="image/png"` 和不带 Data URL 前缀的 base64 数据。当前 `thinking.disabled` 不保证关闭思考；客户端只提取 text 块。
+
+```python
+import os
+from anthropic import Anthropic
+
+client = Anthropic(
+    api_key=os.environ["HEIHUZI_API_KEY"],
+    base_url="https://code.heihuzi.ai",
+    timeout=120.0,
+    max_retries=0,
+)
+import base64
+from pathlib import Path
+
+# Download https://docs.heihuzi.ai/images/reference.png to the working directory.
+encoded = base64.b64encode(Path("reference.png").read_bytes()).decode("ascii")
+result = client.messages.create(
+    model="deepseek-flash", max_tokens=1024,
+    messages=[{"role": "user", "content": [
+        {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": encoded}},
+        {"type": "text", "text": "What is the main object and its color? Answer briefly in English."},
+    ]}], thinking={"type": "disabled"},
+)
+answer = "".join(block.text for block in result.content if block.type == "text")
+print(answer)
+assert result.stop_reason == "end_turn"
+assert "blue" in answer.lower() and any(x in answer.lower() for x in ("cup", "mug"))
+```
+
+## 范围
+
+这证明本次渠道处理了单张 PNG 图片内容；不代表已验证远程 URL、多个图片、上传文件 ID、大图极限或所有图像格式。DeepSeek 官方将视觉输入列为 Flash 能力，Pro 不在本页视觉支持范围内。[官方视觉说明](https://api-docs.deepseek.com/zh-cn/guides/vision/)
+
+此接口用于理解图片。生成或编辑图片请使用 [GPT Image 文档](/cn/user-guide/gpt-image-2)。

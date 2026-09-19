@@ -1,0 +1,46 @@
+---
+title: "DeepSeek 兼容性与限制"
+description: "官方能力、便利店实测差异和未验证范围。"
+---
+
+以下为 **2026-09-19** 便利店公网入口的实际结果，适用于当时的 DeepSeek 渠道。官方文档描述的是官方接口，不能直接替代便利店验证。
+
+## 思考模式：收到正文不等于关闭成功
+
+| 请求设置 | 官方用法 | 便利店本次结果 |
+| --- | --- | --- |
+| Chat `thinking: {"type":"disabled"}` | 关闭思考 | Flash 仍返回非空 `reasoning_content` |
+| Chat `reasoning_effort: "none"` | 不是官方 Chat 思考开关的等价写法 | Pro 返回正文，同时仍有思考内容 |
+| Responses `reasoning: {"effort":"none"}` | 关闭思考 | Flash、Pro 仍返回 reasoning 条目 |
+| Messages `thinking: {"type":"disabled"}` | 关闭思考 | Flash、Pro 仍返回 thinking 块 |
+
+因此，本次不提供“已验证可关闭思考”的示例，也不承诺 `low/high/max` 的实际强度差异。官方定义与取值见[Thinking Mode](https://api-docs.deepseek.com/zh-cn/guides/thinking_mode/)。
+
+源码核对发现：当前 Chat → Responses 转换没有保留 `thinking` 字段；Messages → Responses 转换明确忽略 `thinking.type`，改用 `output_config.effort`。Responses 的 `none` 请求虽然完成，实际渠道仍返回思考内容，不能把“请求没有报错”写成“参数已生效”。
+
+## 三种流式的完成条件
+
+| 协议 | 本次观测 | 客户端成功判断 |
+| --- | --- | --- |
+| Chat Completions | `choices[].delta`、最终 finish_reason、用量、`[DONE]` | 有最终正文，且 finish_reason 为 `stop`；工具轮按 `tool_calls` 处理 |
+| Responses | 正文 delta、思考摘要 delta、`response.completed`；无 `[DONE]` | 收到 `response.completed` 且正文完整 |
+| Messages | 内容块事件、`message_delta`、`message_stop` | 正常结束，最终 stop_reason 为 `end_turn` |
+
+Responses 本次的思考事件为 `response.reasoning_summary_text.delta` / `.done`。不要只监听官方页面列出的 `response.reasoning_text.delta` 就断定没有思考输出。[官方 Responses 文档](https://api-docs.deepseek.com/zh-cn/guides/responses_api/)
+
+## 返回字段、缓存与上下文
+
+- Responses 的 `store`、`reasoning`、token details 等可选字段本次缺失；读取前判断是否存在。
+- Chat 和 Responses 本次主要返回输入、输出、合计 token；Messages 的缓存字段为 0。本次没有证明缓存命中，也没有验证缓存计费精度。
+- Responses 使用客户端回传完整历史的方式完成多轮。不要依赖 `previous_response_id` 或服务端存储延续会话。
+- 官方上下文缓存说明可用于了解概念，便利店实际账单仍以当前分组用量明细为准。[官方缓存说明](https://api-docs.deepseek.com/zh-cn/guides/kv_cache/)
+
+## 尚未验证的能力
+
+Files API / `file_id`、Beta FIM 与前缀补全、严格结构化输出、内置搜索、后台任务、Claude 模型别名映射、Claude Code / Codex 应用端集成、Pro 视觉输入、长上下文、最大输出和并发极限不在此次验证范围。官方宣称支持或源码存在路由，不足以把这些能力写为便利店已测通。
+
+## 排查
+
+先查询当前 Key 的 `/v1/models`，核对完整模型名、Base URL 和分组。保留请求时间、状态码、请求 ID、完成标记和错误正文，分享前删除密钥。遇到限流、余额不足或服务错误时先检查用量和状态，避免无间隔重试。
+
+本次没有主动制造限流或耗尽余额，也没有把[官方错误码](https://api-docs.deepseek.com/zh-cn/quick_start/error_codes)逐项作为便利店已复现结论。
