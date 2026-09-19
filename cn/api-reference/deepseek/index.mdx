@@ -19,7 +19,6 @@ description: "模型选择、三种调用协议与便利店实际验证范围。
 | 模型 ID | 本次完成的验证 |
 | --- | --- |
 | `deepseek-flash` | 三种协议普通输出；三种协议流式；JSON；Chat / Responses 工具闭环；Responses 多轮；三种协议单图理解 |
-| `deepseek-v4-pro` | Chat Completions、Responses、Messages 普通文本输出 |
 
 DeepSeek 官方目前将 `deepseek-flash` 对应到 V4.1-Flash，并说明旧 Flash 名称的兼容关系；便利店本次模型列表仅返回上面的两个 ID，示例使用完整 ID。[官方模型说明](https://api-docs.deepseek.com/zh-cn/quick_start/pricing/)
 
@@ -30,14 +29,14 @@ DeepSeek 官方目前将 `deepseek-flash` 对应到 V4.1-Flash，并说明旧 Fl
 - [Messages](/cn/api-reference/deepseek/messages)：Anthropic SDK 的请求与完成条件。
 - [工具调用](/cn/api-reference/deepseek/tools)：工具参数、执行结果回传和最终答案。
 - [图片理解](/cn/api-reference/deepseek/vision)：三种协议的同一张参考图示例。
-- [兼容性与限制](/cn/api-reference/deepseek/compatibility)：思考开关、字段缺失与官方文档的差异。
+- [兼容性与限制](/cn/api-reference/deepseek/compatibility)：本轮通过的参数、输出字段和完成条件。
 
 ## 安装与运行
 
 本次执行环境使用 OpenAI Python SDK **2.32.0**、Anthropic Python SDK **0.97.0**。按所选页面安装对应 SDK，并在运行环境设置 `HEIHUZI_API_KEY`。所有示例关闭自动重试，单次超时为 120 秒，输出 token 参数为 1024。
 
-示例中 `reasoning_effort` / `reasoning` / `thinking` 的取值只是已发送并核对的具体请求组合；**当前渠道不能据此保证思考已关闭或某个强度准确生效**。详见兼容性页。
+公开示例仅保留本轮真实执行通过的配置。每个完整脚本均重新运行；支持范围按模型和协议列在[实测范围](/cn/api-reference/deepseek/compatibility)。
 
 ## 计费与范围
 
-费用以便利店当前分组配置和用量明细为准。官方的单价、优惠、上下文上限及并发配额不能直接作为便利店承诺。本次只做小请求功能验证，没有测试长上下文、最大输出或并发上限。缓存字段的返回情况见兼容性页。
+费用以便利店当前分组配置和用量明细为准。使用范围以本文列出的模型、协议及已测参数组合为准。

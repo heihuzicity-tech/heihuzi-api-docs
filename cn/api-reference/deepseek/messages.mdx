@@ -9,7 +9,7 @@ api: "POST /v1/messages"
 ## 请求参数
 
 <ParamField body="model" type="string" required>
-显式填写 `deepseek-flash` 或 `deepseek-v4-pro`。本次未验证 Claude 模型别名自动映射。
+填写 `deepseek-flash`。本页普通文本、流式和图片输入均使用此模型。
 </ParamField>
 
 <ParamField body="messages" type="object[]" required>
@@ -17,7 +17,7 @@ api: "POST /v1/messages"
 </ParamField>
 
 <ParamField body="max_tokens" type="integer" required>
-本页示例实际使用 `1024`。
+本页成功示例使用 `1024`。同一取值的长输出测试也已通过，`stop_reason` 为 `max_tokens`，实际输出 token 为 1024。
 </ParamField>
 
 <ParamField body="stream" type="boolean">
@@ -26,62 +26,41 @@ SDK 的 `messages.stream()` 开启流式。本次观察到 `message_start`、内
 
 ## 普通文本示例
 
-以下 Pro 请求已返回 `HEIHUZI_OK`，`stop_reason` 为 `end_turn`。**其中 `thinking.disabled` 没有关闭当前渠道的思考输出**；示例按内容块类型只取最终正文。Flash 的同类普通请求也返回了正确正文与 thinking 块。
+以下 Flash 请求已返回 `HEIHUZI_OK`，`stop_reason` 为 `end_turn`；示例按内容块类型提取正文。
 
 <RequestExample>
 
 ```python
 import os
 from anthropic import Anthropic
-
-client = Anthropic(
-    api_key=os.environ["HEIHUZI_API_KEY"],
-    base_url="https://code.heihuzi.ai",
-    timeout=120.0,
-    max_retries=0,
-)
-result = client.messages.create(
-    model="deepseek-v4-pro", max_tokens=1024,
-    thinking={"type": "disabled"},
-    messages=[{"role": "user", "content": "Reply exactly HEIHUZI_OK."}],
-)
-answer = "".join(block.text for block in result.content if block.type == "text")
+client = Anthropic(api_key=os.environ['HEIHUZI_API_KEY'], base_url='https://code.heihuzi.ai', timeout=120.0, max_retries=0)
+result = client.messages.create(model='deepseek-flash', max_tokens=1024, messages=[{'role': 'user', 'content': 'Reply exactly HEIHUZI_OK.'}])
+answer = ''.join((block.text for block in result.content if block.type == 'text'))
 print(answer)
-assert result.stop_reason == "end_turn" and answer.strip() == "HEIHUZI_OK"
+assert result.stop_reason == 'end_turn' and answer.strip() == 'HEIHUZI_OK'
 ```
 </RequestExample>
 
 ## Flash 流式示例
 
-本次答案为 `42`，最终 `stop_reason` 为 `end_turn`。下面发送的 `budget_tokens` 和 `output_config.effort` 是本次请求组合，不构成对思考预算或强度精确生效的保证。
+本次答案为 `42`，最终 `stop_reason` 为 `end_turn`。下面的完整脚本已实际运行通过。
 
 ```python
 import os
 from anthropic import Anthropic
-
-client = Anthropic(
-    api_key=os.environ["HEIHUZI_API_KEY"],
-    base_url="https://code.heihuzi.ai",
-    timeout=120.0,
-    max_retries=0,
-)
-with client.messages.stream(
-    model="deepseek-flash", max_tokens=1024,
-    messages=[{"role": "user", "content": "What is 19 + 23? Reply with the number only."}],
-    thinking={"type": "enabled", "budget_tokens": 512},
-    extra_body={"output_config": {"effort": "low"}},
-) as stream:
-    answer = "".join(stream.text_stream)
+client = Anthropic(api_key=os.environ['HEIHUZI_API_KEY'], base_url='https://code.heihuzi.ai', timeout=120.0, max_retries=0)
+with client.messages.stream(model='deepseek-flash', max_tokens=1024, messages=[{'role': 'user', 'content': 'What is 19 + 23? Reply with the number only.'}]) as stream:
+    answer = ''.join(stream.text_stream)
     result = stream.get_final_message()
 print(answer)
-print("stop_reason", result.stop_reason)
-assert result.stop_reason == "end_turn" and answer.strip() == "42"
+print('stop_reason', result.stop_reason)
+assert result.stop_reason == 'end_turn' and answer.strip() == '42'
 ```
 
 ## 完成条件与兼容差异
 
 非流式读取 `content` 中 `type="text"` 的块；流式用最终消息的 `stop_reason` 确认完成。本次用量返回 `input_tokens`、`output_tokens` 及值为 0 的缓存字段，不据此推断缓存命中能力。
 
-当前协议转换不会按官方方式处理 `thinking.type`，详见[兼容性说明](/cn/api-reference/deepseek/compatibility)。[图片理解](/cn/api-reference/deepseek/vision)页提供已验证的 Flash 单图示例。
+本页只保留实际通过的请求配置，见[实测范围](/cn/api-reference/deepseek/compatibility)。[图片理解](/cn/api-reference/deepseek/vision)页提供已验证的 Flash 单图示例。
 
-本次没有进行 Claude Code 应用端验收，因此 Messages API 调用通过不等于已验证 Claude Code 全部功能。[官方 Anthropic API 文档](https://api-docs.deepseek.com/zh-cn/guides/anthropic_api/)
+[官方 Anthropic API 文档](https://api-docs.deepseek.com/zh-cn/guides/anthropic_api/)

@@ -14,44 +14,23 @@ description: "Chat Completions 与 Responses 的两轮真实工具闭环。"
 ```python
 import os
 from openai import OpenAI
-
-client = OpenAI(
-    api_key=os.environ["HEIHUZI_API_KEY"],
-    base_url="https://code.heihuzi.ai/v1",
-    timeout=120.0,
-    max_retries=0,
-)
+client = OpenAI(api_key=os.environ['HEIHUZI_API_KEY'], base_url='https://code.heihuzi.ai/v1', timeout=120.0, max_retries=0)
 import json
-
-tools = [{"type": "function", "function": {
-    "name": "add", "description": "Add two integers.",
-    "parameters": {"type": "object", "properties": {
-        "a": {"type": "integer"}, "b": {"type": "integer"}},
-        "required": ["a", "b"], "additionalProperties": False},
-}}]
-messages = [{"role": "user", "content": "Use the add tool to calculate 19 + 23, then reply with the number only."}]
-first = client.chat.completions.create(
-    model="deepseek-flash", messages=messages, tools=tools,
-    tool_choice={"type": "function", "function": {"name": "add"}},
-    reasoning_effort="low", max_tokens=1024,
-)
+tools = [{'type': 'function', 'function': {'name': 'add', 'description': 'Add two integers.', 'parameters': {'type': 'object', 'properties': {'a': {'type': 'integer'}, 'b': {'type': 'integer'}}, 'required': ['a', 'b'], 'additionalProperties': False}}}]
+messages = [{'role': 'user', 'content': 'Use the add tool to calculate 19 + 23, then reply with the number only.'}]
+first = client.chat.completions.create(model='deepseek-flash', messages=messages, tools=tools, tool_choice={'type': 'function', 'function': {'name': 'add'}}, max_tokens=1024)
 message = first.choices[0].message
-assert first.choices[0].finish_reason == "tool_calls"
+assert first.choices[0].finish_reason == 'tool_calls'
 assert len(message.tool_calls or []) == 1
-# Keep the complete assistant message, including any reasoning_content and tool_calls.
 messages.append(message.model_dump(exclude_none=True))
 call = message.tool_calls[0]
-assert call.function.name == "add"
+assert call.function.name == 'add'
 args = json.loads(call.function.arguments)
-assert args == {"a": 19, "b": 23}
-messages.append({"role": "tool", "tool_call_id": call.id,
-                 "content": str(args["a"] + args["b"])})
-second = client.chat.completions.create(
-    model="deepseek-flash", messages=messages, tools=tools,
-    tool_choice="none", reasoning_effort="low", max_tokens=1024,
-)
-assert second.choices[0].finish_reason == "stop"
-assert second.choices[0].message.content.strip() == "42"
+assert args == {'a': 19, 'b': 23}
+messages.append({'role': 'tool', 'tool_call_id': call.id, 'content': str(args['a'] + args['b'])})
+second = client.chat.completions.create(model='deepseek-flash', messages=messages, tools=tools, tool_choice='none', max_tokens=1024)
+assert second.choices[0].finish_reason == 'stop'
+assert second.choices[0].message.content.strip() == '42'
 print(second.choices[0].message.content)
 ```
 
@@ -62,42 +41,24 @@ print(second.choices[0].message.content)
 ```python
 import os
 from openai import OpenAI
-
-client = OpenAI(
-    api_key=os.environ["HEIHUZI_API_KEY"],
-    base_url="https://code.heihuzi.ai/v1",
-    timeout=120.0,
-    max_retries=0,
-)
+client = OpenAI(api_key=os.environ['HEIHUZI_API_KEY'], base_url='https://code.heihuzi.ai/v1', timeout=120.0, max_retries=0)
 import json
-
-tools = [{"type": "function", "name": "add", "description": "Add two integers.",
-    "parameters": {"type": "object", "properties": {
-        "a": {"type": "integer"}, "b": {"type": "integer"}},
-        "required": ["a", "b"], "additionalProperties": False}}]
-history = [{"role": "user", "content": "Use the add tool to calculate 19 + 23, then reply with the number only."}]
-first = client.responses.create(
-    model="deepseek-flash", input=history, tools=tools,
-    tool_choice={"type": "function", "name": "add"},
-    reasoning={"effort": "low"}, max_output_tokens=1024,
-)
-assert first.status == "completed"
-calls = [item for item in first.output if item.type == "function_call"]
-assert len(calls) == 1 and calls[0].name == "add"
+tools = [{'type': 'function', 'name': 'add', 'description': 'Add two integers.', 'parameters': {'type': 'object', 'properties': {'a': {'type': 'integer'}, 'b': {'type': 'integer'}}, 'required': ['a', 'b'], 'additionalProperties': False}}]
+history = [{'role': 'user', 'content': 'Use the add tool to calculate 19 + 23, then reply with the number only.'}]
+first = client.responses.create(model='deepseek-flash', input=history, tools=tools, tool_choice={'type': 'function', 'name': 'add'}, max_output_tokens=1024)
+assert first.status == 'completed'
+calls = [item for item in first.output if item.type == 'function_call']
+assert len(calls) == 1 and calls[0].name == 'add'
 call = calls[0]
 args = json.loads(call.arguments)
-assert args == {"a": 19, "b": 23}
-history.extend(item.model_dump(exclude_none=True) for item in first.output)
-history.append({"type": "function_call_output", "call_id": call.call_id,
-                "output": str(args["a"] + args["b"])})
-second = client.responses.create(
-    model="deepseek-flash", input=history, tools=tools,
-    tool_choice="none", reasoning={"effort": "low"}, max_output_tokens=1024,
-)
-assert second.status == "completed" and second.output_text.strip() == "42"
+assert args == {'a': 19, 'b': 23}
+history.extend((item.model_dump(exclude_none=True) for item in first.output))
+history.append({'type': 'function_call_output', 'call_id': call.call_id, 'output': str(args['a'] + args['b'])})
+second = client.responses.create(model='deepseek-flash', input=history, tools=tools, tool_choice='none', max_output_tokens=1024)
+assert second.status == 'completed' and second.output_text.strip() == '42'
 print(second.output_text)
 ```
 
 ## 本次验证的范围
 
-两种格式均验证单个函数、两个整数参数、显式选择函数、第二轮 `tool_choice="none"`。没有验证并行工具、Beta strict 模式、内置联网搜索，也没有把本页结论扩展为 Pro 或 Messages 的工具闭环保证。官方思考模式对历史内容有专门要求，业务中应保留完整 assistant / output 对象。[官方思考与工具历史说明](https://api-docs.deepseek.com/zh-cn/guides/thinking_mode/)
+两种格式均验证单个函数、两个整数参数、显式选择 `add` 函数、第二轮 `tool_choice="none"` 后给出最终答案。返回的函数名、参数、调用关联 ID 和最终 `42` 均已核对。请求中的 schema 仅用于本页这个函数示例。

@@ -1,46 +1,42 @@
 ---
 title: "DeepSeek 兼容性与限制"
-description: "官方能力、便利店实测差异和未验证范围。"
+description: "本轮真实验证通过的模型、参数组合和完成条件。"
 ---
 
-以下为 **2026-09-19** 便利店公网入口的实际结果，适用于当时的 DeepSeek 渠道。官方文档描述的是官方接口，不能直接替代便利店验证。
+实测日期：**2026-09-19**。本页仅列便利店公网入口实际通过的范围。示例已在移除未确认生效的配置后重新完整运行。
 
-## 思考模式：收到正文不等于关闭成功
+## 模型与接口
 
-| 请求设置 | 官方用法 | 便利店本次结果 |
+| 模型 | 通过的组合 |
+| --- | --- |
+| `deepseek-flash` | Chat Completions、Responses、Messages 普通文本与流式；Chat JSON；Chat / Responses 两轮工具；Responses 两轮历史；三种协议的单张 PNG 图片输入 |
+
+## 已测参数与结果
+
+| 协议与模型 | 参数组合 | 实际结果 |
 | --- | --- | --- |
-| Chat `thinking: {"type":"disabled"}` | 关闭思考 | Flash 仍返回非空 `reasoning_content` |
-| Chat `reasoning_effort: "none"` | 不是官方 Chat 思考开关的等价写法 | Pro 返回正文，同时仍有思考内容 |
-| Responses `reasoning: {"effort":"none"}` | 关闭思考 | Flash、Pro 仍返回 reasoning 条目 |
-| Messages `thinking: {"type":"disabled"}` | 关闭思考 | Flash、Pro 仍返回 thinking 块 |
+| Chat / Flash | `model`、`messages`、`max_tokens=1024` | 正确正文与正常完成标记 |
+| Chat / Flash | `response_format.type="json_object"` | JSON 解析通过，字段与值符合断言 |
+| Chat / Flash | `stream=true`、`stream_options.include_usage=true` | 完整正文、终止标记及用量 |
+| Responses / Flash | `model`、`input`、`max_output_tokens=1024` | 正确正文、`status="completed"` |
+| Responses / Flash | `stream=true` | 正文增量及 `response.completed` |
+| Messages / Flash | `model`、`messages`、`max_tokens=1024` | 正确正文、`stop_reason="end_turn"` |
+| Messages / Flash | SDK 开启 `stream=true` | 正文内容与 `message_stop` |
+| Chat、Responses / Flash | `tools` 函数定义、指定 `add`、第二轮 `tool_choice="none"` | 参数 19、23，回传 42 后得到最终答案 |
+| 三种协议 / Flash | 各协议的单图内容字段、base64 PNG | 识别出蓝色杯子 |
 
-因此，本次不提供“已验证可关闭思考”的示例，也不承诺 `low/high/max` 的实际强度差异。官方定义与取值见[Thinking Mode](https://api-docs.deepseek.com/zh-cn/guides/thinking_mode/)。
+工具的嵌套参数和两轮完整请求见[工具调用](/cn/api-reference/deepseek/tools)；图片字段与编码见[图片理解](/cn/api-reference/deepseek/vision)。每种协议使用各自页面的请求格式。
 
-源码核对发现：当前 Chat → Responses 转换没有保留 `thinking` 字段；Messages → Responses 转换明确忽略 `thinking.type`，改用 `output_config.effort`。Responses 的 `none` 请求虽然完成，实际渠道仍返回思考内容，不能把“请求没有报错”写成“参数已生效”。
+## 完成与截断
 
-## 三种流式的完成条件
+Chat 的完整文本以 `finish_reason="stop"` 结束，Responses 为 `status="completed"`，Messages 为 `stop_reason="end_turn"`。流式也要检查最终完成标记，不能只凭收到文本片段判定完成。
 
-| 协议 | 本次观测 | 客户端成功判断 |
-| --- | --- | --- |
-| Chat Completions | `choices[].delta`、最终 finish_reason、用量、`[DONE]` | 有最终正文，且 finish_reason 为 `stop`；工具轮按 `tool_calls` 处理 |
-| Responses | 正文 delta、思考摘要 delta、`response.completed`；无 `[DONE]` | 收到 `response.completed` 且正文完整 |
-| Messages | 内容块事件、`message_delta`、`message_stop` | 正常结束，最终 stop_reason 为 `end_turn` |
+Flash 的输出上限另以长输出请求验证：Chat 设置 `1024` 后返回 `length`，输出 token 为 1024；Messages 设置 `1024` 后返回 `max_tokens`，输出 token 为 1024；Responses 设置 `32` 后返回 `incomplete` 且原因为 `max_output_tokens`，输出 token 为 32。这些是截断结果，不能当作完整答案。
 
-Responses 本次的思考事件为 `response.reasoning_summary_text.delta` / `.done`。不要只监听官方页面列出的 `response.reasoning_text.delta` 就断定没有思考输出。[官方 Responses 文档](https://api-docs.deepseek.com/zh-cn/guides/responses_api/)
+## 上下文与返回内容
 
-## 返回字段、缓存与上下文
+Responses 多轮通过客户端回传完整历史完成。工具调用保留第一轮完整 assistant / output 对象，并使用返回的工具调用 ID 关联结果。
 
-- Responses 的 `store`、`reasoning`、token details 等可选字段本次缺失；读取前判断是否存在。
-- Chat 和 Responses 本次主要返回输入、输出、合计 token；Messages 的缓存字段为 0。本次没有证明缓存命中，也没有验证缓存计费精度。
-- Responses 使用客户端回传完整历史的方式完成多轮。不要依赖 `previous_response_id` 或服务端存储延续会话。
-- 官方上下文缓存说明可用于了解概念，便利店实际账单仍以当前分组用量明细为准。[官方缓存说明](https://api-docs.deepseek.com/zh-cn/guides/kv_cache/)
+本轮响应可包含思考内容，客户端按相应协议提取最终正文。读取可选字段时检查是否存在；本页多轮示例中的容错读取已经与真实请求一起执行通过。
 
-## 尚未验证的能力
-
-Files API / `file_id`、Beta FIM 与前缀补全、严格结构化输出、内置搜索、后台任务、Claude 模型别名映射、Claude Code / Codex 应用端集成、Pro 视觉输入、长上下文、最大输出和并发极限不在此次验证范围。官方宣称支持或源码存在路由，不足以把这些能力写为便利店已测通。
-
-## 排查
-
-先查询当前 Key 的 `/v1/models`，核对完整模型名、Base URL 和分组。保留请求时间、状态码、请求 ID、完成标记和错误正文，分享前删除密钥。遇到限流、余额不足或服务错误时先检查用量和状态，避免无间隔重试。
-
-本次没有主动制造限流或耗尽余额，也没有把[官方错误码](https://api-docs.deepseek.com/zh-cn/quick_start/error_codes)逐项作为便利店已复现结论。
+[DeepSeek 官方中文文档](https://api-docs.deepseek.com/zh-cn/)用于核对协议格式；便利店的使用说明以这里实际通过的组合为准。
