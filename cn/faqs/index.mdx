@@ -8,3 +8,15 @@ description: "按认证、模型或图片响应查找实测排查信息。"
 - [图片问题](/cn/faqs/images)：缺少参考图、透明图片、无预览的流式结果、异步接口 404。
 
 排查前保存实际请求参数、响应状态、错误正文和响应头请求 ID，删除 Key 后再分享。
+## 部分地区无法访问 heihuzi.ai 怎么办？
+
+如果你所在地区或当前网络无法访问 heihuzi.ai，可切换到 vim27.cc 备用域名：
+
+| 用途 | 常用地址 | 备用地址 |
+| --- | --- | --- |
+| 便利店网站 | [https://code.heihuzi.ai](https://code.heihuzi.ai) | [https://vim27.cc](https://vim27.cc) |
+| API 入口 | `https://code.heihuzi.ai` | `https://vim27.cc` |
+| API 文档 | [https://docs.heihuzi.ai/cn](/cn) | [https://docs.vim27.cc/cn](https://docs.vim27.cc/cn) |
+
+配置 API 备用地址时，只把 `https://code.heihuzi.ai` 替换为 `https://vim27.cc`，保留原有的 `/v1` 前缀和后续接口路径，继续使用原来的便利店 API Key。API 请求应发往 `vim27.cc`；`docs.vim27.cc` 用于阅读文档。
+
