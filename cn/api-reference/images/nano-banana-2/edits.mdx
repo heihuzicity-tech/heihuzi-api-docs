@@ -39,7 +39,7 @@ EOF
 ```
 </RequestExample>
 
-响应保存为 `edit.json`，结构与[图像生成](/cn/api-reference/images/nano-banana-2/generation)相同，图片在 `candidates[].content.parts[].inlineData`。该命令在 macOS 和 Linux 上均可运行。
+响应保存为 `edit.json`，结构与[图像生成](/cn/api-reference/images/nano-banana-2/generation)相同，图片在 `candidates[].content.parts[].inlineData`。
 
 ## 请求参数
 
@@ -64,7 +64,7 @@ EOF
 | --- | --- | --- |
 | 单图改色 | reference.png | 蓝色杯子改为红色、保持杯形；返回 1024×1024 红色杯子 |
 | 两张参考图 | reference.png + [palette.png](/images/palette.png) | 用第一张的杯形和第二张的红色；返回 1024×1024 红色杯子 |
-| 14 张参考图 | 14 张纯色色块 | 每种颜色画一个圆点，`16:9`；返回 1376×768，画面中 14 个对应颜色的圆点 |
+| 14 张参考图 | 14 张纯色色块 | 每种颜色画一个圆点，`16:9`；返回 1376×768，画面中两排共 14 个圆点，多数颜色与色块一致，个别色调有偏差 |
 | 不填比例 | 一张 1376×768 的 16:9 图片 | 蓝色杯子改为红色，只填 `imageSize: "1K"`；返回 1376×768 |
 
 ## Python 两张参考图
@@ -125,7 +125,7 @@ print("Saved", len(images), "image(s)")
 
 ## 使用 Google GenAI SDK 编辑
 
-需要 `google-genai` 1.49.0 及以上：更早的版本没有 `image_size` 字段，运行会报错。这段代码已用 `google-genai==2.28.0`（需要 Python 3.10 及以上）真实执行，读取 reference.png，把蓝色杯子改为红色，保存为 `sdk-edited-1.jpg`。
+官方工具包从 `google-genai` 1.49.0 起才有 `image_size` 参数，`1.47.0` 实测会报错。这段代码已用 `google-genai==2.28.0`（需要 Python 3.10 及以上）真实执行，读取 reference.png，把蓝色杯子改为红色，保存为 `sdk-edited-1.jpg`。
 
 ```python
 import os

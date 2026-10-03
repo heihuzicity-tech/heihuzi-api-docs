@@ -37,7 +37,9 @@ curl --fail-with-body --silent --show-error --max-time 600 --no-buffer \
   --output stream.sse
 ```
 
-完整事件流保存到 `stream.sse`。每个事件是一行 `data: {...}`，`{...}` 的结构与非流式响应相同，不能把整个文件当作一个 JSON 读取。下面的命令取出其中的图片，保存为 `stream.jpg`：
+完整事件流保存到 `stream.sse`。每个事件是一行 `data: {...}`，`{...}` 的结构与非流式响应相同，不能把整个文件当作一个 JSON 读取。
+
+实测的事件流格式：`data: ` 后面是一整行 JSON，接着一个空行；换行符为 `\n`；没有 `[DONE]` 之类的结束标记，事件发完后连接结束。边收边解析时按标准 SSE 处理即可。图片在这一行里，1K 时这一行约 1.4 MB、2K 更大，逐行读取时不要设过小的单行长度上限。下面的命令取出其中的图片，保存为 `stream.jpg`：
 
 ```bash
 python3 - <<'EOF'
@@ -60,7 +62,7 @@ EOF
 
 ## Python SDK 流式保存图片
 
-需要 `google-genai` 1.49.0 及以上：更早的版本没有 `image_size` 字段，运行会报错。这段代码已用 `google-genai==2.28.0`（需要 Python 3.10 及以上）真实执行，收到一个事件并保存 1024×1024 JPEG 到 `stream-1.jpg`。
+官方工具包从 `google-genai` 1.49.0 起才有 `image_size` 参数，`1.47.0` 实测会报错。这段代码已用 `google-genai==2.28.0`（需要 Python 3.10 及以上）真实执行，收到一个事件并保存 1024×1024 JPEG 到 `stream-1.jpg`。
 
 ```python
 import os

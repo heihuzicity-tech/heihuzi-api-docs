@@ -23,8 +23,8 @@ description: "模型 ID、所需 Key、调用入口和常用参数的阅读位�
 
 ## 常用参数
 
-- **比例** `generationConfig.imageConfig.aspectRatio`：14 种比例均已验证，实际像素见[生成页的尺寸表](/cn/api-reference/images/nano-banana-2/generation)。谷歌官方说明不填时由模型决定比例、有参考图时参照参考图；本次不带参考图、不填时实测返回 1408×768，需要固定比例时一定要填。
-- **清晰度** `generationConfig.imageConfig.imageSize`：`1K`、`2K`、`4K`，必须用大写 `K`；不填时按 `1K`。
+- **比例** `generationConfig.imageConfig.aspectRatio`：14 种比例均已验证，实际像素见[生成页的尺寸表](/cn/api-reference/images/nano-banana-2/generation)。谷歌官方说明不填时由模型决定比例、有参考图时参照参考图；本次不带参考图、不填时实测返回 1408×768（图片用量与 1K 相同），需要固定比例时一定要填。
+- **清晰度** `generationConfig.imageConfig.imageSize`：`1K`、`2K`、`4K`，请使用大写 `K`（谷歌官方要求的写法）；不填时按 `1K`。
 - **输出格式**：本次所有返回均为 JPEG（`image/jpeg`）。
 - **张数**：本次每个请求都返回一张图片；需要多张时发多个请求。
 
@@ -34,7 +34,7 @@ description: "模型 ID、所需 Key、调用入口和常用参数的阅读位�
 | --- | --- | --- |
 | 接口 | Gemini 原生 `generateContent` | OpenAI `/v1/images/generations`、`/v1/images/edits` |
 | 尺寸写法 | 比例 + 清晰度（`16:9` + `2K`） | 像素尺寸（`1536x1024`） |
-| 参考图 | `parts[].inlineData`，最多 14 张 | `images[].image_url` 或文件上传 |
+| 参考图 | `parts[].inlineData`，谷歌官方上限 14 张 | `images[].image_url` 或文件上传 |
 | 输出 | JPEG | PNG、JPEG、WebP，可透明 |
 
 GPT Image 的用法见 [GPT Image 使用指南](/cn/user-guide/gpt-image-2)。
