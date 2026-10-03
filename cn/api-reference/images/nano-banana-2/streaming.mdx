@@ -39,7 +39,9 @@ curl --fail-with-body --silent --show-error --max-time 600 --no-buffer \
 
 完整事件流保存到 `stream.sse`。每个事件是一行 `data: {...}`，`{...}` 的结构与非流式响应相同，不能把整个文件当作一个 JSON 读取。
 
-实测的事件流格式：`data: ` 后面是一整行 JSON，接着一个空行；换行符为 `\n`；没有 `[DONE]` 之类的结束标记，事件发完后连接结束。边收边解析时按标准 SSE 处理即可。图片在这一行里，1K 时这一行约 1.4 MB、2K 更大，逐行读取时不要设过小的单行长度上限。下面的命令取出其中的图片，保存为 `stream.jpg`：
+实测的事件流格式：`data: ` 后面是一整行 JSON，接着一个空行；换行符为 `\n`；没有 `[DONE]` 之类的结束标记，事件发完后连接结束。边收边解析时按标准 SSE 处理即可。图片在这一行里，1K 时这一行约 1.4～1.5 MB，2K 实测约 6 MB，逐行读取时不要设过小的单行长度上限。
+
+请求参数有误时（例如比例写成 `5:3`），实测直接返回 HTTP 400：响应体是一段普通 JSON 错误（格式见[错误响应](/cn/api-reference/images/nano-banana-2/generation#错误响应)），没有 `data:` 前缀，但 `Content-Type` 仍为 `text/event-stream`。请先判断 HTTP 状态码，只在 200 时按事件流解析。下面的命令取出其中的图片，保存为 `stream.jpg`：
 
 ```bash
 python3 - <<'EOF'

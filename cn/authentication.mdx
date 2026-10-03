@@ -21,7 +21,7 @@ description: "三种实测鉴权头，以及实际触发的错误。"
 
 | 状态码 | 已复现的请求 | 处理方法 |
 | --- | --- | --- |
-| 400 | URL 携带 `key` / `api_key` 查询参数；非法 JSON；生成请求缺少 prompt；编辑缺少图片或使用 file_id；partial_images 为 -1 或 4 | 按对应接口示例修正请求 |
+| 400 | URL 携带 `key` / `api_key` 查询参数（Gemini 原生 `/v1beta` 接口的 `?key=` 除外，见下文）；非法 JSON；生成请求缺少 prompt；编辑缺少图片或使用 file_id；partial_images 为 -1 或 4 | 按对应接口示例修正请求 |
 | 401 | 不提供 Key，或提供无效 Key | 检查 Key 和鉴权头 |
 | 403 | 无图片权限的 Key 请求 Images | 使用具有图片权限的 Key |
 | 404 | 错误路径；当前 Messages Key 请求 claude-sonnet-4-6；图片异步提交 | 检查路径、具体模型和[当前异步状态](/cn/faqs/images) |
