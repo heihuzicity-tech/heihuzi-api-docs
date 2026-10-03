@@ -61,6 +61,14 @@
               "cn/api-reference/images/gpt-image-2/generation",
               "cn/api-reference/images/gpt-image-2/edits"
             ]
+          },
+          {
+            "group": "Nano Banana 2",
+            "pages": [
+              "cn/api-reference/images/nano-banana-2/generation",
+              "cn/api-reference/images/nano-banana-2/edits",
+              "cn/api-reference/images/nano-banana-2/streaming"
+            ]
           }
         ]
       },
@@ -90,6 +98,7 @@
             "group": "图像生成",
             "pages": [
               "cn/user-guide/gpt-image-2",
+              "cn/user-guide/nano-banana-2",
               "cn/user-guide/image-edits"
             ]
           }

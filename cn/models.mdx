@@ -58,6 +58,12 @@ curl --fail-with-body --silent --show-error --max-time 600 \
 
 示例中的模型不能替代自己 Key 的查询结果。模型列表用于发现模型，具体请求仍需验证；例如本次旧模型 `claude-sonnet-4-6` 实际返回 404，文档示例已改用测通的 `claude-sonnet-5`。
 
+## Nano Banana 2（2026-10-03 实测）
+
+「Nano Banana 2 画图」分组 Key 的 `/v1/models` 本次返回 `gemini-3.1-flash-image` 和 `gemini-3.1-flash-image-preview`；文档示例均使用 `gemini-3.1-flash-image`。调用入口是 Gemini 原生接口，见 [Nano Banana 2 图像生成](/cn/api-reference/images/nano-banana-2/generation)。
+
+Gemini 格式的 `/v1beta/models` 会列出更多模型，但其中只有上面两个能用这个 Key 调用：本次用同一 Key 请求 `gemini-2.5-pro` 返回 404。请以 `/v1/models` 的结果为准。
+
 ## DeepSeek 模型（2026-09-19 实测）
 
 DeepSeek Key 的 `/v1/models` 本次返回 `deepseek-flash` 与 `deepseek-v4-pro`；Flash 的三种协议普通文本已通过。Flash 的流式、JSON、工具闭环及图片输入范围见 [DeepSeek 接入](/cn/api-reference/deepseek/index)。模型列表不会自动证明每种参数或协议组合均受支持。

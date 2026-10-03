@@ -1,0 +1,163 @@
+---
+title: "Nano Banana 2 图像编辑"
+description: "在请求里附带参考图修改或融合图片：单图、两张和 14 张参考图均经过生产 API 验证。"
+api: "POST /v1beta/models/gemini-3.1-flash-image:generateContent"
+---
+
+Nano Banana 2 的编辑和生成是同一个接口：在 `parts` 里同时放提示词和参考图即可。验证日期：**2026-10-03**。请使用绑定「Nano Banana 2 画图」分组的 API Key，并设置环境变量 `HEIHUZI_API_KEY`。
+
+参考图以 base64 写在 `inlineData` 里，`mimeType` 填图片的实际格式（本页验证了 `image/png` 和 `image/jpeg`）。
+
+下载[参考图 reference.png](/images/reference.png)（1024×1024 蓝色杯子）到运行目录后，可以直接运行下面的单图编辑示例。
+
+<RequestExample>
+```bash
+REFERENCE_B64=$(base64 < reference.png | tr -d '\n')
+curl --fail-with-body --silent --show-error --max-time 600 \
+  --request POST \
+  --url https://code.heihuzi.ai/v1beta/models/gemini-3.1-flash-image:generateContent \
+  --header "x-goog-api-key: $HEIHUZI_API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data-binary @- \
+  --output edit.json <<EOF
+{
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        {"text": "Change the blue cup to a bright red cup. Keep the cup shape and the white background."},
+        {"inlineData": {"mimeType": "image/png", "data": "$REFERENCE_B64"}}
+      ]
+    }
+  ],
+  "generationConfig": {
+    "responseModalities": ["IMAGE"],
+    "imageConfig": {"aspectRatio": "1:1", "imageSize": "1K"}
+  }
+}
+EOF
+```
+</RequestExample>
+
+响应保存为 `edit.json`，结构与[图像生成](/cn/api-reference/images/nano-banana-2/generation)相同，图片在 `candidates[].content.parts[].inlineData`。该命令在 macOS 和 Linux 上均可运行。
+
+## 请求参数
+
+<ParamField body="contents" type="object[]" required>
+放一条 `role: "user"` 消息，`parts` 里依次写提示词和参考图。
+<Expandable title="parts 中的参考图" defaultOpen>
+<ParamField body="inlineData" type="object">
+一张参考图。`mimeType` 为图片格式，`data` 为图片文件的 base64。本页验证了 1 张、2 张和 14 张参考图。谷歌官方说明单次最多 14 张，其中保持物体细节的最多 10 张、保持人物一致的最多 4 张。
+</ParamField>
+</Expandable>
+</ParamField>
+
+<ParamField body="generationConfig" type="object">
+与[图像生成](/cn/api-reference/images/nano-banana-2/generation)相同，比例和清晰度写在 `imageConfig` 里。带参考图且不填 `aspectRatio` 时，输出沿用参考图的比例：本次输入 16:9 图片、只填 `imageSize: "1K"`，返回 1376×768。
+</ParamField>
+
+## 已验证的编辑场景
+
+均使用 `aspectRatio: "1:1"`、`imageSize: "1K"`（另注明的除外），返回 JPEG。
+
+| 场景 | 参考图 | 提示词要求与实际结果 |
+| --- | --- | --- |
+| 单图改色 | reference.png | 蓝色杯子改为红色、保持杯形；返回 1024×1024 红色杯子 |
+| 两张参考图 | reference.png + [palette.png](/images/palette.png) | 用第一张的杯形和第二张的红色；返回 1024×1024 红色杯子 |
+| 14 张参考图 | 14 张纯色色块 | 每种颜色画一个圆点，`16:9`；返回 1376×768，画面中 14 个对应颜色的圆点 |
+| 不填比例 | 一张 1376×768 的 16:9 图片 | 蓝色杯子改为红色，只填 `imageSize: "1K"`；返回 1376×768 |
+
+## Python 两张参考图
+
+这段完整代码已用 `requests==2.32.5` 真实执行。运行前把 reference.png 和 palette.png 下载到运行目录；输出为一张 1024×1024 红色杯子，保存为 `edited-1.jpg`。
+
+```python
+import base64
+import os
+from pathlib import Path
+
+import requests
+
+
+def image_part(path):
+    data = base64.b64encode(Path(path).read_bytes()).decode("ascii")
+    return {"inlineData": {"mimeType": "image/png", "data": data}}
+
+
+response = requests.post(
+    "https://code.heihuzi.ai/v1beta/models/gemini-3.1-flash-image:generateContent",
+    headers={"x-goog-api-key": os.environ["HEIHUZI_API_KEY"]},
+    json={
+        "contents": [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "text": "Use the cup shape from the first image and the red color from the second image. "
+                        "Output one red cup on a white background."
+                    },
+                    image_part("reference.png"),
+                    image_part("palette.png"),
+                ],
+            }
+        ],
+        "generationConfig": {
+            "responseModalities": ["IMAGE"],
+            "imageConfig": {"aspectRatio": "1:1", "imageSize": "1K"},
+        },
+    },
+    timeout=(15, 600),
+)
+response.raise_for_status()
+payload = response.json()
+images = [
+    part["inlineData"]
+    for candidate in payload.get("candidates", [])
+    for part in candidate.get("content", {}).get("parts", [])
+    if "inlineData" in part and not part.get("thought")
+]
+if not images:
+    raise RuntimeError(payload.get("error", "No image returned"))
+for index, image in enumerate(images, 1):
+    Path(f"edited-{index}.jpg").write_bytes(base64.b64decode(image["data"]))
+print("Saved", len(images), "image(s)")
+```
+
+## 使用 Google GenAI SDK 编辑
+
+需要 `google-genai` 1.49.0 及以上：更早的版本没有 `image_size` 字段，运行会报错。这段代码已用 `google-genai==2.28.0`（需要 Python 3.10 及以上）真实执行，读取 reference.png，把蓝色杯子改为红色，保存为 `sdk-edited-1.jpg`。
+
+```python
+import os
+from pathlib import Path
+
+from google import genai
+from google.genai import types
+
+client = genai.Client(
+    api_key=os.environ["HEIHUZI_API_KEY"],
+    http_options=types.HttpOptions(base_url="https://code.heihuzi.ai", timeout=600_000),
+)
+response = client.models.generate_content(
+    model="gemini-3.1-flash-image",
+    contents=[
+        "Change the blue cup to a bright red cup. Keep the cup shape and the white background.",
+        types.Part.from_bytes(data=Path("reference.png").read_bytes(), mime_type="image/png"),
+    ],
+    config=types.GenerateContentConfig(
+        response_modalities=["IMAGE"],
+        image_config=types.ImageConfig(aspect_ratio="1:1", image_size="1K"),
+    ),
+)
+saved = 0
+for part in response.candidates[0].content.parts:
+    if part.inline_data and not part.thought:
+        saved += 1
+        with open(f"sdk-edited-{saved}.jpg", "wb") as file:
+            file.write(part.inline_data.data)
+if saved == 0:
+    raise RuntimeError("No image returned")
+print("Saved", saved, "image(s)")
+```
+
+参考图越多、越大，请求体越大。本页 14 张参考图的请求实测约 19 秒返回。

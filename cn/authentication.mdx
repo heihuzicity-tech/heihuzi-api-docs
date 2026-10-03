@@ -30,6 +30,12 @@ URL 参数测试使用无效占位值，同时提供有效请求头，仍返回 
 
 排查时保留状态码、`error.type` / `error.message`、响应头 `X-Client-Request-Id` 和请求时间。分享排查信息前删除真实 Key。
 
+## Nano Banana 2 Key
+
+2026-10-03 使用「Nano Banana 2 画图」分组 Key 验证：Gemini 原生接口 `/v1beta/models/gemini-3.1-flash-image:generateContent` 接受 `x-goog-api-key` 和 `Authorization: Bearer`；同一个 Key 查询 `/v1/models` 时，上表三种请求头都返回模型列表。
+
+把 Key 放在网址参数里的结果按接口区分：`/v1/models` 等 OpenAI 格式接口带 `?key=` 返回 400（`api_key_in_query_deprecated`）；Gemini 原生接口兼容谷歌习惯的 `?key=`，实测可以生成图片。网址参数容易留在日志和浏览器历史里，请统一使用请求头。
+
 ## DeepSeek Key
 
 2026-09-19 使用 DeepSeek 分组 Key 完成三种协议调用：OpenAI SDK 使用 Bearer 认证，Anthropic SDK 使用 `x-api-key`。请将便利店 Key 与便利店 Base URL 配对，具体配置见 [DeepSeek 接入](/cn/api-reference/deepseek/index)。
