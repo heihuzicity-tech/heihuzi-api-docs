@@ -45,7 +45,7 @@ curl --fail-with-body --silent --show-error \
 ```
 </ResponseExample>
 
-- `usage.completion_tokens` 是计费用量，扣费 = 用量 × 单价 ÷ 1,000,000，单价见[创建任务的计费说明](/cn/api-reference/videos/seedance/create)。本例 50,638 × 55.2 ÷ 1,000,000 = 2.7952176。
+- `usage.completion_tokens` 是本次的计费用量（token），计费规则见[创建任务](/cn/api-reference/videos/seedance/create)。
 - `resolution`、`duration` 为实际出片的清晰度和时长。
 - 成片链接由火山存储提供，**24 小时内有效**，请及时下载保存。
 
