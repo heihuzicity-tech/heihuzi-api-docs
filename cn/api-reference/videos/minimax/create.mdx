@@ -1,0 +1,93 @@
+---
+title: "MiniMax 视频：创建任务"
+description: "用 MiniMax-H3-Max 或 MiniMax-H3 异步生成视频，示例与参数均经过生产 API 验证。"
+api: "POST /v1/videos"
+---
+
+便利店提供 MiniMax H3 视频生成：`POST https://code.heihuzi.ai/v1/videos`。任务异步生成：先创建任务拿到 `id`，再[查询任务](/cn/api-reference/videos/minimax/status)，完成后[下载视频](/cn/api-reference/videos/minimax/content)。验证日期：**2026-10-05**。
+
+请使用绑定「MiniMax视频-官方8.5折」分组的 API Key。
+
+<RequestExample>
+```bash
+curl --fail-with-body --silent --show-error \
+  --request POST \
+  --url https://code.heihuzi.ai/v1/videos \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "model": "MiniMax-H3-Max",
+  "prompt": "清晨的湖面上，一只白鹭缓缓飞过，薄雾和远山",
+  "seconds": 5,
+  "resolution": "480P",
+  "ratio": "16:9"
+}'
+```
+</RequestExample>
+
+运行前设置环境变量 `HEIHUZI_API_KEY`。返回里的 `id` 用于查询任务和下载视频。
+
+## 请求参数
+
+<ParamField body="model" type="string" required>
+`MiniMax-H3-Max` 或 `MiniMax-H3`。
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+画面与动作描述。
+</ParamField>
+
+<ParamField body="seconds" type="integer">
+时长，整数秒。`MiniMax-H3-Max`：5–15；`MiniMax-H3`：4–15。建议填写。
+</ParamField>
+
+<ParamField body="resolution" type="string">
+清晰度。`MiniMax-H3-Max`：`480P`、`768P`；`MiniMax-H3`：`768P`。建议填写。
+</ParamField>
+
+<ParamField body="ratio" type="string">
+画面比例：`16:9` 或 `9:16`。传了 `first_frame_image` 时由首帧图决定比例，`ratio` 不生效。建议填写。
+</ParamField>
+
+<ParamField body="first_frame_image" type="string">
+首帧图，公网可访问的 https 图片链接。图片宽高比需在 0.4–2.5 之间。
+</ParamField>
+
+图片不符合要求（链接打不开、比例超出范围等）时，任务会失败，冻结的余额全额退回。
+
+## 真实响应
+
+<ResponseExample>
+```json
+{"created_at":1791171673,"id":"video_0def54bdc6de4bf5b6dcbb77acbab186","model":"MiniMax-H3-Max","object":"video","progress":0,"ratio":"16:9","resolution":"480P","seconds":"5","status":"queued"}
+```
+</ResponseExample>
+
+## 计费
+
+按秒计费，价格为「MiniMax视频-官方8.5折」分组价，单位是站内余额（按充值规则折算）：
+
+| 模型 | 清晰度 | 每秒 | 5 秒 |
+| --- | --- | --- | --- |
+| `MiniMax-H3-Max` | `480P` | 0.2805 | 1.4025 |
+| `MiniMax-H3-Max` | `768P` | 0.425 | 2.125 |
+| `MiniMax-H3` | `768P` | 0.425 | 2.125 |
+
+- 提交时按“每秒单价 × 秒数”冻结余额，生成成功后扣除。上面的示例冻结并扣除 1.4025。
+- 生成失败、被上游拒绝，冻结的余额全额退回。
+- 带首帧图不另外收费。
+
+## 错误响应
+
+| HTTP | `error.code` | 说明 |
+| --- | --- | --- |
+| 400 | 例如 `invalid_model`、`missing_prompt`、`invalid_seconds`、`invalid_resolution`、`invalid_ratio`、`invalid_image_url` | 参数不符合要求，`error.code` 指出是哪一项 |
+| 402 | `insufficient_balance` | 余额不足以冻结本次费用，返回里附需要和可用的金额 |
+| 403 | `permission_denied` | 密钥所在分组没有开通视频生成 |
+| 404 | `not_found` | 视频功能暂未开放 |
+| 429 | `too_many_active_tasks` | 未完成的视频任务过多，请等前面的完成后再提交 |
+| 502 | `upstream_outcome_unknown` | 提交结果暂时无法确认。返回里带任务 `id`，请用它查询，**不要立即重复提交**；冻结的余额会在确认后结算，最长 30 分钟仍确认不了就全额退回 |
+| 4xx 或 502 | `upstream_error` | 上游拒绝了这次请求，冻结的余额已退回 |
+| 503 | `service_unavailable` | 服务暂时不可用，请稍后重试 |
+
+暂不支持：参考视频、参考音频、回调地址。

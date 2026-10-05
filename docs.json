@@ -69,6 +69,14 @@
               "cn/api-reference/images/nano-banana-2/edits",
               "cn/api-reference/images/nano-banana-2/streaming"
             ]
+          },
+          {
+            "group": "视频生成",
+            "pages": [
+              "cn/api-reference/videos/minimax/create",
+              "cn/api-reference/videos/minimax/status",
+              "cn/api-reference/videos/minimax/content"
+            ]
           }
         ]
       },

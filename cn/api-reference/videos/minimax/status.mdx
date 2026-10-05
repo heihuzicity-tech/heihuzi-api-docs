@@ -1,0 +1,43 @@
+---
+title: "MiniMax 视频：查询任务"
+description: "按任务 id 查询生成进度，完成后返回成片链接。"
+api: "GET /v1/videos/{id}"
+---
+
+用[创建任务](/cn/api-reference/videos/minimax/create)返回的 `id` 查询进度。验证日期：**2026-10-05**。
+
+<RequestExample>
+```bash
+curl --fail-with-body --silent --show-error \
+  --url "https://code.heihuzi.ai/v1/videos/$VIDEO_ID" \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY"
+```
+</RequestExample>
+
+运行前把环境变量 `VIDEO_ID` 设为创建任务返回的 `id`。
+
+## 路径参数
+
+<ParamField path="id" type="string" required>
+创建任务返回的 `id`，形如 `video_` 加 32 位字符。只能查询自己的任务，查不到时返回 404 `not_found`。
+</ParamField>
+
+## 状态
+
+`status` 依次为 `queued`（排队中）→ `in_progress`（生成中）→ `completed`（完成）或 `failed`（失败）。`progress` 为 0–100 的进度。
+
+`MiniMax-H3-Max` 一般 1 分钟内出片；`MiniMax-H3` 较慢，可能要几分钟。建议每 10 秒左右查询一次。生成失败时 `status` 为 `failed`，冻结的余额全额退回。
+
+## 真实响应
+
+完成时（`video.url` 为签名链接，此处省略）：
+
+<ResponseExample>
+```json
+{"completed_at":1791171704,"created_at":1791171673,"id":"video_0def54bdc6de4bf5b6dcbb77acbab186","model":"MiniMax-H3-Max","object":"video","progress":100,"ratio":"16:9","resolution":"480P","seconds":"5","status":"completed","usage":{"output_seconds":5},"video":{"duration_seconds":5,"url":"https://…"}}
+```
+</ResponseExample>
+
+本次示例 31 秒完成：第 11、21 秒查询为 `in_progress`、`progress` 50，第 31 秒为 `completed`。
+
+成片链接 24 小时有效，请及时[下载](/cn/api-reference/videos/minimax/content)保存。

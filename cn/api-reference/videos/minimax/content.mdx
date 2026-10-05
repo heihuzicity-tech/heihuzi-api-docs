@@ -1,0 +1,30 @@
+---
+title: "MiniMax 视频：下载视频"
+description: "任务完成后跳转到成片地址，保存为 MP4 文件。"
+api: "GET /v1/videos/{id}/content"
+---
+
+任务完成后，这个接口返回 302，跳转到成片地址；还没完成时返回 409 `video_not_ready`。验证日期：**2026-10-05**。
+
+<RequestExample>
+```bash
+curl --fail-with-body --silent --show-error --location \
+  --url "https://code.heihuzi.ai/v1/videos/$VIDEO_ID/content" \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
+  --output video.mp4
+```
+</RequestExample>
+
+`--location` 让 curl 跟随跳转，把成片保存为 `video.mp4`。
+
+## 路径参数
+
+<ParamField path="id" type="string" required>
+创建任务返回的 `id`。
+</ParamField>
+
+## 实测结果
+
+[创建任务](/cn/api-reference/videos/minimax/create)页的示例（`MiniMax-H3-Max`、`480P`、5 秒、`16:9`）完成后，用上面的命令下载到 1,685,376 字节的 MP4：H.264 视频 832×480，带 AAC 音轨，时长 5.18 秒。
+
+还没完成时运行同一命令，curl 报 `The requested URL returned error: 409`。成片链接 24 小时有效，请及时下载保存。
