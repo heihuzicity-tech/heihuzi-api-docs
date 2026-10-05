@@ -1,0 +1,50 @@
+---
+title: "Seedance 视频：取消或删除任务"
+description: "取消排队中的 Seedance 任务，或删除已结束任务的记录。"
+api: "DELETE /api/v3/contents/generations/tasks/{id}"
+---
+
+按火山方舟官方规则取消或删除任务：排队中的任务会被取消，已结束的任务会删除记录。验证日期：**2026-10-05**。
+
+<RequestExample>
+```bash
+curl --fail-with-body --silent --show-error \
+  --request DELETE \
+  --url "https://code.heihuzi.ai/api/v3/contents/generations/tasks/$TASK_ID" \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY"
+```
+</RequestExample>
+
+## 路径参数
+
+<ParamField path="id" type="string" required>
+创建任务返回的 `id`。只能操作自己创建的任务。
+</ParamField>
+
+## 不同状态的结果
+
+| 任务状态 | 结果 |
+| --- | --- |
+| `queued`（排队中） | 取消任务，冻结的余额全额退回 |
+| `running`（生成中） | **不能取消**，返回 409 `InvalidAction.RunningTaskDeletion`，任务继续生成并照常扣费 |
+| `succeeded`、`failed`、`expired` | 先完成结算，再删除记录；删除后再查询返回 404 |
+
+实测说明：火山不忙时任务提交后几乎立刻开始生成（提交 0.37 秒后取消已返回“正在运行”），所以通常来不及取消，只有在排队时才能取消。
+
+## 真实响应
+
+删除已完成的任务：
+
+<ResponseExample>
+```json
+{}
+```
+</ResponseExample>
+
+删除生成中的任务（实测）：
+
+```json
+{"error":{"code":"InvalidAction.RunningTaskDeletion","message":"Cannot delete task `cgt-20261005162359-6cgkk` because it is currently running. Request id: …","param":"","type":"Conflict"}}
+```
+
+删除后已完成任务的成片链接不再能通过查询接口获取，删除前请先下载保存。

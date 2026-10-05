@@ -75,7 +75,10 @@
             "pages": [
               "cn/api-reference/videos/minimax/create",
               "cn/api-reference/videos/minimax/status",
-              "cn/api-reference/videos/minimax/content"
+              "cn/api-reference/videos/minimax/content",
+              "cn/api-reference/videos/seedance/create",
+              "cn/api-reference/videos/seedance/status",
+              "cn/api-reference/videos/seedance/delete"
             ]
           }
         ]

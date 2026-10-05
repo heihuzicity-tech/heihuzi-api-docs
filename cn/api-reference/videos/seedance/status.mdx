@@ -1,0 +1,56 @@
+---
+title: "Seedance 视频：查询任务"
+description: "按任务 id 查询 Seedance 视频的生成状态，完成后返回成片链接和实际用量。"
+api: "GET /api/v3/contents/generations/tasks/{id}"
+---
+
+用[创建任务](/cn/api-reference/videos/seedance/create)返回的 `id` 查询进度。响应格式与火山方舟官方「查询视频生成任务」接口一致。验证日期：**2026-10-05**。
+
+<RequestExample>
+```bash
+curl --fail-with-body --silent --show-error \
+  --url "https://code.heihuzi.ai/api/v3/contents/generations/tasks/$TASK_ID" \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY"
+```
+</RequestExample>
+
+运行前把环境变量 `TASK_ID` 设为创建任务返回的 `id`。
+
+## 路径参数
+
+<ParamField path="id" type="string" required>
+创建任务返回的 `id`，形如 `cgt-` 开头。只能查询自己创建的任务，查不到时返回 404 `ResourceNotFound`。
+</ParamField>
+
+## 状态
+
+| `status` | 含义 | 费用 |
+| --- | --- | --- |
+| `queued` | 排队中 | 余额保持冻结 |
+| `running` | 生成中 | 余额保持冻结 |
+| `succeeded` | 已完成，`content.video_url` 为成片链接 | 按实际用量扣费，多冻结的退回 |
+| `failed` | 失败，`error` 里有原因 | 全额退回 |
+| `expired` | 超过执行期限仍未完成 | 全额退回 |
+| `cancelled` | 排队中被取消 | 全额退回 |
+
+建议每 10 秒左右查询一次。实测 `480p` 5 秒的任务约 2–3 分钟完成（127–168 秒）。即使不查询，系统也会在任务结束后自动结算。
+
+## 真实响应
+
+完成时（`content.video_url` 为带签名的链接，此处省略签名）：
+
+<ResponseExample>
+```json
+{"id":"cgt-20261005170037-c27t7","model":"doubao-seedance-2-0-260128","status":"succeeded","content":{"video_url":"https://ark-acg-cn-beijing.tos-cn-beijing.volces.com/…"},"usage":{"completion_tokens":50638,"total_tokens":50638},"created_at":1791190838,"updated_at":1791190988,"seed":67171,"resolution":"480p","ratio":"16:9","duration":5,"framespersecond":24,"service_tier":"default","execution_expires_after":172800,"generate_audio":true,"draft":false,"priority":0,"output_format":"mp4"}
+```
+</ResponseExample>
+
+- `usage.completion_tokens` 是计费用量，扣费 = 用量 × 单价 ÷ 1,000,000，单价见[创建任务的计费说明](/cn/api-reference/videos/seedance/create)。本例 50,638 × 55.2 ÷ 1,000,000 = 2.7952176。
+- `resolution`、`duration` 为实际出片的清晰度和时长。
+- 成片链接由火山存储提供，**24 小时内有效**，请及时下载保存。
+
+## 错误响应
+
+| HTTP | `error.code` | 说明 |
+| --- | --- | --- |
+| 404 | `ResourceNotFound` | 任务不存在、不属于你，或已被[删除](/cn/api-reference/videos/seedance/delete) |

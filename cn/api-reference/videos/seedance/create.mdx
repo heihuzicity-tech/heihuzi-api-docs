@@ -1,0 +1,168 @@
+---
+title: "Seedance 视频：创建任务"
+description: "用 Seedance 2.0、2.0 Fast、2.0 mini、2.5 异步生成视频，请求和响应与火山方舟官方接口一致，示例经过生产 API 验证。"
+api: "POST /api/v3/contents/generations/tasks"
+---
+
+便利店提供字节跳动 Seedance 视频生成：`POST https://code.heihuzi.ai/api/v3/contents/generations/tasks`。请求体和响应与火山方舟官方「创建视频生成任务」接口一致。任务异步生成：先创建任务拿到 `id`，再[查询任务](/cn/api-reference/videos/seedance/status)取成片链接；不需要的任务可以[取消或删除](/cn/api-reference/videos/seedance/delete)。验证日期：**2026-10-05**。
+
+请使用绑定「Seedance 视频」分组的 API Key。其他分组的 Key 调用会返回 403 `PermissionDenied`。
+
+<RequestExample>
+```bash
+curl --fail-with-body --silent --show-error \
+  --request POST \
+  --url https://code.heihuzi.ai/api/v3/contents/generations/tasks \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "model": "doubao-seedance-2-0-260128",
+  "content": [
+    {"type": "text", "text": "一只手从枝头摘下沾着露水的红苹果，阳光透过树叶，镜头缓慢推近"},
+    {"type": "image_url", "image_url": {"url": "https://ark-project.tos-cn-beijing.volces.com/doc_image/r2v_tea_pic1.jpg"}, "role": "first_frame"}
+  ],
+  "resolution": "480p",
+  "ratio": "adaptive",
+  "duration": 5
+}'
+```
+</RequestExample>
+
+运行前设置环境变量 `HEIHUZI_API_KEY`。上面是“首帧生视频”：用一张图作为视频第一帧。返回里的 `id` 用于查询和删除任务。
+
+## 模型
+
+| 模型 ID | 名称 | 清晰度（火山官方） | 时长（火山官方） |
+| --- | --- | --- | --- |
+| `doubao-seedance-2-0-260128` | Seedance 2.0 | `480p`、`720p`、`1080p`、`4k` | 4–15 秒 |
+| `doubao-seedance-2-0-fast-260128` | Seedance 2.0 Fast | `480p`、`720p` | 4–15 秒 |
+| `doubao-seedance-2-0-mini-260615` | Seedance 2.0 mini | `480p`、`720p` | 4–15 秒 |
+| `doubao-seedance-2-5-260628` | Seedance 2.5 | `480p`、`720p`、`1080p` | 4–30 秒 |
+
+本站在生产实测过：四个模型的 `480p` 5 秒文生视频，Seedance 2.0 的首帧、首尾帧生视频。其余清晰度、时长组合按火山官方规则原样转发。
+
+## 请求参数
+
+<ParamField body="model" type="string" required>
+模型 ID，见上表。不在上表里的模型返回 404 `model_not_found`。
+</ParamField>
+
+<ParamField body="content" type="object[]" required>
+输入内容列表，不能为空。
+- 文字：`{"type": "text", "text": "画面与动作描述"}`。
+- 首帧：`{"type": "image_url", "image_url": {"url": "图片链接"}, "role": "first_frame"}`。
+- 首尾帧：再加一张 `"role": "last_frame"` 的图片，视频从首帧过渡到尾帧。
+</ParamField>
+
+<ParamField body="resolution" type="string">
+清晰度，例如 `480p`、`720p`、`1080p`。不填时按火山默认（2.x 系列为 `720p`）。建议填写，计费按实际出片的清晰度。
+</ParamField>
+
+<ParamField body="ratio" type="string">
+画面比例，例如 `16:9`、`9:16`、`1:1`。带首帧图时填 `adaptive`，由图片决定比例（实测 1280×706 的图出片为 `16:9`）。
+</ParamField>
+
+<ParamField body="duration" type="integer">
+时长，整数秒，范围见上表。
+</ParamField>
+
+其他官方参数（如 `seed`、`camera_fixed`、`generate_audio`、`watermark`）按火山官方规则原样转发。
+
+### 图片要求（火山官方）
+
+- 图片链接需公网可访问，也可以用 `data:image/png;base64,…` 形式的 Base64。
+- 宽高比在 0.4–2.5 之间，宽和高在 300–6000 像素之间，单张小于 30 MB。
+- **含真人的照片会被拒绝**：返回 400 `InputImageSensitiveContentDetected.PrivacyInformation`，冻结的余额全额退回（实测）。
+
+## 真实响应
+
+<ResponseExample>
+```json
+{"id":"cgt-20261005170037-c27t7"}
+```
+</ResponseExample>
+
+本次示例 158 秒出片，用量 50,638 token，扣费 2.7952176。
+
+## 更多示例
+
+文生视频（只传文字，Seedance 2.5，实测 151 秒出片）：
+
+```json
+{
+  "model": "doubao-seedance-2-5-260628",
+  "content": [{"type": "text", "text": "海浪轻轻拍打沙滩，夕阳映在水面上"}],
+  "resolution": "480p",
+  "ratio": "16:9",
+  "duration": 5
+}
+```
+
+首尾帧生视频（Seedance 2.0，实测 168 秒出片）：
+
+```json
+{
+  "model": "doubao-seedance-2-0-260128",
+  "content": [
+    {"type": "text", "text": "刚摘下的苹果变成一杯苹果饮品，镜头从果树拉远到果园"},
+    {"type": "image_url", "image_url": {"url": "https://ark-project.tos-cn-beijing.volces.com/doc_image/r2v_tea_pic1.jpg"}, "role": "first_frame"},
+    {"type": "image_url", "image_url": {"url": "https://ark-project.tos-cn-beijing.volces.com/doc_image/r2v_tea_pic2.jpg"}, "role": "last_frame"}
+  ],
+  "resolution": "480p",
+  "ratio": "adaptive",
+  "duration": 5
+}
+```
+
+## 计费
+
+按火山官方返回的实际用量（`usage.completion_tokens`）计费，单位是站内余额（按充值规则折算）：
+
+**扣费 = completion_tokens × 单价 ÷ 1,000,000**
+
+单价（每百万 token，已含「Seedance 视频」分组倍率）：
+
+| 模型 | 480p / 720p | 1080p | 4k |
+| --- | --- | --- | --- |
+| Seedance 2.5 | 84 | 92.4 | — |
+| Seedance 2.0 | 55.2 | 61.2 | 31.2 |
+| Seedance 2.0 Fast | 44.4 | — | — |
+| Seedance 2.0 mini | 27.6 | — | — |
+
+5 秒参考（`480p` 为实测用量）：
+
+| 模型 | 清晰度 | 用量（token） | 扣费 |
+| --- | --- | --- | --- |
+| Seedance 2.0 | `480p` | 50,638 | 2.7952 |
+| Seedance 2.0 Fast | `480p` | 50,638 | 2.2483 |
+| Seedance 2.0 mini | `480p` | 50,638 | 1.3976 |
+| Seedance 2.5 | `480p` | 48,437 | 4.0687 |
+| Seedance 2.5 | `1080p` | 245,025 | 22.6403 |
+
+- 提交时按最坏情况冻结余额（多留约 5% 余量），生成成功后按实际用量扣费，多冻结的部分全额退回。上面的首帧示例冻结 2.9107512，实扣 2.7952176。
+- 生成失败、超时、被取消，或火山拒绝请求（例如图片含真人），冻结的余额全额退回。
+- 请求里带参考视频时按火山官方“含视频”单价计费。
+
+## 限制
+
+- 每个用户同时最多 5 个未完成的任务（排队中的也算），超过返回 429 `TooManyActiveTasks`。
+- 高峰时任务可能在火山排队，`status` 显示为 `queued`，轮到后自动开始生成。
+- 暂不支持：任务列表接口、联网搜索（`tools`）、素材 ID（`asset://`）。
+
+## 错误响应
+
+本站自有错误的格式为 `{"error": {"code": "…", "message": "…", "param": "", "type": "…"}}`；火山拒绝的请求原样返回火山的错误码和说明。
+
+| HTTP | `error.code` | 说明 |
+| --- | --- | --- |
+| 400 | `InvalidParameter` | 参数不符合要求，例如 `content` 为空 |
+| 400 | `PricingNotConfigured` | 模型不支持这个清晰度，例如 mini 选 `1080p` |
+| 400 | `ToolNotAllowed` | 使用了未开放的 `tools` |
+| 400 | `InputImageSensitiveContentDetected.PrivacyInformation` 等 | 火山审核拒绝（真人、敏感内容、版权等），冻结的余额已退回 |
+| 402 | `InsufficientBalance` | 余额不足以冻结本次费用，返回里附 `required_amount` 和 `available_amount` |
+| 403 | `PermissionDenied` | Key 没有绑定「Seedance 视频」分组 |
+| 404 | `model_not_found` | 模型不在本站支持的列表里 |
+| 429 | `TooManyActiveTasks` | 未完成的任务太多，请等前面的完成后再提交 |
+| 502 | `UpstreamOutcomeUnknown` | 提交结果暂时无法确认，**不要立即重复提交**；冻结保留，确认后自动结算或退回 |
+| 503 | `UpstreamUnreachable` | 视频服务暂时连不上，本次未扣费，请稍后再试 |
+| 503 | `RefundPending` | 视频服务连不上且退款还在核对中，**不要立即重复提交**，冻结的余额会由系统退回 |
