@@ -4,7 +4,7 @@ description: "用 Seedance 2.0、2.0 Fast、2.0 mini、2.5 异步生成视频，
 api: "POST /api/v3/contents/generations/tasks"
 ---
 
-便利店提供字节跳动 Seedance 视频生成：`POST https://code.heihuzi.ai/api/v3/contents/generations/tasks`。请求体和响应与火山方舟官方「创建视频生成任务」接口一致。任务异步生成：先创建任务拿到 `id`，再[查询任务](/cn/api-reference/videos/seedance/status)取成片链接；不需要的任务可以[取消或删除](/cn/api-reference/videos/seedance/delete)。验证日期：**2026-10-05**。
+便利店提供字节跳动 Seedance 视频生成：`POST https://code.heihuzi.ai/api/v3/contents/generations/tasks`。请求体和响应与火山方舟官方「创建视频生成任务」接口一致。任务异步生成：先创建任务拿到 `id`，再[查询任务](/cn/api-reference/videos/seedance/status)取成片链接；已结束的任务可以[删除](/cn/api-reference/videos/seedance/delete)。验证日期：**2026-10-05**。
 
 请使用绑定「Seedance 视频」分组的 API Key。其他分组的 Key 调用会返回 403 `PermissionDenied`。
 
@@ -32,47 +32,45 @@ curl --fail-with-body --silent --show-error \
 
 ## 模型
 
-| 模型 ID | 名称 | 清晰度（火山官方） | 时长（火山官方） |
-| --- | --- | --- | --- |
-| `doubao-seedance-2-0-260128` | Seedance 2.0 | `480p`、`720p`、`1080p`、`4k` | 4–15 秒 |
-| `doubao-seedance-2-0-fast-260128` | Seedance 2.0 Fast | `480p`、`720p` | 4–15 秒 |
-| `doubao-seedance-2-0-mini-260615` | Seedance 2.0 mini | `480p`、`720p` | 4–15 秒 |
-| `doubao-seedance-2-5-260628` | Seedance 2.5 | `480p`、`720p`、`1080p` | 4–30 秒 |
+文档只列本站在生产实测过的组合（清晰度 `480p`、时长 5 秒）：
 
-本站在生产实测过：四个模型的 `480p` 5 秒文生视频，Seedance 2.0 的首帧、首尾帧生视频。其余清晰度、时长组合按火山官方规则原样转发。
+| 模型 ID | 名称 | 本站实测 |
+| --- | --- | --- |
+| `doubao-seedance-2-0-260128` | Seedance 2.0 | 文生视频、首帧、首尾帧 |
+| `doubao-seedance-2-0-fast-260128` | Seedance 2.0 Fast | 文生视频 |
+| `doubao-seedance-2-0-mini-260615` | Seedance 2.0 mini | 文生视频 |
+| `doubao-seedance-2-5-260628` | Seedance 2.5 | 文生视频 |
 
 ## 请求参数
 
 <ParamField body="model" type="string" required>
-模型 ID，见上表。不在上表里的模型返回 404 `model_not_found`。
+模型 ID，见上表。其他模型返回 404 `model_not_found`。
 </ParamField>
 
 <ParamField body="content" type="object[]" required>
-输入内容列表，不能为空。
+输入内容列表，不能为空（为空返回 400 `InvalidParameter`）。
 - 文字：`{"type": "text", "text": "画面与动作描述"}`。
 - 首帧：`{"type": "image_url", "image_url": {"url": "图片链接"}, "role": "first_frame"}`。
 - 首尾帧：再加一张 `"role": "last_frame"` 的图片，视频从首帧过渡到尾帧。
 </ParamField>
 
 <ParamField body="resolution" type="string">
-清晰度，例如 `480p`、`720p`、`1080p`。不填时按火山默认（2.x 系列为 `720p`）。建议填写，计费按实际出片的清晰度。
+清晰度，填 `480p`。
 </ParamField>
 
 <ParamField body="ratio" type="string">
-画面比例，例如 `16:9`、`9:16`、`1:1`。带首帧图时填 `adaptive`，由图片决定比例（实测 1280×706 的图出片为 `16:9`）。
+画面比例。文生视频填 `16:9`；带首帧图时填 `adaptive`，由图片决定比例（1280×706 的示例图出片为 `16:9`）。
 </ParamField>
 
 <ParamField body="duration" type="integer">
-时长，整数秒，范围见上表。
+时长，填 `5`（秒）。
 </ParamField>
 
-其他官方参数（如 `seed`、`camera_fixed`、`generate_audio`、`watermark`）按火山官方规则原样转发。
+### 图片
 
-### 图片要求（火山官方）
-
-- 图片链接需公网可访问，也可以用 `data:image/png;base64,…` 形式的 Base64。
-- 宽高比在 0.4–2.5 之间，宽和高在 300–6000 像素之间，单张小于 30 MB。
-- **含真人的照片会被拒绝**：返回 400 `InputImageSensitiveContentDetected.PrivacyInformation`，冻结的余额全额退回（实测）。
+- 用公网可访问的 https 图片链接（实测为火山对象存储上的示例图）。
+- **含真人的照片会被拒绝**：返回 400 `InputImageSensitiveContentDetected.PrivacyInformation`，冻结的余额全额退回。
+- 不支持素材 ID（`asset://`），返回 400 `AssetNotAllowed`。
 
 ## 真实响应
 
@@ -116,14 +114,13 @@ curl --fail-with-body --silent --show-error \
 
 ## 计费
 
-- 按火山官方返回的实际用量（`usage.completion_tokens`）计费；不同模型、清晰度、是否带参考视频，单价不同。具体价格以便利店当前分组配置和用量明细为准。
+- 按火山官方返回的实际用量（`usage.completion_tokens`）计费；不同模型、清晰度单价不同。具体价格以便利店当前分组配置和用量明细为准。
 - 提交时先按最坏情况冻结余额，生成成功后按实际用量扣费，多冻结的部分全额退回。
 - 生成失败、超时、被取消，或火山拒绝请求（例如图片含真人），冻结的余额全额退回。
 
 ## 限制
 
 - 每个用户同时最多 5 个未完成的任务（排队中的也算），超过返回 429 `TooManyActiveTasks`。
-- 高峰时任务可能在火山排队，`status` 显示为 `queued`，轮到后自动开始生成。
 - 暂不支持：任务列表接口、联网搜索（`tools`）、素材 ID（`asset://`）。
 
 ## 错误响应
@@ -135,7 +132,8 @@ curl --fail-with-body --silent --show-error \
 | 400 | `InvalidParameter` | 参数不符合要求，例如 `content` 为空 |
 | 400 | `PricingNotConfigured` | 模型不支持这个清晰度，例如 mini 选 `1080p` |
 | 400 | `ToolNotAllowed` | 使用了未开放的 `tools` |
-| 400 | `InputImageSensitiveContentDetected.PrivacyInformation` 等 | 火山审核拒绝（真人、敏感内容、版权等），冻结的余额已退回 |
+| 400 | `AssetNotAllowed` | 引用了素材 ID（`asset://`） |
+| 400 | `InputImageSensitiveContentDetected.PrivacyInformation` | 火山审核拒绝：图片可能含真人，冻结的余额已退回 |
 | 402 | `InsufficientBalance` | 余额不足以冻结本次费用，返回里附 `required_amount` 和 `available_amount` |
 | 403 | `PermissionDenied` | Key 没有绑定「Seedance 视频」分组 |
 | 404 | `model_not_found` | 模型不在本站支持的列表里 |

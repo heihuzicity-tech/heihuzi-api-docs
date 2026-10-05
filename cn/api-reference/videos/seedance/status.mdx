@@ -19,7 +19,7 @@ curl --fail-with-body --silent --show-error \
 ## 路径参数
 
 <ParamField path="id" type="string" required>
-创建任务返回的 `id`，形如 `cgt-` 开头。只能查询自己创建的任务，查不到时返回 404 `ResourceNotFound`。
+创建任务返回的 `id`，形如 `cgt-` 开头。同一账号下绑定「Seedance 视频」分组的任意 Key 都能查询；查不到时返回 404 `ResourceNotFound`。
 </ParamField>
 
 ## 状态
@@ -47,10 +47,11 @@ curl --fail-with-body --silent --show-error \
 
 - `usage.completion_tokens` 是本次的计费用量（token），计费规则见[创建任务](/cn/api-reference/videos/seedance/create)。
 - `resolution`、`duration` 为实际出片的清晰度和时长。
-- 成片链接由火山存储提供，**24 小时内有效**，请及时下载保存。
+- 成片链接由火山存储提供，按火山官方说明 **24 小时内有效**，请及时下载保存。
 
 ## 错误响应
 
 | HTTP | `error.code` | 说明 |
 | --- | --- | --- |
+| 403 | `PermissionDenied` | Key 没有绑定「Seedance 视频」分组 |
 | 404 | `ResourceNotFound` | 任务不存在、不属于你，或已被[删除](/cn/api-reference/videos/seedance/delete) |
