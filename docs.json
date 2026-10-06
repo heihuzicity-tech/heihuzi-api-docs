@@ -73,6 +73,9 @@
           {
             "group": "视频生成",
             "pages": [
+              "cn/api-reference/videos/minimax-v2/create",
+              "cn/api-reference/videos/minimax-v2/query",
+              "cn/api-reference/videos/minimax-v2/delete",
               "cn/api-reference/videos/minimax/create",
               "cn/api-reference/videos/minimax/status",
               "cn/api-reference/videos/minimax/content",

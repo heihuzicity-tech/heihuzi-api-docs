@@ -1,0 +1,112 @@
+---
+title: "MiniMax 视频（官方格式）：创建任务"
+description: "与 MiniMax 官方视频生成 V2 接口一致的写法，示例与参数均经过实测。"
+api: "POST /v2/video_generation"
+---
+
+便利店提供与 MiniMax 官方一致的视频生成接口：`POST https://code.heihuzi.ai/v2/video_generation`。请求和返回的字段与[官方文档](https://platform.minimaxi.com/docs/api-reference/video-generation-v2-create)相同，把官方地址和密钥换成便利店的即可。任务异步生成：先创建任务拿到 `task_id`，再[查询任务](/cn/api-reference/videos/minimax-v2/query)。验证日期：**2026-10-06**。
+
+请使用绑定「MiniMax 视频｜MiniMax 官方」分组的 API Key。
+
+<RequestExample>
+```bash 文生视频
+curl --fail-with-body --silent --show-error \
+  --request POST \
+  --url https://code.heihuzi.ai/v2/video_generation \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "model": "MiniMax-H3-Max",
+  "content": [
+    {"type": "text", "text": "一只橘猫在窗台上伸懒腰，阳光洒进来，镜头缓慢推近"}
+  ],
+  "resolution": "480P",
+  "duration": 5,
+  "ratio": "16:9"
+}'
+```
+</RequestExample>
+
+运行前设置环境变量 `HEIHUZI_API_KEY`。返回里的 `task_id` 用于查询任务。
+
+## 请求参数
+
+<ParamField body="model" type="string" required>
+`MiniMax-H3-Max`。
+</ParamField>
+
+<ParamField body="content" type="object[]" required>
+输入内容数组，必须包含且只包含一项非空的文字：
+
+- 文字：`{"type": "text", "text": "画面与动作描述"}`
+- 首帧图（可选）：`{"type": "image_url", "role": "first_frame", "image_url": {"url": "data:image/jpeg;base64,..."}}`，图片以 base64 形式传入。宽高比需在 0.4–2.5 之间，每条边 256–5760 像素。
+</ParamField>
+
+<ParamField body="resolution" type="string" required>
+清晰度：`480P`。
+</ParamField>
+
+<ParamField body="duration" type="integer" required>
+时长（秒）：`5`。
+</ParamField>
+
+<ParamField body="ratio" type="string">
+画面比例。文生视频（只有文字）**必须**填写：`16:9`。带首帧图时由图片决定比例，不需要填写。
+</ParamField>
+
+<ParamField body="extra" type="object">
+额外生成选项，仅 `MiniMax-H3-Max`。目前支持 `{"prompt_expansion_mode": "balanced"}`（提示词均衡扩写，也是不传时的默认做法）。
+</ParamField>
+
+<ParamField body="aigc_watermark" type="boolean">
+传 `true` 时在视频右下角加“AI生成”标识；不传则不加。
+</ParamField>
+
+### 首帧图示例
+
+```json
+{
+  "model": "MiniMax-H3-Max",
+  "content": [
+    {"type": "text", "text": "一家人围坐吃拉面，热气升腾，镜头缓慢推近"},
+    {"type": "image_url", "role": "first_frame", "image_url": {"url": "data:image/jpeg;base64,/9j/4AAQ..."}}
+  ],
+  "resolution": "480P",
+  "duration": 5,
+  "aigc_watermark": true
+}
+```
+
+## 真实响应
+
+<ResponseExample>
+```json
+{"task_id":"video_e992bbae16f64f0fa2ef2d18d5a22360"}
+```
+</ResponseExample>
+
+`task_id` 是便利店的任务号（形如 `video_` 加 32 位字符），与官方任务号不同，用它在便利店查询。
+
+## 计费
+
+- 按秒计费，具体价格以便利店当前分组配置和用量明细为准。
+- 提交时按请求的秒数冻结余额，生成成功后扣除。
+- 生成失败、被上游拒绝，冻结的余额全额退回。
+- 带首帧图不另外收费。
+
+## 错误响应
+
+出错时与官方格式一致：
+
+```json
+{"type":"error","error":{"type":"bad_request_error","code":"invalid_ratio","message":"text-to-video requires ratio, one of 21:9, 16:9, 4:3, 1:1, 3:4, 9:16","http_code":"400"}}
+```
+
+`error.code` 是便利店补充的原因代码，实测过的有：
+
+| HTTP | `error.code` | 说明 |
+| --- | --- | --- |
+| 400 | `invalid_ratio` | 文生视频没有填写 `ratio` |
+| 400 | `unsupported_parameter` | 传了暂不支持的输入，例如参考视频（`video_url`） |
+
+参数不符合要求时不会冻结余额。暂不支持：参考视频。

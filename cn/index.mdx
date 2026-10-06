@@ -20,7 +20,7 @@ API 地址：**`https://code.heihuzi.ai`**。文档验证日期：**2026-09-10**
 | 图片生成 | `POST /v1/images/generations` |
 | 图片编辑 | `POST /v1/images/edits` |
 | Nano Banana 2 生成、编辑 | `POST /v1beta/models/gemini-3.1-flash-image:generateContent` |
-| MiniMax 视频生成 | `POST /v1/videos` |
+| MiniMax 视频生成（官方格式） | `POST /v2/video_generation` |
 | Seedance 视频生成 | `POST /api/v3/contents/generations/tasks` |
 
 从[快速验证](/cn/quickstart)开始，或查看[集成指南](/cn/integrations/index)。所有请求都应使用与目标能力对应的 Key，认证和已复现错误见[认证](/cn/authentication)。
@@ -33,7 +33,7 @@ API 地址：**`https://code.heihuzi.ai`**。文档验证日期：**2026-09-10**
 
 ## MiniMax 视频
 
-已新增 [MiniMax 视频](/cn/api-reference/videos/minimax/create)（`MiniMax-H3-Max`、`MiniMax-H3`）的创建、查询和下载文档。任务异步生成，按秒计费；文档示例在生产 API 原样跑通，验证日期为 2026-10-05。
+已新增与 MiniMax 官方一致的[官方格式接口](/cn/api-reference/videos/minimax-v2/create)（`POST /v2/video_generation`）的创建、查询和删除文档，把官方地址和密钥换成便利店的即可；文档示例在生产 API 原样跑通，验证日期为 2026-10-06。原来的 [`/v1/videos` 写法](/cn/api-reference/videos/minimax/create)继续可用。
 
 ## Seedance 视频
 

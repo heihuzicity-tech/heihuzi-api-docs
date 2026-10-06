@@ -1,8 +1,10 @@
 ---
-title: "MiniMax 视频：创建任务"
+title: "MiniMax 视频：创建任务（兼容旧写法）"
 description: "用 MiniMax-H3-Max 或 MiniMax-H3 异步生成视频，示例与参数均经过生产 API 验证。"
 api: "POST /v1/videos"
 ---
+
+新接入请使用与 MiniMax 官方一致的[官方格式接口](/cn/api-reference/videos/minimax-v2/create)；本页的旧写法继续可用。
 
 便利店提供 MiniMax H3 视频生成：`POST https://code.heihuzi.ai/v1/videos`。任务异步生成：先创建任务拿到 `id`，再[查询任务](/cn/api-reference/videos/minimax/status)，完成后[下载视频](/cn/api-reference/videos/minimax/content)。验证日期：**2026-10-05**。
 

@@ -1,0 +1,34 @@
+---
+title: "MiniMax 视频（官方格式）：删除任务"
+description: "删除已成功任务的记录。"
+api: "DELETE /v2/video_generation/{task_id}"
+---
+
+删除已成功任务的记录，请求与返回与[官方“取消或删除任务”接口](https://platform.minimaxi.com/docs/api-reference/video-generation-v2-delete)一致。验证日期：**2026-10-06**。
+
+<RequestExample>
+```bash
+curl --fail-with-body --silent --show-error \
+  --request DELETE \
+  --url "https://code.heihuzi.ai/v2/video_generation/$TASK_ID" \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY"
+```
+</RequestExample>
+
+## 路径参数
+
+<ParamField path="task_id" type="string" required>
+创建任务返回的 `task_id`。只能操作自己创建的任务。
+</ParamField>
+
+## 真实响应
+
+删除已成功的任务：
+
+<ResponseExample>
+```json
+{"action":"deleted","status":"deleted","task_id":"video_e992bbae16f64f0fa2ef2d18d5a22360"}
+```
+</ResponseExample>
+
+删除后再查询或再次删除，返回 404。删除不影响已扣的费用和用量明细。

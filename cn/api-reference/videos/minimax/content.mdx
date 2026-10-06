@@ -1,8 +1,10 @@
 ---
-title: "MiniMax 视频：下载视频"
+title: "MiniMax 视频：下载视频（兼容旧写法）"
 description: "任务完成后跳转到成片地址，保存为 MP4 文件。"
 api: "GET /v1/videos/{id}/content"
 ---
+
+新接入请使用与 MiniMax 官方一致的[官方格式接口](/cn/api-reference/videos/minimax-v2/create)；本页的旧写法继续可用。
 
 任务完成后，这个接口返回 302，跳转到成片地址；还没完成时返回 409 `video_not_ready`。验证日期：**2026-10-05**。
 
