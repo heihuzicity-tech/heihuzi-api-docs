@@ -77,6 +77,35 @@ curl --fail-with-body --silent --show-error \
 }
 ```
 
+### 本机图片作首帧
+
+首帧图的 `image_url.url` 填图片的 Base64 编码：把本机图片转换为 Base64 字符串，写成 `data:image/jpeg;base64,<Base64 编码>`。2026-10-08 实测 jpeg 首帧正常出片。
+
+- 本站补充：不要填本机文件路径（如 `/Users/...`、`file://...`），视频服务读不到。
+
+命令行示例（把 `first.jpg` 换成你的图片）：
+
+```bash
+IMAGE_BASE64=$(base64 < first.jpg | tr -d '\n')
+cat > request.json <<JSON
+{
+  "model": "MiniMax-H3-Max",
+  "content": [
+    {"type": "text", "text": "一只手从枝头摘下沾着露水的红苹果，阳光透过树叶，镜头缓慢推近"},
+    {"type": "image_url", "role": "first_frame", "image_url": {"url": "data:image/jpeg;base64,${IMAGE_BASE64}"}}
+  ],
+  "resolution": "480P",
+  "duration": 5
+}
+JSON
+curl --fail-with-body --silent --show-error \
+  --request POST \
+  --url https://code.heihuzi.ai/v2/video_generation \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data @request.json
+```
+
 ## 真实响应
 
 <ResponseExample>

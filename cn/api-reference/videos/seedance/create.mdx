@@ -36,7 +36,7 @@ curl --fail-with-body --silent --show-error \
 
 | 模型 ID | 名称 | 本站实测 |
 | --- | --- | --- |
-| `doubao-seedance-2-0-260128` | Seedance 2.0 | 文生视频、首帧、首尾帧 |
+| `doubao-seedance-2-0-260128` | Seedance 2.0 | 文生视频、首帧、首尾帧、参考图 |
 | `doubao-seedance-2-0-fast-260128` | Seedance 2.0 Fast | 文生视频 |
 | `doubao-seedance-2-0-mini-260615` | Seedance 2.0 mini | 文生视频 |
 | `doubao-seedance-2-5-260628` | Seedance 2.5 | 文生视频 |
@@ -69,9 +69,78 @@ curl --fail-with-body --silent --show-error \
 ### 图片
 
 - 用公网可访问的 https 图片链接（实测为火山对象存储上的示例图）。
-- 也可以直接传 base64 图片：`url` 写成 `data:image/jpeg;base64,` 加上图片文件的 base64 编码（2026-10-07 实测 jpeg 图片作首帧、首尾帧，均正常出片）。
+- 也可以填图片的 Base64 编码，写法见下方「本机图片（Base64 编码）」。
 - **含真人的照片会被拒绝**：返回 400 `InputImageSensitiveContentDetected.PrivacyInformation`，冻结的余额全额退回。
 - 不支持素材 ID（`asset://`），返回 400 `AssetNotAllowed`。
+
+### 本机图片（Base64 编码）
+
+`image_url.url` 可以填图片的 Base64 编码：将本地文件转换为 Base64 编码字符串，遵循格式 `data:image/<图片格式>;base64,<Base64 编码>`，注意 `<图片格式>` 需小写，如 `data:image/png;base64,...`。首帧（`first_frame`）、尾帧（`last_frame`）和参考图（`reference_image`）都可以这样传。
+
+- 本站实测（2026-10-07、10-08）：Seedance 2.0 用 jpeg、png 作首帧，jpeg 作首尾帧和参考图，均正常出片。
+- 单张图片小于 30 MB，超过返回 400 `InvalidParameter`。
+- 本站补充：Base64 图片会先暂存到本站存储，再以链接交给视频服务，计费不变。不要填本机文件路径（如 `/Users/...`、`file://...`），视频服务读不到。
+
+首帧（命令行，把 `first.png` 换成你的图片）：
+
+```bash
+IMAGE_BASE64=$(base64 < first.png | tr -d '\n')
+cat > request.json <<JSON
+{
+  "model": "doubao-seedance-2-0-260128",
+  "content": [
+    {"type": "text", "text": "一只手从枝头摘下沾着露水的红苹果，阳光透过树叶，镜头缓慢推近"},
+    {"type": "image_url", "image_url": {"url": "data:image/png;base64,${IMAGE_BASE64}"}, "role": "first_frame"}
+  ],
+  "resolution": "480p",
+  "ratio": "adaptive",
+  "duration": 5
+}
+JSON
+curl --fail-with-body --silent --show-error \
+  --request POST \
+  --url https://code.heihuzi.ai/api/v3/contents/generations/tasks \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data @request.json
+```
+
+参考图（Python，把 `reference.jpg` 换成你的图片）：
+
+```python
+import base64
+import json
+import os
+import urllib.request
+
+with open("reference.jpg", "rb") as f:
+    image_base64 = base64.b64encode(f.read()).decode()
+
+body = {
+    "model": "doubao-seedance-2-0-260128",
+    "content": [
+        {"type": "text", "text": "参考图片1里的苹果饮品，杯子放在果园的木桌上，镜头缓慢环绕"},
+        {
+            "type": "image_url",
+            "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"},
+            "role": "reference_image",
+        },
+    ],
+    "resolution": "480p",
+    "ratio": "16:9",
+    "duration": 5,
+}
+request = urllib.request.Request(
+    "https://code.heihuzi.ai/api/v3/contents/generations/tasks",
+    data=json.dumps(body).encode(),
+    headers={
+        "Authorization": "Bearer " + os.environ["HEIHUZI_API_KEY"],
+        "Content-Type": "application/json",
+    },
+)
+with urllib.request.urlopen(request) as response:
+    print(response.read().decode())
+```
 
 ## 真实响应
 
