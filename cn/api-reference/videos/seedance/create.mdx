@@ -69,6 +69,7 @@ curl --fail-with-body --silent --show-error \
 ### 图片
 
 - 用公网可访问的 https 图片链接（实测为火山对象存储上的示例图）。
+- 也可以直接传 base64 图片：`url` 写成 `data:image/jpeg;base64,` 加上图片文件的 base64 编码（2026-10-07 实测 jpeg 图片作首帧、首尾帧，均正常出片）。
 - **含真人的照片会被拒绝**：返回 400 `InputImageSensitiveContentDetected.PrivacyInformation`，冻结的余额全额退回。
 - 不支持素材 ID（`asset://`），返回 400 `AssetNotAllowed`。
 
@@ -129,7 +130,7 @@ curl --fail-with-body --silent --show-error \
 
 | HTTP | `error.code` | 说明 |
 | --- | --- | --- |
-| 400 | `InvalidParameter` | 参数不符合要求，例如 `content` 为空 |
+| 400 | `InvalidParameter` | 参数不符合要求，例如 `content` 为空、base64 图片的内容不是图片 |
 | 400 | `PricingNotConfigured` | 模型不支持这个清晰度，例如 mini 选 `1080p` |
 | 400 | `ToolNotAllowed` | 使用了未开放的 `tools` |
 | 400 | `AssetNotAllowed` | 引用了素材 ID（`asset://`） |
