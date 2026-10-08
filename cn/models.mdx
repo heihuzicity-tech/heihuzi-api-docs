@@ -58,9 +58,9 @@ curl --fail-with-body --silent --show-error --max-time 600 \
 
 示例中的模型不能替代自己 Key 的查询结果。模型列表用于发现模型，具体请求仍需验证；例如本次旧模型 `claude-sonnet-4-6` 实际返回 404，文档示例已改用测通的 `claude-sonnet-5`。
 
-## Nano Banana 2（2026-10-03 实测）
+## Nano Banana 2.1（2026-10-08 实测）
 
-「Nano Banana 2 画图」分组 Key 的 `/v1/models` 本次返回 `gemini-3.1-flash-image` 和 `gemini-3.1-flash-image-preview`；文档示例均使用 `gemini-3.1-flash-image`。调用入口是 Gemini 原生接口，见 [Nano Banana 2 图像生成](/cn/api-reference/images/nano-banana-2/generation)。
+「Nano Banana 2.1 画图」分组 Key 的 `/v1/models` 本次返回 `gemini-nano-banana-2.1`、`gemini-3.1-flash-image` 和 `gemini-3.1-flash-image-preview`。后两个是旧 ID，仍可调用并自动转到 Nano Banana 2.1；文档示例均使用 `gemini-nano-banana-2.1`。调用入口是 Gemini 原生接口，见 [Nano Banana 2.1 图像生成](/cn/api-reference/images/nano-banana-2/generation)。
 
 Gemini 格式的 `/v1beta/models` 会列出更多模型，但列出的模型不一定能用这个 Key 调用：本次列表里有 `gemini-2.5-pro`，用同一 Key 请求它返回 404。请以 `/v1/models` 的结果为准。
 

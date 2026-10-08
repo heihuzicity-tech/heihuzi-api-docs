@@ -19,7 +19,7 @@ API 地址：**`https://code.heihuzi.ai`**。文档验证日期：**2026-09-10**
 | Messages | `POST /v1/messages` |
 | 图片生成 | `POST /v1/images/generations` |
 | 图片编辑 | `POST /v1/images/edits` |
-| Nano Banana 2 生成、编辑 | `POST /v1beta/models/gemini-3.1-flash-image:generateContent` |
+| Nano Banana 2.1 生成、编辑 | `POST /v1beta/models/gemini-nano-banana-2.1:generateContent` |
 | MiniMax 视频生成（官方格式） | `POST /v2/video_generation` |
 | Seedance 视频生成 | `POST /api/v3/contents/generations/tasks` |
 
@@ -27,9 +27,9 @@ API 地址：**`https://code.heihuzi.ai`**。文档验证日期：**2026-09-10**
 
 图片 API 按版本分组：GPT Image 2.5 提供生成、编辑和流式文档；GPT Image 2 提供独立的[生成](/cn/api-reference/images/gpt-image-2/generation)和[编辑](/cn/api-reference/images/gpt-image-2/edits)文档。模型选择统一见[图片使用指南](/cn/user-guide/gpt-image-2)。
 
-## Nano Banana 2
+## Nano Banana 2.1
 
-已新增 [Nano Banana 2](/cn/api-reference/images/nano-banana-2/generation)（`gemini-3.1-flash-image`）的生成、编辑和流式文档。它使用 Gemini 原生接口，不走 `/v1/images/generations`；14 种比例、1K/2K/4K 清晰度和 1、2、14 张参考图均有实测记录，验证日期为 2026-10-03。用法总览见 [Nano Banana 2 使用指南](/cn/user-guide/nano-banana-2)。
+[Nano Banana 2.1](/cn/api-reference/images/nano-banana-2/generation)（`gemini-nano-banana-2.1`）的生成、编辑和流式文档已更新，旧 ID `gemini-3.1-flash-image` 仍可调用并自动转到 2.1。它使用 Gemini 原生接口，不走 `/v1/images/generations`；14 种比例、1K/2K/4K 清晰度、思考档位和 1、2、14 张参考图均有实测记录，验证日期为 2026-10-08。用法总览见 [Nano Banana 2.1 使用指南](/cn/user-guide/nano-banana-2)。
 
 ## MiniMax 视频
 

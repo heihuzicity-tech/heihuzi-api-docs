@@ -1,10 +1,10 @@
 ---
-title: "Nano Banana 2 图像编辑"
+title: "Nano Banana 2.1 图像编辑"
 description: "在请求里附带参考图修改或融合图片：单图、两张和 14 张参考图均经过生产 API 验证。"
-api: "POST /v1beta/models/gemini-3.1-flash-image:generateContent"
+api: "POST /v1beta/models/gemini-nano-banana-2.1:generateContent"
 ---
 
-Nano Banana 2 的编辑和生成是同一个接口：在 `parts` 里同时放提示词和参考图即可。验证日期：**2026-10-03**。请使用绑定「Nano Banana 2 画图」分组的 API Key，并设置环境变量 `HEIHUZI_API_KEY`。
+Nano Banana 2.1 的编辑和生成是同一个接口：在 `parts` 里同时放提示词和参考图即可。验证日期：**2026-10-08**。请使用绑定「Nano Banana 2.1 画图」分组的 API Key，并设置环境变量 `HEIHUZI_API_KEY`。
 
 参考图以 base64 写在 `inlineData` 里，`mimeType` 填图片的实际格式（本页验证了 `image/png` 和 `image/jpeg`）。
 
@@ -15,7 +15,7 @@ Nano Banana 2 的编辑和生成是同一个接口：在 `parts` 里同时放提
 REFERENCE_B64=$(base64 < reference.png | tr -d '\n')
 curl --fail-with-body --silent --show-error --max-time 600 \
   --request POST \
-  --url https://code.heihuzi.ai/v1beta/models/gemini-3.1-flash-image:generateContent \
+  --url https://code.heihuzi.ai/v1beta/models/gemini-nano-banana-2.1:generateContent \
   --header "x-goog-api-key: $HEIHUZI_API_KEY" \
   --header 'Content-Type: application/json' \
   --data-binary @- \
@@ -64,8 +64,8 @@ EOF
 | --- | --- | --- |
 | 单图改色 | reference.png | 蓝色杯子改为红色、保持杯形；返回 1024×1024 红色杯子 |
 | 两张参考图 | reference.png + [palette.png](/images/palette.png) | 用第一张的杯形和第二张的红色；返回 1024×1024 红色杯子 |
-| 14 张参考图 | 14 张纯色色块 | 每种颜色画一个圆点，`16:9`；返回 1376×768，画面中两排共 14 个圆点，多数颜色与色块一致，个别色调有偏差 |
-| 不填比例 | 一张 1376×768 的 16:9 图片 | 蓝色杯子改为红色，只填 `imageSize: "1K"`；返回 1376×768 |
+| 14 张参考图 | 14 张纯色色块 | 每种颜色画一个圆点，`16:9`；返回 1376×768，画面中两排各 7 个、共 14 个圆点，颜色与色块逐一对应，个别色调略浅 |
+| 不填比例 | 一张 1376×768 的 16:9 JPEG 图片 | 蓝色杯子改为红色，只填 `imageSize: "1K"`；返回 1376×768 |
 
 ## Python 两张参考图
 
@@ -85,7 +85,7 @@ def image_part(path):
 
 
 response = requests.post(
-    "https://code.heihuzi.ai/v1beta/models/gemini-3.1-flash-image:generateContent",
+    "https://code.heihuzi.ai/v1beta/models/gemini-nano-banana-2.1:generateContent",
     headers={"x-goog-api-key": os.environ["HEIHUZI_API_KEY"]},
     json={
         "contents": [
@@ -139,7 +139,7 @@ client = genai.Client(
     http_options=types.HttpOptions(base_url="https://code.heihuzi.ai", timeout=600_000),
 )
 response = client.models.generate_content(
-    model="gemini-3.1-flash-image",
+    model="gemini-nano-banana-2.1",
     contents=[
         "Change the blue cup to a bright red cup. Keep the cup shape and the white background.",
         types.Part.from_bytes(data=Path("reference.png").read_bytes(), mime_type="image/png"),
@@ -160,4 +160,4 @@ if saved == 0:
 print("Saved", saved, "image(s)")
 ```
 
-参考图越多、越大，请求体越大。本页 14 张参考图的请求实测约 19 秒返回。
+参考图越多、越大，请求体越大。本页 14 张参考图的请求实测约 57 秒返回，响应约 7 MB。

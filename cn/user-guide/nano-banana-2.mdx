@@ -1,5 +1,5 @@
 ---
-title: "Nano Banana 2 使用指南"
+title: "Nano Banana 2.1 使用指南"
 description: "模型 ID、所需 Key、调用入口和常用参数的阅读位置。"
 ---
 
@@ -7,13 +7,13 @@ description: "模型 ID、所需 Key、调用入口和常用参数的阅读位�
 
 | 项目 | 说明 |
 | --- | --- |
-| 模型 ID | `gemini-3.1-flash-image` |
-| API Key | 绑定「Nano Banana 2 画图」分组的 Key；在网页上首次用 Nano Banana 2 画图时，会自动创建名为「艺术创作自动密钥（Nano Banana）」的 Key |
-| 生成、编辑 | `POST /v1beta/models/gemini-3.1-flash-image:generateContent` |
-| 流式 | `POST /v1beta/models/gemini-3.1-flash-image:streamGenerateContent?alt=sse` |
+| 模型 ID | `gemini-nano-banana-2.1`（旧 ID `gemini-3.1-flash-image` 仍可调用，自动转到 2.1） |
+| API Key | 绑定「Nano Banana 2.1 画图」分组的 Key；在网页上首次用 Nano Banana 2.1 画图时，会自动创建名为「艺术创作自动密钥（Nano Banana）」的 Key |
+| 生成、编辑 | `POST /v1beta/models/gemini-nano-banana-2.1:generateContent` |
+| 流式 | `POST /v1beta/models/gemini-nano-banana-2.1:streamGenerateContent?alt=sse` |
 | 鉴权头 | `x-goog-api-key: <Key>` 或 `Authorization: Bearer <Key>` |
 
-本文档只提供 Gemini 原生接口的用法，验证日期 2026-10-03。OpenAI Images 接口（`/v1/images/generations`）不支持本模型。
+本文档只提供 Gemini 原生接口的用法，验证日期 2026-10-08。OpenAI Images 接口（`/v1/images/generations`）不支持本模型。
 
 ## 按目标使用
 
@@ -23,14 +23,15 @@ description: "模型 ID、所需 Key、调用入口和常用参数的阅读位�
 
 ## 常用参数
 
-- **比例** `generationConfig.imageConfig.aspectRatio`：14 种比例均已验证，实际像素见[生成页的尺寸表](/cn/api-reference/images/nano-banana-2/generation)。谷歌官方说明不填时由模型决定比例、有参考图时参照参考图；本次不带参考图、不填时实测返回 1408×768（图片用量与 1K 相同），需要固定比例时一定要填。
-- **清晰度** `generationConfig.imageConfig.imageSize`：`1K`、`2K`、`4K`，请使用大写 `K`（谷歌官方要求的写法）；不填时按 `1K`。
+- **比例** `generationConfig.imageConfig.aspectRatio`：14 种比例均已验证，实际像素见[生成页的尺寸表](/cn/api-reference/images/nano-banana-2/generation)。谷歌官方说明不填时由模型决定比例、有参考图时参照参考图；本次不带参考图、不填时实测返回 1376×768（图片用量与 1K 相同），需要固定比例时一定要填。
+- **清晰度** `generationConfig.imageConfig.imageSize`：`1K`、`2K`、`4K`，请使用大写 `K`（谷歌官方要求的写法）；不填 `imageConfig` 时实测按 1K 输出。不支持 `512`（0.5K）。
+- **思考档位** `generationConfig.thinkingConfig.thinkingLevel`：`minimal`、`medium`、`high`；填 `minimal` 时实测不产生思考 token，其余档位和不填都会思考，思考 token 按用量计费。
 - **输出格式**：本次所有返回均为 JPEG（`image/jpeg`）。
 - **张数**：本次每个请求都返回一张图片；需要多张时发多个请求。
 
 ## 与 GPT Image 的区别
 
-| | Nano Banana 2 | GPT Image 2.5 |
+| | Nano Banana 2.1 | GPT Image 2.5 |
 | --- | --- | --- |
 | 接口 | Gemini 原生 `generateContent` | OpenAI `/v1/images/generations`、`/v1/images/edits` |
 | 尺寸写法 | 比例 + 清晰度（`16:9` + `2K`） | 像素尺寸（`1536x1024`） |
