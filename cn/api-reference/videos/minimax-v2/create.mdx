@@ -40,6 +40,7 @@ curl --fail-with-body --silent --show-error \
 
 - 文字：`{"type": "text", "text": "画面与动作描述"}`
 - 首帧图（可选）：`{"type": "image_url", "role": "first_frame", "image_url": {"url": "data:image/jpeg;base64,..."}}`，图片以 base64 形式传入。宽高比需在 0.4–2.5 之间，每条边 256–5760 像素。
+- 参考视频（可选）：`{"type": "video_url", "role": "reference_video", "video_url": {"url": "https://example.com/reference.mp4"}}`，填公网可访问的 https 视频链接，最多 3 个。链接的路径必须以 `.mp4` 或 `.mov` 结尾；每段 2–15 秒，合计不超过 15 秒。不能和首帧图同时使用。
 </ParamField>
 
 <ParamField body="resolution" type="string" required>
@@ -51,7 +52,7 @@ curl --fail-with-body --silent --show-error \
 </ParamField>
 
 <ParamField body="ratio" type="string">
-画面比例。文生视频（只有文字）**必须**填写：`16:9`。带首帧图时由图片决定比例，不需要填写。
+画面比例。文生视频（只有文字）**必须**填写：`16:9`。带首帧图时由图片决定比例，不需要填写。带参考视频时可以填写，2026-10-11 实测 `16:9`。
 </ParamField>
 
 <ParamField body="extra" type="object">
@@ -106,6 +107,25 @@ curl --fail-with-body --silent --show-error \
   --data @request.json
 ```
 
+### 带参考视频
+
+在 `content` 里加一项参考视频，并在文字里说明怎么用它。2026-10-11 实测下面的请求正常出片：
+
+```json
+{
+  "model": "MiniMax-H3-Max",
+  "content": [
+    {"type": "text", "text": "沿用参考视频里卡通角色的样子和画风，让它在白色背景前开心地转一圈"},
+    {"type": "video_url", "role": "reference_video", "video_url": {"url": "https://example.com/reference.mp4"}}
+  ],
+  "resolution": "480P",
+  "duration": 5,
+  "ratio": "16:9"
+}
+```
+
+把 `https://example.com/reference.mp4` 换成你自己的视频链接。链接路径不以 `.mp4` 或 `.mov` 结尾时，请求会被拒绝，冻结的余额全额退回。
+
 ## 真实响应
 
 <ResponseExample>
@@ -122,6 +142,7 @@ curl --fail-with-body --silent --show-error \
 - 提交时按请求的秒数冻结余额，生成成功后扣除。
 - 生成失败、被上游拒绝，冻结的余额全额退回。
 - 带首帧图不另外收费。
+- 带参考视频时，参考视频的时长也计费。提交时还不知道视频多长，先按 15 秒冻结；生成成功后按实际时长扣除，多冻结的退回。[查询任务](/cn/api-reference/videos/minimax-v2/query)返回的 `usage.input_seconds` 是计费的参考视频秒数。
 
 ## 错误响应
 
@@ -136,6 +157,5 @@ curl --fail-with-body --silent --show-error \
 | HTTP | `error.code` | 说明 |
 | --- | --- | --- |
 | 400 | `invalid_ratio` | 文生视频没有填写 `ratio` |
-| 400 | `unsupported_parameter` | 传了暂不支持的输入，例如参考视频（`video_url`） |
 
-参数不符合要求时不会冻结余额。暂不支持：参考视频。
+参数不符合要求时不会冻结余额。
