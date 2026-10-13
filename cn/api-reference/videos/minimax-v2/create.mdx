@@ -1,12 +1,12 @@
 ---
-title: "MiniMax 视频（官方格式）：创建任务"
-description: "与 MiniMax 官方视频生成 V2 接口一致的写法，示例与参数均经过实测。"
+title: "MiniMax 视频：创建任务"
+description: "用 MiniMax-H3-Max 或 MiniMax-H3 异步生成视频，支持文生视频、首帧图、参考图和参考视频。"
 api: "POST /v2/video_generation"
 ---
 
-便利店提供与 MiniMax 官方一致的视频生成接口：`POST https://code.heihuzi.ai/v2/video_generation`。请求和返回的字段与[官方文档](https://platform.minimaxi.com/docs/api-reference/video-generation-v2-create)相同，把官方地址和密钥换成便利店的即可。任务异步生成：先创建任务拿到 `task_id`，再[查询任务](/cn/api-reference/videos/minimax-v2/query)。验证日期：**2026-10-06**。
+`POST https://code.heihuzi.ai/v2/video_generation` 创建一个视频生成任务，请求和返回的字段与 MiniMax 的视频生成接口相同。任务异步执行：创建后返回 `task_id`，再用[查询任务](/cn/api-reference/videos/minimax-v2/query)获取成片链接。
 
-请使用绑定「MiniMax 视频｜MiniMax 官方」分组的 API Key。
+请使用绑定「MiniMax 视频」分组的 API Key。
 
 <RequestExample>
 ```bash 文生视频
@@ -27,65 +27,50 @@ curl --fail-with-body --silent --show-error \
 ```
 </RequestExample>
 
-运行前设置环境变量 `HEIHUZI_API_KEY`。返回里的 `task_id` 用于查询任务。
+运行前设置环境变量 `HEIHUZI_API_KEY`。
 
 ## 请求参数
 
 <ParamField body="model" type="string" required>
-`MiniMax-H3-Max`。
+`MiniMax-H3-Max` 或 `MiniMax-H3`。
 </ParamField>
 
 <ParamField body="content" type="object[]" required>
-输入内容数组，必须包含且只包含一项非空的文字：
+输入内容数组。必须包含且只包含一项文字，其余各项可选：
 
 - 文字：`{"type": "text", "text": "画面与动作描述"}`
-- 首帧图（可选）：`{"type": "image_url", "role": "first_frame", "image_url": {"url": "data:image/jpeg;base64,..."}}`，图片以 base64 形式传入。宽高比需在 0.4–2.5 之间，每条边 256–5760 像素。
-- 参考图（可选）：`{"type": "image_url", "role": "reference_image", "image_url": {"url": "https://example.com/reference.jpg"}}`，填公网可访问的 https 图片链接，或 `data:image/jpeg;base64,...` 形式的 base64 图片，最多 9 张。前 2 张不另外收费，超出的按张计费。不能和首帧图同时使用。2026-10-13 实测 2 张（1 张链接、1 张 base64）正常出片。
-- 参考视频（可选）：`{"type": "video_url", "role": "reference_video", "video_url": {"url": "https://example.com/reference.mp4"}}`，填公网可访问的 https 视频链接，最多 3 个。链接的路径必须以 `.mp4` 或 `.mov` 结尾；每段 2–15 秒，合计不超过 15 秒。不能和首帧图同时使用。
+- 首帧图：`{"type": "image_url", "role": "first_frame", "image_url": {"url": "data:image/jpeg;base64,..."}}`，图片以 Base64 编码传入。宽高比在 0.4–2.5 之间，每条边 256–5760 像素。
+- 参考图：`{"type": "image_url", "role": "reference_image", "image_url": {"url": "https://example.com/reference.jpg"}}`，填 https 图片链接或 Base64 编码，最多 9 张。
+- 参考视频：`{"type": "video_url", "role": "reference_video", "video_url": {"url": "https://example.com/reference.mp4"}}`，填 https 视频链接，最多 3 个。链接的路径必须以 `.mp4` 或 `.mov` 结尾；每段 2–15 秒，合计不超过 15 秒。
+
+首帧图不能和参考图、参考视频同时使用。
 </ParamField>
 
 <ParamField body="resolution" type="string" required>
-清晰度：`480P`。
+清晰度。`MiniMax-H3-Max`：`480P`、`768P`；`MiniMax-H3`：`768P`。
 </ParamField>
 
 <ParamField body="duration" type="integer" required>
-时长（秒）：`5`。
+时长（秒）。`MiniMax-H3-Max`：5–15；`MiniMax-H3`：4–15。
 </ParamField>
 
 <ParamField body="ratio" type="string">
-画面比例。文生视频（只有文字）**必须**填写：`16:9`。带首帧图时由图片决定比例，不需要填写。带参考图或参考视频时可以填写，实测 `16:9`。
+画面比例：`16:9` 或 `9:16`。只有文字时必须填写；带首帧图时由图片决定比例，不需要填写；带参考图或参考视频时可以填写。
 </ParamField>
 
 <ParamField body="extra" type="object">
-额外生成选项，仅 `MiniMax-H3-Max`。目前支持 `{"prompt_expansion_mode": "balanced"}`（提示词均衡扩写，也是不传时的默认做法）。
+额外生成选项，仅 `MiniMax-H3-Max`。支持 `{"prompt_expansion_mode": "balanced"}`（提示词均衡扩写，不传时也按此处理）。
 </ParamField>
 
 <ParamField body="aigc_watermark" type="boolean">
 传 `true` 时在视频右下角加“AI生成”标识；不传则不加。
 </ParamField>
 
-### 首帧图示例
+## 示例
 
-```json
-{
-  "model": "MiniMax-H3-Max",
-  "content": [
-    {"type": "text", "text": "一家人围坐吃拉面，热气升腾，镜头缓慢推近"},
-    {"type": "image_url", "role": "first_frame", "image_url": {"url": "data:image/jpeg;base64,/9j/4AAQ..."}}
-  ],
-  "resolution": "480P",
-  "duration": 5,
-  "aigc_watermark": true
-}
-```
+### 首帧图
 
-### 本机图片作首帧
-
-首帧图的 `image_url.url` 填图片的 Base64 编码：把本机图片转换为 Base64 字符串，写成 `data:image/jpeg;base64,<Base64 编码>`。2026-10-08 实测 jpeg 首帧正常出片。
-
-- 本站补充：不要填本机文件路径（如 `/Users/...`、`file://...`），视频服务读不到。
-
-命令行示例（把 `first.jpg` 换成你的图片）：
+把本机图片转换为 Base64 字符串，写成 `data:image/jpeg;base64,<Base64 编码>` 填入 `image_url.url`。不要填本机文件路径（如 `/Users/...`、`file://...`）。
 
 ```bash
 IMAGE_BASE64=$(base64 < first.jpg | tr -d '\n')
@@ -108,9 +93,9 @@ curl --fail-with-body --silent --show-error \
   --data @request.json
 ```
 
-### 带参考图
+### 参考图
 
-在 `content` 里加参考图，并在文字里说明参考图里的内容怎么用。2026-10-13 实测下面的写法正常出片：
+在文字里说明参考图里的内容怎么用。
 
 ```json
 {
@@ -126,11 +111,9 @@ curl --fail-with-body --silent --show-error \
 }
 ```
 
-把 `https://example.com/boy.png` 换成你自己的图片链接；本机图片按上面「本机图片作首帧」的办法转成 Base64 再填。参考图超过 9 张返回 400 `invalid_reference_images`，和首帧图同时使用返回 400 `invalid_content`。
+### 参考视频
 
-### 带参考视频
-
-在 `content` 里加一项参考视频，并在文字里说明怎么用它。2026-10-11 实测下面的请求正常出片：
+在文字里说明参考视频怎么用。
 
 ```json
 {
@@ -145,9 +128,7 @@ curl --fail-with-body --silent --show-error \
 }
 ```
 
-把 `https://example.com/reference.mp4` 换成你自己的视频链接。链接路径不以 `.mp4` 或 `.mov` 结尾时，请求会被拒绝，冻结的余额全额退回。
-
-## 真实响应
+## 响应
 
 <ResponseExample>
 ```json
@@ -155,29 +136,31 @@ curl --fail-with-body --silent --show-error \
 ```
 </ResponseExample>
 
-`task_id` 是便利店的任务号（形如 `video_` 加 32 位字符），与官方任务号不同，用它在便利店查询。
+`task_id` 是任务号，用它[查询](/cn/api-reference/videos/minimax-v2/query)和[删除](/cn/api-reference/videos/minimax-v2/delete)任务。
 
 ## 计费
 
-- 按秒计费，具体价格以便利店当前分组配置和用量明细为准。
-- 提交时按请求的秒数冻结余额，生成成功后扣除。
-- 生成失败、被上游拒绝，冻结的余额全额退回。
-- 带首帧图不另外收费。
-- 带参考图时，前 2 张不另外收费，超出的每张另外计费。[查询任务](/cn/api-reference/videos/minimax-v2/query)返回的 `usage.input_image_count` 是本次的参考图张数。
-- 带参考视频时，参考视频的时长也计费。提交时还不知道视频多长，先按 15 秒冻结；生成成功后按实际时长扣除，多冻结的退回。[查询任务](/cn/api-reference/videos/minimax-v2/query)返回的 `usage.input_seconds` 是计费的参考视频秒数。
+- 按成片秒数计费，不同型号、清晰度单价不同，价格以便利店当前分组配置和用量明细为准。
+- 提交时按请求的秒数冻结余额，生成成功后扣除；生成失败或请求被拒绝时全额退回。
+- 首帧图不另外收费。
+- 参考图：`MiniMax-H3-Max` 的前 2 张、`MiniMax-H3` 的前 5 张不另外收费，超出的按张计费。
+- 参考视频：按参考视频的时长另外计费。提交时先按 15 秒冻结，生成成功后按实际时长扣除，多冻结的退回。
 
 ## 错误响应
-
-出错时与官方格式一致：
 
 ```json
 {"type":"error","error":{"type":"bad_request_error","code":"invalid_ratio","message":"text-to-video requires ratio, one of 21:9, 16:9, 4:3, 1:1, 3:4, 9:16","http_code":"400"}}
 ```
 
-`error.code` 是便利店补充的原因代码，实测过的有：
-
 | HTTP | `error.code` | 说明 |
 | --- | --- | --- |
-| 400 | `invalid_ratio` | 文生视频没有填写 `ratio` |
+| 400 | `invalid_model` | `model` 不是支持的型号 |
+| 400 | `missing_prompt` | `content` 里没有文字 |
+| 400 | `invalid_resolution` | 清晰度不是该型号支持的取值 |
+| 400 | `invalid_seconds` | 时长不在该型号支持的范围内 |
+| 400 | `invalid_ratio` | 画面比例不支持，或只有文字时没有填写 `ratio` |
+| 400 | `invalid_content` | 首帧图和参考图同时使用 |
+| 400 | `invalid_reference_images` | 参考图超过 9 张 |
+| 400 | `invalid_reference_videos` | 参考视频超过 3 个，或和首帧图同时使用 |
 
-参数不符合要求时不会冻结余额。
+参数不符合要求时不会冻结余额。参考视频链接的路径不以 `.mp4` 或 `.mov` 结尾时，请求会被拒绝，冻结的余额全额退回。

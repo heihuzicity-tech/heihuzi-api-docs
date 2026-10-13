@@ -1,10 +1,10 @@
 ---
 title: "Seedance 视频：创建任务"
-description: "用 Seedance 2.0、2.0 Fast、2.0 mini、2.5 异步生成视频，请求和响应与火山方舟官方接口一致，示例经过生产 API 验证。"
+description: "用 Seedance 2.0、2.0 Fast、2.0 mini、2.5 异步生成视频，支持文生视频、首帧、首尾帧、参考图和参考视频。"
 api: "POST /api/v3/contents/generations/tasks"
 ---
 
-便利店提供字节跳动 Seedance 视频生成：`POST https://code.heihuzi.ai/api/v3/contents/generations/tasks`。请求体和响应与火山方舟官方「创建视频生成任务」接口一致。任务异步生成：先创建任务拿到 `id`，再[查询任务](/cn/api-reference/videos/seedance/status)取成片链接；已结束的任务可以[删除](/cn/api-reference/videos/seedance/delete)。验证日期：**2026-10-05**。
+`POST https://code.heihuzi.ai/api/v3/contents/generations/tasks` 创建一个 Seedance 视频生成任务，请求和响应的格式与火山方舟「创建视频生成任务」接口相同。任务异步执行：创建后返回 `id`，再用[查询任务](/cn/api-reference/videos/seedance/status)获取成片链接；已结束的任务可以[删除](/cn/api-reference/videos/seedance/delete)。
 
 请使用绑定「Seedance 视频」分组的 API Key。其他分组的 Key 调用会返回 403 `PermissionDenied`。
 
@@ -28,18 +28,16 @@ curl --fail-with-body --silent --show-error \
 ```
 </RequestExample>
 
-运行前设置环境变量 `HEIHUZI_API_KEY`。上面是“首帧生视频”：用一张图作为视频第一帧。返回里的 `id` 用于查询和删除任务。
+运行前设置环境变量 `HEIHUZI_API_KEY`。上面的示例用一张图作为视频的第一帧。
 
 ## 模型
 
-文档只列本站在生产实测过的组合（清晰度 `480p`、时长 5 秒）：
-
-| 模型 ID | 名称 | 本站实测 |
+| 模型 ID | 名称 | 支持的输入 |
 | --- | --- | --- |
-| `doubao-seedance-2-0-260128` | Seedance 2.0 | 文生视频、首帧、首尾帧、参考图、参考视频 |
-| `doubao-seedance-2-0-fast-260128` | Seedance 2.0 Fast | 文生视频 |
-| `doubao-seedance-2-0-mini-260615` | Seedance 2.0 mini | 文生视频、参考图（9 张）、参考图加参考视频 |
-| `doubao-seedance-2-5-260628` | Seedance 2.5 | 文生视频 |
+| `doubao-seedance-2-0-260128` | Seedance 2.0 | 文字、首帧、首尾帧、参考图、参考视频 |
+| `doubao-seedance-2-0-fast-260128` | Seedance 2.0 Fast | 文字 |
+| `doubao-seedance-2-0-mini-260615` | Seedance 2.0 mini | 文字、参考图、参考视频 |
+| `doubao-seedance-2-5-260628` | Seedance 2.5 | 文字 |
 
 ## 请求参数
 
@@ -48,11 +46,11 @@ curl --fail-with-body --silent --show-error \
 </ParamField>
 
 <ParamField body="content" type="object[]" required>
-输入内容列表，不能为空（为空返回 400 `InvalidParameter`）。
+输入内容列表，不能为空。各模型支持的输入见上表。
 - 文字：`{"type": "text", "text": "画面与动作描述"}`。
 - 首帧：`{"type": "image_url", "image_url": {"url": "图片链接"}, "role": "first_frame"}`。
 - 首尾帧：再加一张 `"role": "last_frame"` 的图片，视频从首帧过渡到尾帧。
-- 参考图：`{"type": "image_url", "image_url": {"url": "图片链接"}, "role": "reference_image"}`，可以放多张。
+- 参考图：`{"type": "image_url", "image_url": {"url": "图片链接"}, "role": "reference_image"}`，最多 9 张。
 - 参考视频：`{"type": "video_url", "video_url": {"url": "视频链接"}, "role": "reference_video"}`，可以和参考图一起用。
 </ParamField>
 
@@ -61,7 +59,7 @@ curl --fail-with-body --silent --show-error \
 </ParamField>
 
 <ParamField body="ratio" type="string">
-画面比例。文生视频填 `16:9`；带首帧图时填 `adaptive`，由图片决定比例（1280×706 的示例图出片为 `16:9`）。
+画面比例。填 `16:9`；带首帧图时填 `adaptive`，由图片决定比例。
 </ParamField>
 
 <ParamField body="duration" type="integer">
@@ -70,25 +68,21 @@ curl --fail-with-body --silent --show-error \
 
 ### 图片
 
-- 用公网可访问的 https 图片链接（实测为火山对象存储上的示例图）。
-- 也可以填图片的 Base64 编码，写法见下方「本机图片（Base64 编码）」。
+- 填公网可访问的 https 图片链接，或图片的 Base64 编码（写法见下方「本机图片」）。
+- 单张图片小于 30 MB。
 - **含真人的照片会被拒绝**：返回 400 `InputImageSensitiveContentDetected.PrivacyInformation`，冻结的余额全额退回。
 - 不支持素材 ID（`asset://`），返回 400 `AssetNotAllowed`。
+- 参考图超过 9 张时，任务创建后会失败，冻结的余额全额退回。
 
-### 参考图和参考视频
+### 参考视频
 
-- 参考图可以放多张，写法和要求同上面的图片。2026-10-13 实测 Seedance 2.0 mini 带 9 张正常出片；带 10 张时任务创建后失败（查询返回 `failed`），冻结的余额全额退回。
-- 参考视频用公网可访问的视频链接。2026-10-13 实测用的是火山对象存储上的 mp4 示例（1280×720、约 5 秒）。
-- 参考视频不支持 Base64 编码，返回 400 `InvalidParameter`。
-- 在提示词里说明每个素材怎么用，写法见下方「更多示例」。
+- 填公网可访问的视频链接（mp4）。
+- 不支持 Base64 编码，返回 400 `InvalidParameter`。
+- 在提示词里说明参考视频怎么用，写法见下方「更多示例」。
 
-### 本机图片（Base64 编码）
+### 本机图片
 
-`image_url.url` 可以填图片的 Base64 编码：将本地文件转换为 Base64 编码字符串，遵循格式 `data:image/<图片格式>;base64,<Base64 编码>`，注意 `<图片格式>` 需小写，如 `data:image/png;base64,...`。首帧（`first_frame`）、尾帧（`last_frame`）和参考图（`reference_image`）都可以这样传。
-
-- 本站实测（2026-10-07、10-08）：Seedance 2.0 用 jpeg、png 作首帧，jpeg 作首尾帧和参考图，均正常出片。
-- 单张图片小于 30 MB，超过返回 400 `InvalidParameter`。
-- 本站补充：Base64 图片会先暂存到本站存储，再以链接交给视频服务，计费不变。不要填本机文件路径（如 `/Users/...`、`file://...`），视频服务读不到。
+把本机图片转换为 Base64 字符串，写成 `data:image/<图片格式>;base64,<Base64 编码>` 填入 `image_url.url`，`<图片格式>` 用小写，如 `data:image/png;base64,...`。首帧、尾帧和参考图都可以这样传，支持 jpeg、png。不要填本机文件路径（如 `/Users/...`、`file://...`）。
 
 首帧（命令行，把 `first.png` 换成你的图片）：
 
@@ -151,7 +145,7 @@ with urllib.request.urlopen(request) as response:
     print(response.read().decode())
 ```
 
-## 真实响应
+## 响应
 
 <ResponseExample>
 ```json
@@ -159,11 +153,11 @@ with urllib.request.urlopen(request) as response:
 ```
 </ResponseExample>
 
-本次示例 158 秒出片。
+`id` 是任务号，用它[查询](/cn/api-reference/videos/seedance/status)和[删除](/cn/api-reference/videos/seedance/delete)任务。
 
 ## 更多示例
 
-文生视频（只传文字，Seedance 2.5，实测 151 秒出片）：
+文生视频（只传文字）：
 
 ```json
 {
@@ -175,7 +169,7 @@ with urllib.request.urlopen(request) as response:
 }
 ```
 
-首尾帧生视频（Seedance 2.0，实测 168 秒出片）：
+首尾帧：
 
 ```json
 {
@@ -191,7 +185,7 @@ with urllib.request.urlopen(request) as response:
 }
 ```
 
-参考视频（Seedance 2.0，2026-10-13 实测 255 秒出片）：
+参考视频：
 
 ```json
 {
@@ -206,7 +200,7 @@ with urllib.request.urlopen(request) as response:
 }
 ```
 
-参考图加参考视频（Seedance 2.0 mini，2026-10-13 实测 148 秒出片）：
+参考图加参考视频：
 
 ```json
 {
@@ -225,10 +219,10 @@ with urllib.request.urlopen(request) as response:
 
 ## 计费
 
-- 按火山官方返回的实际用量（`usage.completion_tokens`）计费；不同模型、清晰度单价不同。具体价格以便利店当前分组配置和用量明细为准。
-- 提交时先按最坏情况冻结余额，生成成功后按实际用量扣费，多冻结的部分全额退回。
-- 带参考视频时，参考视频的时长也计入用量，单价也和不带视频时不同；[查询任务](/cn/api-reference/videos/seedance/status)返回的 `usage.completion_tokens` 已经包含这一部分。带参考图不增加用量。
-- 生成失败、超时、被取消，或火山拒绝请求（例如图片含真人），冻结的余额全额退回。
+- 按任务完成后返回的实际用量（`usage.completion_tokens`）计费，不同模型、清晰度单价不同，价格以便利店当前分组配置和用量明细为准。
+- 提交时按本次请求可能产生的最大用量冻结余额，生成成功后按实际用量扣费，多冻结的部分退回。
+- 带参考视频时，参考视频的时长计入用量，并按含视频输入的单价计费。参考图不增加用量。
+- 生成失败、超时、被取消，或请求被拒绝（例如图片含真人），冻结的余额全额退回。
 
 ## 限制
 
@@ -237,7 +231,7 @@ with urllib.request.urlopen(request) as response:
 
 ## 错误响应
 
-本站自有错误的格式为 `{"error": {"code": "…", "message": "…", "param": "", "type": "…"}}`；火山拒绝的请求原样返回火山的错误码和说明。
+错误的格式为 `{"error": {"code": "…", "message": "…", "param": "", "type": "…"}}`。
 
 | HTTP | `error.code` | 说明 |
 | --- | --- | --- |
@@ -245,7 +239,7 @@ with urllib.request.urlopen(request) as response:
 | 400 | `PricingNotConfigured` | 模型不支持这个清晰度，例如 mini 选 `1080p` |
 | 400 | `ToolNotAllowed` | 使用了未开放的 `tools` |
 | 400 | `AssetNotAllowed` | 引用了素材 ID（`asset://`） |
-| 400 | `InputImageSensitiveContentDetected.PrivacyInformation` | 火山审核拒绝：图片可能含真人，冻结的余额已退回 |
+| 400 | `InputImageSensitiveContentDetected.PrivacyInformation` | 图片可能含真人，审核未通过，冻结的余额已退回 |
 | 402 | `InsufficientBalance` | 余额不足以冻结本次费用，返回里附 `required_amount` 和 `available_amount` |
 | 403 | `PermissionDenied` | Key 没有绑定「Seedance 视频」分组 |
 | 404 | `model_not_found` | 模型不在本站支持的列表里 |

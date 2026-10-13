@@ -1,10 +1,10 @@
 ---
-title: "MiniMax 视频（官方格式）：查询任务"
+title: "MiniMax 视频：查询任务"
 description: "按 task_id 查询生成状态，成功后返回成片链接。"
 api: "GET /v2/query/video_generation/{task_id}"
 ---
 
-用[创建任务](/cn/api-reference/videos/minimax-v2/create)返回的 `task_id` 查询，返回结构与[官方查询接口](https://platform.minimaxi.com/docs/api-reference/video-generation-v2-query)一致。验证日期：**2026-10-06**。
+用[创建任务](/cn/api-reference/videos/minimax-v2/create)返回的 `task_id` 查询任务状态，成功后返回成片链接和用量。
 
 <RequestExample>
 ```bash
@@ -24,13 +24,9 @@ curl --fail-with-body --silent --show-error \
 
 ## 状态
 
-`task.status` 依次为 `queued`（排队中）→ `running`（生成中）→ `succeeded`（成功）。成功后 `task.content.url` 是成片链接，`task.usage.output_seconds` 是实际计费秒数。
+`task.status` 依次为 `queued`（排队中）→ `running`（生成中）→ `succeeded`（成功）。建议每 5 秒左右查询一次。
 
-`MiniMax-H3-Max` 实测 10–20 秒出片（文生示例：第 0、5 秒为 `queued`，第 10 秒为 `succeeded`；首帧示例：第 10、15 秒为 `running`，第 20 秒为 `succeeded`），建议每 5 秒左右查询一次。
-
-## 真实响应
-
-成功时（`content.url` 为签名链接，此处省略）：
+## 响应
 
 <ResponseExample>
 ```json
@@ -38,4 +34,8 @@ curl --fail-with-body --silent --show-error \
 ```
 </ResponseExample>
 
-带首帧图时 `ratio` 为 `adaptive`，`usage.input_image_count` 为 `1`。成片链接有有效期，请及时下载保存。
+- `task.content.url`：成片链接，成功后返回。链接有有效期，请及时下载保存。
+- `task.ratio`：画面比例；带首帧图时为 `adaptive`。
+- `task.usage.output_seconds`：计费的成片秒数。
+- `task.usage.input_image_count`：首帧图或参考图的张数。
+- `task.usage.input_seconds`：计费的参考视频秒数。

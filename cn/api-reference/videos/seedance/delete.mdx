@@ -4,7 +4,7 @@ description: "删除已结束的 Seedance 任务记录；生成中的任务不�
 api: "DELETE /api/v3/contents/generations/tasks/{id}"
 ---
 
-删除已结束任务的记录。请求与响应与火山方舟官方「取消或删除视频生成任务」接口一致。验证日期：**2026-10-05**。
+删除已结束任务的记录。请求和响应的格式与火山方舟「取消或删除视频生成任务」接口相同。
 
 <RequestExample>
 ```bash
@@ -28,9 +28,9 @@ curl --fail-with-body --silent --show-error \
 | `running`（生成中） | **不能删除**，返回 409 `InvalidAction.RunningTaskDeletion`，任务继续生成并照常扣费 |
 | `succeeded`（已完成） | 先完成结算，再删除记录，返回 200；删除后再查询返回 404 |
 
-实测说明：火山不忙时任务提交后几乎立刻开始生成（提交 0.37 秒后删除已返回“正在运行”），所以提交后通常无法撤回，请确认参数后再提交。
+任务提交后通常很快开始生成，开始后无法撤回，请确认参数后再提交。
 
-## 真实响应
+## 响应
 
 删除已完成的任务：
 
@@ -40,7 +40,7 @@ curl --fail-with-body --silent --show-error \
 ```
 </ResponseExample>
 
-删除生成中的任务（实测）：
+删除生成中的任务：
 
 ```json
 {"error":{"code":"InvalidAction.RunningTaskDeletion","message":"Cannot delete task `cgt-20261005162359-6cgkk` because it is currently running. Request id: …","param":"","type":"Conflict"}}

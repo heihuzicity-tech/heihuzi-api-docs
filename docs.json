@@ -75,10 +75,7 @@
             "pages": [
               "cn/api-reference/videos/minimax-v2/create",
               "cn/api-reference/videos/minimax-v2/query",
-              "cn/api-reference/videos/minimax-v2/delete",
-              "cn/api-reference/videos/minimax/create",
-              "cn/api-reference/videos/minimax/status",
-              "cn/api-reference/videos/minimax/content"
+              "cn/api-reference/videos/minimax-v2/delete"
             ]
           },
           {
@@ -162,6 +159,18 @@
     {
       "source": "/cn/api-reference/images/streaming",
       "destination": "/cn/api-reference/images/gpt-image-2.5/streaming"
+    },
+    {
+      "source": "/cn/api-reference/videos/minimax/create",
+      "destination": "/cn/api-reference/videos/minimax-v2/create"
+    },
+    {
+      "source": "/cn/api-reference/videos/minimax/status",
+      "destination": "/cn/api-reference/videos/minimax-v2/query"
+    },
+    {
+      "source": "/cn/api-reference/videos/minimax/content",
+      "destination": "/cn/api-reference/videos/minimax-v2/query"
     }
   ],
   "api": {

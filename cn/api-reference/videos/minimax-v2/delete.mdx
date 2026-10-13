@@ -1,10 +1,10 @@
 ---
-title: "MiniMax 视频（官方格式）：删除任务"
+title: "MiniMax 视频：删除任务"
 description: "删除已成功任务的记录。"
 api: "DELETE /v2/video_generation/{task_id}"
 ---
 
-删除已成功任务的记录，请求与返回与[官方“取消或删除任务”接口](https://platform.minimaxi.com/docs/api-reference/video-generation-v2-delete)一致。验证日期：**2026-10-06**。
+删除已成功任务的记录。
 
 <RequestExample>
 ```bash
@@ -21,9 +21,7 @@ curl --fail-with-body --silent --show-error \
 创建任务返回的 `task_id`。只能操作自己创建的任务。
 </ParamField>
 
-## 真实响应
-
-删除已成功的任务：
+## 响应
 
 <ResponseExample>
 ```json
