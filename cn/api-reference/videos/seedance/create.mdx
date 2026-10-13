@@ -36,9 +36,9 @@ curl --fail-with-body --silent --show-error \
 
 | 模型 ID | 名称 | 本站实测 |
 | --- | --- | --- |
-| `doubao-seedance-2-0-260128` | Seedance 2.0 | 文生视频、首帧、首尾帧、参考图 |
+| `doubao-seedance-2-0-260128` | Seedance 2.0 | 文生视频、首帧、首尾帧、参考图、参考视频 |
 | `doubao-seedance-2-0-fast-260128` | Seedance 2.0 Fast | 文生视频 |
-| `doubao-seedance-2-0-mini-260615` | Seedance 2.0 mini | 文生视频 |
+| `doubao-seedance-2-0-mini-260615` | Seedance 2.0 mini | 文生视频、参考图（9 张）、参考图加参考视频 |
 | `doubao-seedance-2-5-260628` | Seedance 2.5 | 文生视频 |
 
 ## 请求参数
@@ -52,6 +52,8 @@ curl --fail-with-body --silent --show-error \
 - 文字：`{"type": "text", "text": "画面与动作描述"}`。
 - 首帧：`{"type": "image_url", "image_url": {"url": "图片链接"}, "role": "first_frame"}`。
 - 首尾帧：再加一张 `"role": "last_frame"` 的图片，视频从首帧过渡到尾帧。
+- 参考图：`{"type": "image_url", "image_url": {"url": "图片链接"}, "role": "reference_image"}`，可以放多张。
+- 参考视频：`{"type": "video_url", "video_url": {"url": "视频链接"}, "role": "reference_video"}`，可以和参考图一起用。
 </ParamField>
 
 <ParamField body="resolution" type="string">
@@ -72,6 +74,13 @@ curl --fail-with-body --silent --show-error \
 - 也可以填图片的 Base64 编码，写法见下方「本机图片（Base64 编码）」。
 - **含真人的照片会被拒绝**：返回 400 `InputImageSensitiveContentDetected.PrivacyInformation`，冻结的余额全额退回。
 - 不支持素材 ID（`asset://`），返回 400 `AssetNotAllowed`。
+
+### 参考图和参考视频
+
+- 参考图可以放多张，写法和要求同上面的图片。2026-10-13 实测 Seedance 2.0 mini 带 9 张正常出片；带 10 张时任务创建后失败（查询返回 `failed`），冻结的余额全额退回。
+- 参考视频用公网可访问的视频链接。2026-10-13 实测用的是火山对象存储上的 mp4 示例（1280×720、约 5 秒）。
+- 参考视频不支持 Base64 编码，返回 400 `InvalidParameter`。
+- 在提示词里说明每个素材怎么用，写法见下方「更多示例」。
 
 ### 本机图片（Base64 编码）
 
@@ -182,10 +191,43 @@ with urllib.request.urlopen(request) as response:
 }
 ```
 
+参考视频（Seedance 2.0，2026-10-13 实测 255 秒出片）：
+
+```json
+{
+  "model": "doubao-seedance-2-0-260128",
+  "content": [
+    {"type": "text", "text": "参考视频1的运镜和节奏，把场景换成清晨的橘子果园，一只手摘下一个橘子"},
+    {"type": "video_url", "video_url": {"url": "https://ark-project.tos-cn-beijing.volces.com/doc_video/r2v_tea_video1.mp4"}, "role": "reference_video"}
+  ],
+  "resolution": "480p",
+  "ratio": "16:9",
+  "duration": 5
+}
+```
+
+参考图加参考视频（Seedance 2.0 mini，2026-10-13 实测 148 秒出片）：
+
+```json
+{
+  "model": "doubao-seedance-2-0-mini-260615",
+  "content": [
+    {"type": "text", "text": "参考视频1的运镜和节奏，图片1的柯基小狗在果园里跑向木桌，桌上放着图片2的苹果饮品"},
+    {"type": "image_url", "image_url": {"url": "https://ark-project.tos-cn-beijing.volces.com/doc_image/seelite_ref_2.png"}, "role": "reference_image"},
+    {"type": "image_url", "image_url": {"url": "https://ark-project.tos-cn-beijing.volces.com/doc_image/r2v_tea_pic2.jpg"}, "role": "reference_image"},
+    {"type": "video_url", "video_url": {"url": "https://ark-project.tos-cn-beijing.volces.com/doc_video/r2v_tea_video1.mp4"}, "role": "reference_video"}
+  ],
+  "resolution": "480p",
+  "ratio": "16:9",
+  "duration": 5
+}
+```
+
 ## 计费
 
 - 按火山官方返回的实际用量（`usage.completion_tokens`）计费；不同模型、清晰度单价不同。具体价格以便利店当前分组配置和用量明细为准。
 - 提交时先按最坏情况冻结余额，生成成功后按实际用量扣费，多冻结的部分全额退回。
+- 带参考视频时，参考视频的时长也计入用量，单价也和不带视频时不同；[查询任务](/cn/api-reference/videos/seedance/status)返回的 `usage.completion_tokens` 已经包含这一部分。带参考图不增加用量。
 - 生成失败、超时、被取消，或火山拒绝请求（例如图片含真人），冻结的余额全额退回。
 
 ## 限制
@@ -199,7 +241,7 @@ with urllib.request.urlopen(request) as response:
 
 | HTTP | `error.code` | 说明 |
 | --- | --- | --- |
-| 400 | `InvalidParameter` | 参数不符合要求，例如 `content` 为空、base64 图片的内容不是图片 |
+| 400 | `InvalidParameter` | 参数不符合要求，例如 `content` 为空、base64 图片的内容不是图片、参考视频用了 base64 |
 | 400 | `PricingNotConfigured` | 模型不支持这个清晰度，例如 mini 选 `1080p` |
 | 400 | `ToolNotAllowed` | 使用了未开放的 `tools` |
 | 400 | `AssetNotAllowed` | 引用了素材 ID（`asset://`） |

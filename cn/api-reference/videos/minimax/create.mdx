@@ -55,11 +55,43 @@ curl --fail-with-body --silent --show-error \
 首帧图，公网可访问的 https 图片链接。图片宽高比需在 0.4–2.5 之间。
 </ParamField>
 
+<ParamField body="reference_images" type="string[]">
+参考图，公网可访问的 https 图片链接数组，最多 9 张。`MiniMax-H3-Max` 的前 2 张、`MiniMax-H3` 的前 5 张不另外收费，超出的按张计费。不能和 `first_frame_image` 同时使用，可以和 `reference_videos` 一起用。2026-10-13 实测 `MiniMax-H3-Max` 带 3 张、`MiniMax-H3` 带 9 张正常出片。
+</ParamField>
+
 <ParamField body="reference_videos" type="string[]">
 参考视频，公网可访问的 https 视频链接数组，最多 3 个。链接的路径必须以 `.mp4` 或 `.mov` 结尾；每段 2–15 秒，合计不超过 15 秒。不能和 `first_frame_image` 同时使用。2026-10-11 实测 1 个 5 秒的参考视频正常出片。
 </ParamField>
 
 图片不符合要求（链接打不开、比例超出范围等）时，任务会失败，冻结的余额全额退回。
+
+### 带参考图
+
+在提示词里说明参考图里的内容怎么用。2026-10-13 实测下面的写法（3 张参考图）正常出片：
+
+```bash
+curl --fail-with-body --silent --show-error \
+  --request POST \
+  --url https://code.heihuzi.ai/v1/videos \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "model": "MiniMax-H3-Max",
+  "prompt": "参考图里的柯基小狗坐在果园的木桌旁，桌上放着红苹果和一杯苹果饮品，镜头缓慢推近",
+  "seconds": 5,
+  "resolution": "480P",
+  "ratio": "16:9",
+  "reference_images": [
+    "https://example.com/apple.jpg",
+    "https://example.com/drink.jpg",
+    "https://example.com/corgi.png"
+  ]
+}'
+```
+
+把三个 `https://example.com/...` 换成你自己的图片链接。超过 9 张，或同时传了 `first_frame_image`，返回 400 `invalid_reference_images`。
+
+参考图和参考视频可以一起用：在同一个请求里同时传 `reference_images` 和 `reference_videos`。2026-10-13 实测 1 张参考图加 1 个 5 秒的参考视频正常出片。
 
 ### 带参考视频
 
@@ -97,13 +129,14 @@ curl --fail-with-body --silent --show-error \
 - 提交时按请求的秒数冻结余额，生成成功后扣除。
 - 生成失败、被上游拒绝，冻结的余额全额退回。
 - 带首帧图不另外收费。
+- 带参考图时，`MiniMax-H3-Max` 的前 2 张、`MiniMax-H3` 的前 5 张不另外收费，超出的每张另外计费。[查询任务](/cn/api-reference/videos/minimax/status)返回的 `usage.input_image_count` 是本次的参考图张数。
 - 带参考视频时，参考视频的时长也计费。提交时还不知道视频多长，先按 15 秒冻结；生成成功后按实际时长扣除，多冻结的退回。[查询任务](/cn/api-reference/videos/minimax/status)返回的 `usage.input_seconds` 是计费的参考视频秒数。
 
 ## 错误响应
 
 | HTTP | `error.code` | 说明 |
 | --- | --- | --- |
-| 400 | 例如 `invalid_model`、`missing_prompt`、`invalid_seconds`、`invalid_resolution`、`invalid_ratio`、`invalid_image_url`、`invalid_reference_videos` | 参数不符合要求，`error.code` 指出是哪一项 |
+| 400 | 例如 `invalid_model`、`missing_prompt`、`invalid_seconds`、`invalid_resolution`、`invalid_ratio`、`invalid_image_url`、`invalid_reference_images`、`invalid_reference_videos` | 参数不符合要求，`error.code` 指出是哪一项 |
 | 402 | `insufficient_balance` | 余额不足以冻结本次费用，返回里附需要和可用的金额 |
 | 403 | `permission_denied` | 密钥所在分组没有开通视频生成 |
 | 404 | `not_found` | 视频功能暂未开放 |
