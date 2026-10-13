@@ -263,7 +263,7 @@ with urllib.request.urlopen(request) as response:
 
 | HTTP | `error.code` | 说明 |
 | --- | --- | --- |
-| 400 | `InvalidParameter` | 参数不符合要求，例如 `content` 为空、base64 图片的内容不是图片、参考视频用了 base64 |
+| 400 | `InvalidParameter` | 参数不符合要求，例如 `content` 为空、base64 图片的内容不是图片、参考视频用了 base64、时长或画面比例超出该模型支持的范围 |
 | 400 | `PricingNotConfigured` | 模型不支持这个清晰度，例如 mini 选 `1080p` |
 | 400 | `ToolNotAllowed` | 使用了未开放的 `tools` |
 | 400 | `AssetNotAllowed` | 引用了素材 ID（`asset://`） |
