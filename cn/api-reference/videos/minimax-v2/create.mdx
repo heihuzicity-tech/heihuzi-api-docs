@@ -39,15 +39,16 @@ curl --fail-with-body --silent --show-error \
 输入内容数组。必须包含且只包含一项文字，其余各项可选：
 
 - 文字：`{"type": "text", "text": "画面与动作描述"}`
-- 首帧图：`{"type": "image_url", "role": "first_frame", "image_url": {"url": "data:image/jpeg;base64,..."}}`，图片以 Base64 编码传入，1 张。
+- 首帧图：`{"type": "image_url", "role": "first_frame", "image_url": {"url": "https://example.com/first.jpg"}}`，填 https 图片链接或 Base64 编码，1 张。
+- 尾帧图：`{"type": "image_url", "role": "last_frame", "image_url": {"url": "https://example.com/last.jpg"}}`，填 https 图片链接或 Base64 编码，1 张。`MiniMax-H3` 可以只给尾帧；`MiniMax-H3-Max` 给尾帧时必须同时给首帧。
 - 参考图：`{"type": "image_url", "role": "reference_image", "image_url": {"url": "https://example.com/reference.jpg"}}`，填 https 图片链接或 Base64 编码，最多 9 张。
 - 参考视频：`{"type": "video_url", "role": "reference_video", "video_url": {"url": "https://example.com/reference.mp4"}}`，填 https 视频链接，最多 3 个，合计不超过 15 秒。
 
-首帧图不能和参考图、参考视频同时使用；参考图和参考视频可以一起用。图片和视频的格式、大小等要求见下方「输入素材要求」。
+首帧图、尾帧图不能和参考图、参考视频同时使用；参考图和参考视频可以一起用。图片和视频的格式、大小等要求见下方「输入素材要求」。
 </ParamField>
 
 <ParamField body="resolution" type="string" required>
-清晰度。`MiniMax-H3-Max`：`480P`、`768P`；`MiniMax-H3`：`768P`。
+清晰度。`MiniMax-H3-Max`：`480P`、`768P`；`MiniMax-H3`：`768P`、`2K`。
 </ParamField>
 
 <ParamField body="duration" type="integer" required>
@@ -55,7 +56,7 @@ curl --fail-with-body --silent --show-error \
 </ParamField>
 
 <ParamField body="ratio" type="string">
-画面比例：`16:9` 或 `9:16`。只有文字时必须填写；带首帧图时由图片决定比例，不需要填写；带参考图或参考视频时可以填写。
+画面比例：`21:9`、`16:9`、`4:3`、`1:1`、`3:4`、`9:16`。只有文字时必须填写；带首帧图或尾帧图时由图片决定比例，不需要填写；带参考图或参考视频时可以不填，由模型自动选择。
 </ParamField>
 
 <ParamField body="extra" type="object">
@@ -70,7 +71,7 @@ curl --fail-with-body --silent --show-error \
 
 请求体不超过 64 MB，大文件请用链接，不要用 Base64 编码。
 
-图片（首帧图、参考图）：
+图片（首帧图、尾帧图、参考图）：
 
 | 项目 | 要求 |
 | --- | --- |
@@ -78,7 +79,7 @@ curl --fail-with-body --silent --show-error \
 | 大小 | 单张不超过 30 MB |
 | 宽高 | 每条边 256–5760 像素 |
 | 宽高比（宽/高） | 0.4–2.5 |
-| 数量 | 首帧图 1 张；参考图最多 9 张 |
+| 数量 | 首帧图 1 张；尾帧图 1 张；参考图最多 9 张 |
 
 参考视频：
 
@@ -169,7 +170,7 @@ curl --fail-with-body --silent --show-error \
 
 - 按成片秒数计费，不同型号、清晰度单价不同，价格以便利店当前分组配置和用量明细为准。
 - 提交时按请求的秒数冻结余额，生成成功后扣除；生成失败或请求被拒绝时全额退回。
-- 首帧图不另外收费。
+- 首帧图、尾帧图不另外收费。
 - 参考图：`MiniMax-H3-Max` 的前 2 张、`MiniMax-H3` 的前 5 张不另外收费，超出的按张计费。
 - 参考视频：按参考视频的时长另外计费。提交时先按 15 秒冻结，生成成功后按实际时长扣除，多冻结的退回。
 
@@ -186,8 +187,10 @@ curl --fail-with-body --silent --show-error \
 | 400 | `invalid_resolution` | 清晰度不是该型号支持的取值 |
 | 400 | `invalid_seconds` | 时长不在该型号支持的范围内 |
 | 400 | `invalid_ratio` | 画面比例不支持，或只有文字时没有填写 `ratio` |
-| 400 | `invalid_content` | 首帧图和参考图同时使用 |
+| 400 | `invalid_content` | 首帧图或尾帧图和参考图同时使用 |
+| 400 | `upstream_error` | 请求被视频服务拒绝，例如 `MiniMax-H3-Max` 只给了尾帧 |
 | 400 | `invalid_reference_images` | 参考图超过 9 张 |
-| 400 | `invalid_reference_videos` | 参考视频超过 3 个，或和首帧图同时使用 |
+| 400 | `invalid_reference_videos` | 参考视频超过 3 个，或和首帧图、尾帧图同时使用 |
+| 429 | `too_many_active_tasks` | 未完成的视频任务已有 5 个（MiniMax 和 Seedance 的任务合计），请等前面的完成后再提交 |
 
 参数不符合要求时不会冻结余额。参考视频链接的路径不以 `.mp4` 或 `.mov` 结尾时，请求会被拒绝，冻结的余额全额退回。

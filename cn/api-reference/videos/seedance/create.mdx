@@ -32,12 +32,12 @@ curl --fail-with-body --silent --show-error \
 
 ## 模型
 
-| 模型 ID | 名称 | 参考图 | 参考视频 |
-| --- | --- | --- | --- |
-| `doubao-seedance-2-0-260128` | Seedance 2.0 | 最多 9 张 | 最多 3 个，合计不超过 15 秒 |
-| `doubao-seedance-2-0-fast-260128` | Seedance 2.0 Fast | 最多 9 张 | 最多 3 个，合计不超过 15 秒 |
-| `doubao-seedance-2-0-mini-260615` | Seedance 2.0 mini | 最多 9 张 | 最多 3 个，合计不超过 15 秒 |
-| `doubao-seedance-2-5-260628` | Seedance 2.5 | 最多 30 张 | 最多 10 个，合计不超过 30 秒 |
+| 模型 ID | 名称 | 清晰度 | 时长 | 参考图 | 参考视频 |
+| --- | --- | --- | --- | --- | --- |
+| `doubao-seedance-2-0-260128` | Seedance 2.0 | `480p`、`720p`、`1080p`、`4k` | 4–15 秒 | 最多 9 张 | 最多 3 个，合计不超过 15 秒 |
+| `doubao-seedance-2-0-fast-260128` | Seedance 2.0 Fast | `480p`、`720p` | 4–15 秒 | 最多 9 张 | 最多 3 个，合计不超过 15 秒 |
+| `doubao-seedance-2-0-mini-260615` | Seedance 2.0 mini | `480p`、`720p` | 4–15 秒 | 最多 9 张 | 最多 3 个，合计不超过 15 秒 |
+| `doubao-seedance-2-5-260628` | Seedance 2.5 | `480p`、`720p`、`1080p` | 4–30 秒 | 最多 30 张 | 最多 10 个，合计不超过 30 秒 |
 
 四个模型都支持文生视频、首帧、首尾帧、参考图和参考视频。
 
@@ -57,15 +57,17 @@ curl --fail-with-body --silent --show-error \
 </ParamField>
 
 <ParamField body="resolution" type="string">
-清晰度，填 `480p`。
+清晰度：`480p`、`720p`、`1080p`、`4k`，各模型可选的清晰度见上表。选了模型不支持的清晰度返回 400 `PricingNotConfigured`。清晰度越高，用量越大。
+
+Seedance 2.5 的 `1080p` 和 Seedance 2.0 的 `4k` 成片是 10bit、H.265 编码，少数播放环境可能需要换播放器查看。
 </ParamField>
 
 <ParamField body="ratio" type="string">
-画面比例。填 `16:9`；带首帧图时填 `adaptive`，由图片决定比例。
+画面比例：`16:9`、`4:3`、`1:1`、`3:4`、`9:16`、`21:9`，或 `adaptive`（自动选择）。带首帧图或首尾帧时建议填 `adaptive`，由首帧图决定比例；Seedance 2.5 这时只能填 `adaptive`。
 </ParamField>
 
 <ParamField body="duration" type="integer">
-时长，填 `5`（秒）。
+时长（秒），整数。Seedance 2.0 系列为 4–15，Seedance 2.5 为 4–30。填 `-1` 时由模型在可选范围内自动决定时长，实际时长见[查询任务](/cn/api-reference/videos/seedance/status)返回的 `duration`，并按实际时长计费。
 </ParamField>
 
 ### 图片
@@ -247,7 +249,7 @@ with urllib.request.urlopen(request) as response:
 
 ## 限制
 
-- 每个用户同时最多 5 个未完成的任务（排队中的也算），超过返回 429 `TooManyActiveTasks`。
+- 每个用户同时最多 5 个未完成的视频任务（排队中的也算，Seedance 和 MiniMax 的任务合计），超过返回 429 `TooManyActiveTasks`。
 - 暂不支持：任务列表接口、联网搜索（`tools`）、素材 ID（`asset://`）。
 
 ## 错误响应
