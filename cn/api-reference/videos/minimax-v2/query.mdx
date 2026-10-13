@@ -24,7 +24,14 @@ curl --fail-with-body --silent --show-error \
 
 ## 状态
 
-`task.status` 依次为 `queued`（排队中）→ `running`（生成中）→ `succeeded`（成功）。建议每 5 秒左右查询一次。
+| `task.status` | 含义 | 费用 |
+| --- | --- | --- |
+| `queued` | 排队中 | 余额保持冻结 |
+| `running` | 生成中 | 余额保持冻结 |
+| `succeeded` | 成功，`task.content.url` 为成片链接 | 按实际用量扣费，多冻结的退回 |
+| `failed` | 失败，`task.error` 里有原因 | 全额退回 |
+
+建议每 5 秒左右查询一次。即使不查询，任务结束后也会自动结算。提交后 90 分钟仍未出结果的任务按 `failed` 处理，冻结的余额全额退回。
 
 ## 响应
 
@@ -39,3 +46,18 @@ curl --fail-with-body --silent --show-error \
 - `task.usage.output_seconds`：计费的成片秒数。
 - `task.usage.input_image_count`：首帧图或参考图的张数。
 - `task.usage.input_seconds`：计费的参考视频秒数。
+
+## 失败时的返回
+
+失败的任务返回 `task.error`，没有 `task.content` 和 `task.usage`：
+
+```json
+{"task":{"created_at":1791925140,"duration":5,"error":{"code":"2013","message":"第 1 张图片宽高比不符合要求（1680×320），要在 2:5 到 5:2 之间，请裁剪后再试"},"id":"video_11fcbe6ad6b44ddb8c15113123b89f1d","modality":"video","model":"MiniMax-H3-Max","ratio":"adaptive","resolution":"480P","status":"failed","task_type":"generation","updated_at":1791925163}}
+```
+
+`task.error.message` 是失败原因，`task.error.code` 是错误码：
+
+| `task.error.code` | 说明 |
+| --- | --- |
+| `2013` | 输入的图片或视频不符合要求或读取失败，例如图片宽高比超出范围、链接打不开 |
+| `video_failed` | 任务没有完成，例如提交后 90 分钟仍未出结果 |
