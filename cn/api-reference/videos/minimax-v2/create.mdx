@@ -39,11 +39,11 @@ curl --fail-with-body --silent --show-error \
 输入内容数组。必须包含且只包含一项文字，其余各项可选：
 
 - 文字：`{"type": "text", "text": "画面与动作描述"}`
-- 首帧图：`{"type": "image_url", "role": "first_frame", "image_url": {"url": "data:image/jpeg;base64,..."}}`，图片以 Base64 编码传入。宽高比在 0.4–2.5 之间，每条边 256–5760 像素。
+- 首帧图：`{"type": "image_url", "role": "first_frame", "image_url": {"url": "data:image/jpeg;base64,..."}}`，图片以 Base64 编码传入，1 张。
 - 参考图：`{"type": "image_url", "role": "reference_image", "image_url": {"url": "https://example.com/reference.jpg"}}`，填 https 图片链接或 Base64 编码，最多 9 张。
-- 参考视频：`{"type": "video_url", "role": "reference_video", "video_url": {"url": "https://example.com/reference.mp4"}}`，填 https 视频链接，最多 3 个。链接的路径必须以 `.mp4` 或 `.mov` 结尾；每段 2–15 秒，合计不超过 15 秒。
+- 参考视频：`{"type": "video_url", "role": "reference_video", "video_url": {"url": "https://example.com/reference.mp4"}}`，填 https 视频链接，最多 3 个，合计不超过 15 秒。
 
-首帧图不能和参考图、参考视频同时使用。
+首帧图不能和参考图、参考视频同时使用；参考图和参考视频可以一起用。图片和视频的格式、大小等要求见下方「输入素材要求」。
 </ParamField>
 
 <ParamField body="resolution" type="string" required>
@@ -65,6 +65,33 @@ curl --fail-with-body --silent --show-error \
 <ParamField body="aigc_watermark" type="boolean">
 传 `true` 时在视频右下角加“AI生成”标识；不传则不加。
 </ParamField>
+
+## 输入素材要求
+
+请求体不超过 64 MB，大文件请用链接，不要用 Base64 编码。
+
+图片（首帧图、参考图）：
+
+| 项目 | 要求 |
+| --- | --- |
+| 格式 | JPG、JPEG、PNG、WEBP、HEIC、HEIF |
+| 大小 | 单张不超过 30 MB |
+| 宽高 | 每条边 256–5760 像素 |
+| 宽高比（宽/高） | 0.4–2.5 |
+| 数量 | 首帧图 1 张；参考图最多 9 张 |
+
+参考视频：
+
+| 项目 | 要求 |
+| --- | --- |
+| 格式 | MP4、MOV，链接的路径必须以 `.mp4` 或 `.mov` 结尾 |
+| 编码 | 视频 H.264、H.265；音频 AAC、MP3 |
+| 大小 | 单个不超过 50 MB |
+| 数量 | 最多 3 个 |
+| 时长 | 单个 2–15 秒，合计不超过 15 秒 |
+| 宽高 | 每条边 256–5760 像素 |
+| 宽高比（宽/高） | 0.4–2.5 |
+| 帧率 | 23.976–60 |
 
 ## 示例
 

@@ -32,12 +32,14 @@ curl --fail-with-body --silent --show-error \
 
 ## 模型
 
-| 模型 ID | 名称 | 支持的输入 |
-| --- | --- | --- |
-| `doubao-seedance-2-0-260128` | Seedance 2.0 | 文字、首帧、首尾帧、参考图、参考视频 |
-| `doubao-seedance-2-0-fast-260128` | Seedance 2.0 Fast | 文字 |
-| `doubao-seedance-2-0-mini-260615` | Seedance 2.0 mini | 文字、参考图、参考视频 |
-| `doubao-seedance-2-5-260628` | Seedance 2.5 | 文字 |
+| 模型 ID | 名称 | 参考图 | 参考视频 |
+| --- | --- | --- | --- |
+| `doubao-seedance-2-0-260128` | Seedance 2.0 | 最多 9 张 | 最多 3 个，合计不超过 15 秒 |
+| `doubao-seedance-2-0-fast-260128` | Seedance 2.0 Fast | 最多 9 张 | 最多 3 个，合计不超过 15 秒 |
+| `doubao-seedance-2-0-mini-260615` | Seedance 2.0 mini | 最多 9 张 | 最多 3 个，合计不超过 15 秒 |
+| `doubao-seedance-2-5-260628` | Seedance 2.5 | 最多 30 张 | 最多 10 个，合计不超过 30 秒 |
+
+四个模型都支持文生视频、首帧、首尾帧、参考图和参考视频。
 
 ## 请求参数
 
@@ -46,12 +48,12 @@ curl --fail-with-body --silent --show-error \
 </ParamField>
 
 <ParamField body="content" type="object[]" required>
-输入内容列表，不能为空。各模型支持的输入见上表。
+输入内容列表，不能为空。首帧、首尾帧、参考素材（参考图、参考视频）是三种互斥的用法，不能混用。
 - 文字：`{"type": "text", "text": "画面与动作描述"}`。
 - 首帧：`{"type": "image_url", "image_url": {"url": "图片链接"}, "role": "first_frame"}`。
 - 首尾帧：再加一张 `"role": "last_frame"` 的图片，视频从首帧过渡到尾帧。
-- 参考图：`{"type": "image_url", "image_url": {"url": "图片链接"}, "role": "reference_image"}`，最多 9 张。
-- 参考视频：`{"type": "video_url", "video_url": {"url": "视频链接"}, "role": "reference_video"}`，可以和参考图一起用。
+- 参考图：`{"type": "image_url", "image_url": {"url": "图片链接"}, "role": "reference_image"}`，数量上限见上表。
+- 参考视频：`{"type": "video_url", "video_url": {"url": "视频链接"}, "role": "reference_video"}`，数量和时长上限见上表，可以和参考图一起用。
 </ParamField>
 
 <ParamField body="resolution" type="string">
@@ -68,21 +70,40 @@ curl --fail-with-body --silent --show-error \
 
 ### 图片
 
-- 填公网可访问的 https 图片链接，或图片的 Base64 编码（写法见下方「本机图片」）。
-- 单张图片小于 30 MB。
-- **含真人的照片会被拒绝**：返回 400 `InputImageSensitiveContentDetected.PrivacyInformation`，冻结的余额全额退回。
+填公网可访问的 https 图片链接，或图片的 Base64 编码（写法见下方「本机图片」）。
+
+| 项目 | 要求 |
+| --- | --- |
+| 格式 | jpeg、png、webp、bmp、tiff、gif、heic、heif |
+| 大小 | 单张小于 30 MB；请求体不超过 64 MB，大文件请用链接，不要用 Base64 编码 |
+| 宽高 | 每条边 300–6000 像素 |
+| 宽高比（宽/高） | 0.4–2.5 |
+| 数量 | 首帧 1 张；首尾帧 2 张；参考图：Seedance 2.0 系列 1–9 张，Seedance 2.5 为 1–30 张 |
+
+- **含真人人脸的图片会被拒绝**：返回 400 `InputImageSensitiveContentDetected.PrivacyInformation`，冻结的余额全额退回。
 - 不支持素材 ID（`asset://`），返回 400 `AssetNotAllowed`。
-- 参考图超过 9 张时，任务创建后会失败，冻结的余额全额退回。
+- 参考图数量超出上限时，任务创建后会失败，冻结的余额全额退回。
 
 ### 参考视频
 
-- 填公网可访问的视频链接（mp4）。
-- 不支持 Base64 编码，返回 400 `InvalidParameter`。
+填公网可访问的视频链接。不支持 Base64 编码（返回 400 `InvalidParameter`）和素材 ID（`asset://`）。
+
+| 项目 | 要求 |
+| --- | --- |
+| 格式 | mp4、mov |
+| 编码 | 视频 H.264、H.265；音频 AAC、MP3 |
+| 数量和时长 | Seedance 2.0 系列：最多 3 个，单个 2–15 秒，合计不超过 15 秒。Seedance 2.5：最多 10 个，单个 2–30 秒，合计不超过 30 秒 |
+| 大小 | 单个不超过 200 MB |
+| 宽高 | 每条边 300–6000 像素，宽 × 高在 407696–8295044 之间 |
+| 宽高比（宽/高） | 0.4–2.5 |
+| 帧率 | 24–60 |
+
+- 含真人人脸的视频会被拒绝。
 - 在提示词里说明参考视频怎么用，写法见下方「更多示例」。
 
 ### 本机图片
 
-把本机图片转换为 Base64 字符串，写成 `data:image/<图片格式>;base64,<Base64 编码>` 填入 `image_url.url`，`<图片格式>` 用小写，如 `data:image/png;base64,...`。首帧、尾帧和参考图都可以这样传，支持 jpeg、png。不要填本机文件路径（如 `/Users/...`、`file://...`）。
+把本机图片转换为 Base64 字符串，写成 `data:image/<图片格式>;base64,<Base64 编码>` 填入 `image_url.url`，`<图片格式>` 用小写，如 `data:image/png;base64,...`。首帧、尾帧和参考图都可以这样传。不要填本机文件路径（如 `/Users/...`、`file://...`）。
 
 首帧（命令行，把 `first.png` 换成你的图片）：
 
