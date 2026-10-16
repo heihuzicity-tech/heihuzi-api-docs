@@ -1,149 +1,233 @@
 ---
 title: "Codex懒人一键安装指南"
-description: "按图完成 Windows 安装包下载、API Key 配置、中文界面切换和首次对话。"
+description: "按图完成 API Key 创建、黑胡子助手安装 Codex、中文界面切换、权限设置、首次对话和第一个项目。"
 ---
 
 <Note>
-  本教程演示 Windows x64 安装流程。截图中的懒人安装器版本为 `0.3.2`，桌面应用安装包版本为 `26.814.5167.0`；文件名和界面请以实际下载的版本为准。
+  本教程演示 Windows x64 安装流程。截图中的黑胡子助手版本为 `0.4.5`，Codex 安装包版本为 `26.814.5167.0`；文件名和界面请以实际下载的版本为准。
 </Note>
 
-## 第一步：注册黑胡子便利店账号
+## AI 相关知识普及
 
-用电脑浏览器打开[黑胡子便利店注册页面](https://code.heihuzi.ai/register)，填写邮箱和密码，按页面提示完成注册。优惠码为选填项，没有优惠码可以留空。
+开始之前，可以先看一遍 [AI 相关知识普及](https://www.processon.com/view/link/6ad0c9a679cd0571067d7c0e)。
 
-![打开黑胡子便利店注册页面，填写邮箱和密码](/images/lazy-installer/01-register.png)
+## 软件下载
 
-## 第二步：创建 API Key
+打开[百度网盘下载入口](https://pan.baidu.com/s/5bQlo6U-NG-UPLTb1ezhAYw)，下载以下两个文件：
 
-登录后，打开 [API 密钥](https://code.heihuzi.ai/keys)，点击「创建密钥」。
+- 黑胡子助手，文件名类似 `captain-switch_0.4.5_windows-x64.exe`。
+- Codex 安装包，文件名类似 `OpenAI.Codex_26.814.5167.0_x64__2p2nqsd0c76g0.Msix`。
 
-![在 API 密钥页面点击创建密钥](/images/lazy-installer/02-create-key.png)
+## 第一步：注册黑胡子便利店并创建 API Key
 
-填写一个方便自己识别的名称，例如 `codex`，厂商选择「OpenAI」，分组选择名称以「ChatGPT」开头的分组，其他选项保持默认，然后点击「创建」。分组名称和倍率以便利店当前页面为准。
+用电脑浏览器打开[黑胡子便利店](https://code.heihuzi.ai/)，点击右上角「注册」。
 
+![在便利店首页点击注册](/images/lazy-installer/v2/01-home-register.png)
 
+填写邮箱和密码，勾选服务条款和承诺，点击「继续」。邀请码为选填项，没有可以不填。
 
-![填写密钥名称、选择 OpenAI 厂商和 ChatGPT 分组](/images/feishu/aa7bc0ccd230ebdba1dab6166d4dd8b320d3f7edfa4c81f743e3e4c50738f5cf.png)
+![填写邮箱和密码，邀请码可以不填](/images/lazy-installer/v2/02-register-form.png)
 
-创建完成后，可以在列表中看到刚才的密钥。
+登录后，在左侧「开发者」菜单中打开「API 密钥」，点击「创建密钥」。
 
-![创建成功后的 API 密钥列表](/images/lazy-installer/04-key-created.png)
+![在 API 密钥页面点击创建密钥](/images/lazy-installer/v2/03-keys-empty.png)
 
-## 第三步：充值余额
+名称填写 `codex`，厂商选择「OpenAI」，分组选择名称以「ChatGPT」开头的分组，然后点击「创建」。分组名称和倍率以便利店当前页面为准。
 
-在便利店侧边栏打开「余额充值」，根据自己的使用需求充值。原文对参加线下会的用户建议至少充值 100 元；具体充值金额和赠送活动以当前充值页面为准。
+![填写名称、选择 OpenAI 厂商和 ChatGPT 分组](/images/lazy-installer/v2/04-create-key.png)
 
-![余额充值页面示例，金额和赠送活动以实际页面为准](/images/lazy-installer/05-recharge.png)
+在左侧打开「余额充值」，根据自己的使用需求充值。具体金额和赠送活动以当前充值页面为准。
 
-## 第四步：下载软件安装包
+![余额充值页面，金额和赠送活动以实际页面为准](/images/lazy-installer/v2/05-recharge.png)
 
-打开[百度网盘下载入口：Codex 安装宝](https://pan.baidu.com/s/5bQlo6U-NG-UPLTb1ezhAYw)，将两个文件都下载到本地：
-
-- 黑胡子懒人安装器，文件扩展名为 `.exe`。
-- 配套的 ChatGPT / Codex 桌面应用安装包，文件扩展名为 `.msix`。
+## 第二步：把黑胡子助手和 Codex 安装包放在同一个文件夹
 
 <Warning>
-  **两个文件都必须下载，并且放在同一个文件夹中。** 后续从这个文件夹打开懒人安装器。
+  **两个文件都必须下载，并且放在同一个文件夹中。** 后续从这个文件夹打开黑胡子助手。
 </Warning>
 
-![网盘中的两个配套安装文件，需要一起下载](/images/lazy-installer/06-download-files.png)
+![黑胡子助手和 Codex 安装包放在同一个文件夹](/images/lazy-installer/v2/06-same-folder.png)
 
-## 第五步：打开黑胡子懒人安装器
+## 第三步：使用黑胡子助手安装 Codex
 
-双击打开黑胡子懒人安装器的 `.exe` 文件。截图中的文件名为 `Heihuzi-Codex-Offline-Installer_0.3.2_x64.exe`。
+回到便利店的「API 密钥」页面，点击 `codex` 密钥旁边的复制按钮。
 
-![双击打开黑胡子懒人安装器 exe 文件](/images/lazy-installer/07-open-installer.png)
+![点击密钥旁边的复制按钮](/images/lazy-installer/v2/07-copy-key.png)
 
-## 第六步：填写 API Key
+双击打开黑胡子助手，把复制的 Key 粘贴到「便利店 API Key」输入框，点击「验证 Key 并获取模型」。看到「已读取模型列表」后，点击「保存并继续」。
 
-回到便利店的「API 密钥」页面，点击第二步创建的密钥旁边的复制按钮。
+![粘贴 API Key，验证并获取模型后保存](/images/lazy-installer/v2/08-paste-key.png)
 
-![点击密钥旁边的复制按钮](/images/lazy-installer/08-copy-key.png)
+进入「应用管理」，点击「安装 ChatGPT」。
 
-这张截图仅演示复制按钮的位置，使用的分组按第二步选择。
-
-将复制的 Key 粘贴到懒人安装器的「API Key」输入框中，点击「保存并继续」。请使用自己的完整 Key，截图中的省略形式不能用于配置。
-
-![将完整 API Key 粘贴到安装器并保存](/images/lazy-installer/09-save-key.png)
-
-## 第七步：安装 ChatGPT
-
-保存 API Key 后，安装器会进入「应用管理」。再次确认懒人安装器和配套的 `.msix` 安装包位于同一个文件夹中。
-
-![两个安装文件位于同一个本地文件夹](/images/lazy-installer/10-same-folder.png)
-
-点击「安装 ChatGPT」。
-
-![点击安装 ChatGPT 按钮](/images/lazy-installer/11-install.png)
+![在应用管理中点击安装 ChatGPT](/images/lazy-installer/v2/09-install-chatgpt.png)
 
 等待安装进度完成。
 
-![等待 ChatGPT 安装进度完成](/images/lazy-installer/12-installing.png)
+![等待安装进度完成](/images/lazy-installer/v2/10-installing.png)
 
-安装完成后，安装器会显示「已安装」并启动桌面应用。
+安装完成后，界面显示「已安装 · 正在运行」。如需重新启动，点击「重启 ChatGPT」。
 
-![安装完成并启动桌面应用](/images/lazy-installer/13-installed.png)
+![安装完成，可点击重启 ChatGPT](/images/lazy-installer/v2/11-restart-chatgpt.png)
 
-<Note>
-  本教程截图中，安装器将桌面应用标为「ChatGPT」，部分窗口、按钮和安装文件名仍显示「Codex」。按对应界面继续操作即可。
-</Note>
+## 第四步：设置 Codex
 
-## 第八步：切换为中文界面
+首次打开时，如果询问你从事什么类型的工作，点击「Skip」跳过。
 
-如果启动后的界面仍然是英文，回到黑胡子懒人安装器，点击「切换为中文」。
+![在工作类型页面点击 Skip](/images/lazy-installer/v2/12-skip-work-type.png)
 
-![在应用管理中点击切换为中文](/images/lazy-installer/14-switch-chinese.png)
+如果出现新模型介绍弹窗，点击「Try GPT-6.1 Sol now」。
 
-阅读弹窗说明后，点击「开始切换」。弹窗提示该过程会临时调整系统代理并重启 ChatGPT，流程结束后恢复原来的网络设置。
+![在模型介绍弹窗中点击试用新模型](/images/lazy-installer/v2/13-try-model.png)
 
-![阅读临时网络调整说明并开始切换](/images/lazy-installer/15-confirm-language.png)
+如果提示「Finish Windows setup to continue」，点击「Continue」。
 
-耐心等待切换完成，期间按安装器提示操作。
+![提示完成 Windows 设置时点击 Continue](/images/lazy-installer/v2/14-windows-setup.png)
 
-![等待中文界面切换流程完成](/images/lazy-installer/16-switching.png)
+如果提示「Windows setup didn't finish」，点击「Continue without administrator access」。
+
+![Windows 设置未完成时选择不使用管理员权限继续](/images/lazy-installer/v2/15-without-admin.png)
+
+点击左上角的模式菜单，选择「Codex」。
+
+![在左上角模式菜单中选择 Codex](/images/lazy-installer/v2/16-switch-codex.png)
+
+## 第五步：切换为中文界面
+
+如果界面是英文，回到黑胡子助手的「应用管理」，点击「切换为中文」。
+
+![在应用管理中点击切换为中文](/images/lazy-installer/v2/17-switch-chinese.png)
+
+切换过程中，黑胡子助手会临时连接网络并重启 ChatGPT，请耐心等待。
+
+![等待中文界面切换完成](/images/lazy-installer/v2/18-switching.png)
 
 看到「切换流程已完成」后，检查重新启动的 ChatGPT 是否已经显示中文，再点击「完成」。
 
-![检查中文界面并完成切换流程](/images/lazy-installer/17-language-complete.png)
+![切换流程已完成，原来的网络配置已恢复](/images/lazy-installer/v2/19-switch-complete.png)
 
-## 第九步：完成首次设置
+切换成功后，界面显示为中文。
 
-如果出现「完成 Windows 设置」页面，点击「完成设置」，按系统提示继续。
+![切换成功后的中文界面](/images/lazy-installer/v2/20-chinese-ui.png)
 
-![在首次启动页面点击完成设置](/images/lazy-installer/18-windows-setup.png)
+<Note>
+  - 汉化需要能访问官方服务的网络环境，黑胡子助手会在切换时临时处理网络，结束后恢复原来的网络配置。
+  - 每台设备的汉化尝试次数有限。汉化失败后不必反复尝试；次数用完时，在「诊断与支持」中复制设备 ID 发给黑胡子客服，恢复次数后点击「刷新状态」。
+  - 最近官方新版本存在问题：汉化完成后重启，界面可能恢复成英文。黑胡子正在研究如何固定汉化。
+</Note>
 
-如果提示 `setup_failed`、Windows 安装未完成，按原文演示点击「继续受限访问」，进入应用。
+![次数用完时，在诊断与支持中复制设备 ID](/images/lazy-installer/v2/21-device-id.png)
 
-![Windows 设置失败时继续受限访问](/images/lazy-installer/19-restricted-access.png)
+## 第六步：设置权限
 
-如果出现 GPT-5.6 Sol 介绍弹窗，点击「立即试用 GPT-5.6 Sol」。
+点击界面左下角的齿轮图标，进入「设置」。
 
-![在模型介绍弹窗中选择 GPT-5.6 Sol](/images/lazy-installer/20-select-model.png)
+![点击左下角齿轮图标进入设置](/images/lazy-installer/v2/22-open-settings.png)
 
-## 第十步：设置权限
+在「常规」的权限设置中打开完整访问权限开关，在弹窗中点击「确认」。
 
-原文演示使用「完全访问权限」。该权限允许应用访问电脑上的文件、运行命令和使用互联网，开启前请阅读应用显示的权限说明，并根据自己的任务需要决定是否启用。
+![在常规设置中打开完整访问权限并确认](/images/lazy-installer/v2/23-enable-permission.png)
 
-点击应用**左下角**的账户菜单，再点击「设置」。
+回到对话页面，点击输入框下方的权限菜单，选择「完全访问权限」。
 
-![从左下角账户菜单打开设置](/images/lazy-installer/21-open-settings.png)
+![在权限菜单中选择完全访问权限](/images/lazy-installer/v2/24-select-full-access.png)
 
-进入「常规」，找到权限设置，打开「完整访问权限」开关。
+阅读确认弹窗中的权限范围，确认需要后点击「确认」。完全访问权限允许 Codex 访问电脑上的文件、运行命令和使用互联网，请根据自己的任务需要决定是否开启。
 
-![在常规设置中打开完整访问权限开关](/images/lazy-installer/22-enable-permission.png)
+![阅读完整访问权限的范围并确认](/images/lazy-installer/v2/25-confirm-full-access.png)
 
-返回对话页面，点击输入框下方的权限菜单，选择最后一项「完全访问权限」。
+## 第七步：切换模型和推理强度
 
-![在对话权限菜单中选择最后一项完全访问权限](/images/lazy-installer/23-select-full-access.png)
+点击输入框右下角的模型名称，可以切换模型和推理强度。
 
-阅读确认弹窗中的权限范围，确认需要后点击「确认」。
+![点击模型名称，切换模型和推理强度](/images/lazy-installer/v2/26-model-effort.png)
 
-![阅读完整访问权限的范围并确认](/images/lazy-installer/24-confirm-permission.png)
+拖动滑块调整推理强度。
 
-## 第十一步：测试对话
+![拖动滑块调整推理强度](/images/lazy-installer/v2/27-effort-high.png)
 
-在对话框输入「你好」并发送，等待模型返回正常的文字回复。
+## 第八步：测试对话
 
-![发送你好并收到模型的正常文字回复](/images/lazy-installer/25-test-chat.png)
+在对话框输入「你好」并发送，等待模型正常回复。完整访问权限的提示可以点击「不再显示」关闭。
 
-收到正常回复，说明这次基础对话已经连通。若出现错误，可先查看[认证与权限排查](/cn/faqs/auth-and-permissions)和[模型问题排查](/cn/faqs/models)。
+![发送你好，等待模型回复](/images/lazy-installer/v2/28-test-chat.png)
+
+收到正常回复，说明基础对话已经连通。若出现错误，可先查看[认证与权限排查](/cn/faqs/auth-and-permissions)和[模型问题排查](/cn/faqs/models)。
+
+## 固定程序
+
+点击 Windows「开始」按钮，在「开发人员工具」中找到 ChatGPT。
+
+![在开始菜单的开发人员工具中找到 ChatGPT](/images/lazy-installer/v2/29-start-menu.png)
+
+打开后，在任务栏的 ChatGPT 图标上点击右键，选择「固定到任务栏」，以后可以直接从任务栏打开。
+
+![在任务栏把 ChatGPT 固定](/images/lazy-installer/v2/30-pin-taskbar.png)
+
+## Codex 编写项目规范
+
+用 Codex 写项目一定要注意规范，尤其是刚入门的同学：
+
+1. 使用「Codex」模式，而不是「ChatGPT Work」模式。ChatGPT Work 只是聊天，代码不会保存到电脑上；Codex 模式会把代码保存到本地文件夹。
+2. 强烈建议把权限设置为「完全访问」，否则后面会遇到各种各样的问题。
+3. 先创建项目目录，再开始对话。一个项目一个目录，不要全放在一起。
+
+刚开始使用时不必选择最先进的模型，思考强度选中、低即可。
+
+![Codex 模式、完全访问和模型选择](/images/lazy-installer/v2/31-codex-mode.png)
+
+把鼠标放在左侧「项目」上，会出现「+」号，点击即可添加项目。
+
+![鼠标放在项目上，点击加号添加项目](/images/lazy-installer/v2/32-add-project.png)
+
+在「创建项目」窗口点击「添加」，选择电脑上的文件夹，也就是项目保存的位置。
+
+![点击添加，选择项目保存的文件夹](/images/lazy-installer/v2/33-create-project-cn.png)
+
+英文界面下的操作相同：在「Projects」旁点击「+」号。
+
+![英文界面下在 Projects 旁点击加号](/images/lazy-installer/v2/34-projects-plus.png)
+
+在「Create project」窗口点击「Add」，选择文件夹，并记好它的位置。
+
+![英文界面下点击 Add 选择文件夹](/images/lazy-installer/v2/35-create-project-en.png)
+
+在弹出的窗口中选择项目文件夹，例如 D 盘下新建的练习文件夹。
+
+![选择项目文件夹](/images/lazy-installer/v2/36-select-folder.png)
+
+点击「Create project」创建项目。
+
+![点击 Create project 创建项目](/images/lazy-installer/v2/37-create-project-button.png)
+
+提示是否信任该文件夹时，点击「Trust folder」。
+
+![点击 Trust folder 信任项目文件夹](/images/lazy-installer/v2/38-trust-folder.png)
+
+在左侧选中这个项目后再开始对话。此后的对话都只对这个文件夹生效。
+
+![在项目下开始对话，对话只对该文件夹生效](/images/lazy-installer/v2/39-project-chat.png)
+
+## Codex 的第一个 AI 作品
+
+目标：编写一个俄罗斯方块游戏，这个页面发给别人也能用电脑打开。在项目中发送：
+
+```text
+使用单个html文件，编写一个俄罗斯方块小游戏
+```
+
+完成后，在项目文件夹中可以看到生成的 `tetris.html`。
+
+![项目文件夹中生成的 tetris.html](/images/lazy-installer/v2/40-tetris-file.png)
+
+双击用浏览器打开，即可开始游戏。
+
+![用浏览器打开的俄罗斯方块游戏](/images/lazy-installer/v2/41-tetris-game.png)
+
+继续迭代功能，发送：
+
+```text
+再多开发几个小游戏，然后把他们放在一个页面里让我选择
+```
+
+![Codex 继续开发更多小游戏](/images/lazy-installer/v2/42-more-games.png)
