@@ -39,7 +39,7 @@ curl --fail-with-body --silent --show-error \
 | `doubao-seedance-2-0-mini-260615` | Seedance 2.0 mini | `480p`、`720p` | 4–15 秒 |
 | `doubao-seedance-2-5-260628` | Seedance 2.5 | `480p`、`720p`、`1080p` | 4–30 秒 |
 
-四个模型都支持文生视频、首帧、首尾帧、参考图和参考视频。参考素材的数量上限：
+四个模型都支持文生视频、首帧、首尾帧、参考图和参考视频。参考图可以填图片链接，也可以填自己创建的[素材](/cn/api-reference/videos/seedance/assets) ID。参考素材的数量上限：
 
 | 模型 | 参考图 | 参考视频 |
 | --- | --- | --- |
@@ -88,12 +88,12 @@ Seedance 2.5 的 `1080p` 和 Seedance 2.0 的 `4k` 成片是 10bit、H.265 编�
 | 数量 | 首帧 1 张；首尾帧 2 张；参考图：Seedance 2.0 系列 1–9 张，Seedance 2.5 为 1–30 张 |
 
 - **含真人人脸的图片会被拒绝**：返回 400 `InputImageSensitiveContentDetected.PrivacyInformation`，冻结的余额全额退回。
-- 不支持素材 ID（`asset://`），返回 400 `AssetNotAllowed`。
+- 参考图可以填自己的素材 ID：`{"type": "image_url", "image_url": {"url": "asset://asset-xxx"}, "role": "reference_image"}`。素材要先用[素材管理接口](/cn/api-reference/videos/seedance/assets)创建，并等状态变成 `Active`，写法见下方「更多示例」。
 - 参考图数量超出上限时，任务创建后会失败，冻结的余额全额退回。
 
 ### 参考视频
 
-填公网可访问的视频链接。不支持 Base64 编码（返回 400 `InvalidParameter`）和素材 ID（`asset://`）。
+填公网可访问的视频链接。不支持 Base64 编码（返回 400 `InvalidParameter`）。
 
 | 项目 | 要求 |
 | --- | --- |
@@ -228,6 +228,23 @@ with urllib.request.urlopen(request) as response:
 }
 ```
 
+参考图用素材 ID（两个素材出现在同一个视频里；素材创建方法见[素材管理](/cn/api-reference/videos/seedance/assets)）：
+
+```json
+{
+  "model": "doubao-seedance-2-0-mini-260615",
+  "content": [
+    {"type": "text", "text": "图片1的男子和图片2的女剑客并肩走在月下的古镇石板路上，镜头缓慢跟随"},
+    {"type": "image_url", "image_url": {"url": "asset://asset-20261101165247-rpf5s"}, "role": "reference_image"},
+    {"type": "image_url", "image_url": {"url": "asset://asset-20261101165309-6tc9s"}, "role": "reference_image"}
+  ],
+  "resolution": "480p",
+  "ratio": "16:9",
+  "duration": 5,
+  "generate_audio": false
+}
+```
+
 参考图加参考视频：
 
 ```json
@@ -255,7 +272,9 @@ with urllib.request.urlopen(request) as response:
 ## 限制
 
 - 每个用户同时最多 5 个未完成的视频任务（排队中的也算，Seedance 和 MiniMax 的任务合计），超过返回 429 `TooManyActiveTasks`。
-- 暂不支持：任务列表接口、联网搜索（`tools`）、素材 ID（`asset://`）。
+- 暂不支持：任务列表接口、联网搜索（`tools`）。
+- 素材 ID 请填在参考图（`"role": "reference_image"`）里，只能用自己账号下创建的素材；视频还没结束时，它引用的素材不能删除。
+- 已不支持请求里的 `portrait` 字段，会返回 400 `InvalidParameter`；人物形象请改用素材 ID。
 
 ## 错误响应
 
@@ -266,11 +285,11 @@ with urllib.request.urlopen(request) as response:
 | 400 | `InvalidParameter` | 参数不符合要求，例如 `content` 为空、base64 图片的内容不是图片、参考视频用了 base64、时长或画面比例超出该模型支持的范围 |
 | 400 | `PricingNotConfigured` | 模型不支持这个清晰度，例如 mini 选 `1080p` |
 | 400 | `ToolNotAllowed` | 使用了未开放的 `tools` |
-| 400 | `AssetNotAllowed` | 引用了素材 ID（`asset://`） |
 | 400 | `InputImageSensitiveContentDetected.PrivacyInformation` | 图片可能含真人，审核未通过，冻结的余额已退回 |
 | 402 | `InsufficientBalance` | 余额不足以冻结本次费用，返回里附 `required_amount` 和 `available_amount` |
 | 403 | `PermissionDenied` | Key 没有绑定「Seedance 视频」分组 |
 | 404 | `model_not_found` | 模型不在本站支持的列表里 |
+| 404 | `ResourceNotFound` | 引用的素材 ID 不存在，或不是你自己的素材，本次未扣费 |
 | 429 | `TooManyActiveTasks` | 未完成的任务太多，请等前面的完成后再提交 |
 | 502 | `UpstreamOutcomeUnknown` | 提交结果暂时无法确认，**不要立即重复提交**；冻结保留，确认后自动结算或退回 |
 | 503 | `UpstreamUnreachable` | 视频服务暂时连不上，本次未扣费，请稍后再试 |

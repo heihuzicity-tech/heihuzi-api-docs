@@ -83,7 +83,8 @@
             "pages": [
               "cn/api-reference/videos/seedance/create",
               "cn/api-reference/videos/seedance/status",
-              "cn/api-reference/videos/seedance/delete"
+              "cn/api-reference/videos/seedance/delete",
+              "cn/api-reference/videos/seedance/assets"
             ]
           }
         ]
