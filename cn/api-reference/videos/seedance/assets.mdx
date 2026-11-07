@@ -50,6 +50,8 @@ curl --fail-with-body --silent --show-error \
 
 返回 `{"Id": "group-…"}`。
 
+每个账号最多 10 个素材组，已有 10 个时再创建返回 409 `AssetLimitExceeded`，请先删除不用的素材组。
+
 ### GetAssetGroup 查询素材组
 
 正文 `{"Id": "group-…"}`。返回素材组的 `Id`、`Name`、`Description`、`ProjectName` 等信息，`ProjectName` 固定显示 `default`。
@@ -91,7 +93,7 @@ curl --fail-with-body --silent --show-error \
 | --- | --- | --- | --- |
 | `GroupId` | string | 是 | 你自己创建的素材组 ID |
 | `URL` | string | 是 | 公网可访问的图片链接（http 或 https），图片要求见[创建视频](/cn/api-reference/videos/seedance/create)的「图片」一节 |
-| `AssetType` | string | 是 | 填 `Image` |
+| `AssetType` | string | 是 | 只能填 `Image`，填其他值返回 400 `InvalidParameter` |
 | `Name` | string | 否 | 名称，最多 64 个字 |
 
 返回 `{"Id": "asset-…"}`。
@@ -187,7 +189,7 @@ curl --fail-with-body --silent --show-error \
 
 | HTTP | `Error.Code` | 说明 |
 | --- | --- | --- |
-| 400 | `InvalidParameter` | 字段不符合要求，例如带了不支持的字段、`ProjectName` 不是 `default` |
+| 400 | `InvalidParameter` | 字段不符合要求，例如带了不支持的字段、`ProjectName` 不是 `default`、`AssetType` 不是 `Image` |
 | 400 | `InvalidParameter.FormatUnsupported` | `URL` 指向的文件不是支持的图片格式 |
 | 400 | `InvalidActionOrVersion` | 接口名不在上面列出的范围内，或 `Version` 不是 `2024-01-01` |
 | 401 | — | API Key 不正确 |
@@ -196,4 +198,5 @@ curl --fail-with-body --silent --show-error \
 | 401 | `RequestExpired` | 签名时间和服务器时间相差超过 15 分钟 |
 | 404 | `ResourceNotFound` | 素材或素材组不存在，或不属于你 |
 | 409 | `ResourceInUse` | 素材正被未结束的视频使用，暂时不能删除 |
+| 409 | `AssetLimitExceeded` | 素材组已达 10 个上限，请先删除不用的素材组 |
 | 429 | `TooManyRequests` | 创建素材太快，按响应头 `Retry-After` 等待后重试 |

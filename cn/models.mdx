@@ -60,7 +60,7 @@ curl --fail-with-body --silent --show-error --max-time 600 \
 
 ## GPT Image 2.6（2026-11-07 实测）
 
-具有 GPT Image 2.6 权限的图片 Key，`/v1/models` 本次返回 `gpt-image-2`、`gpt-image-2.5-flare`、`gpt-image-2.5-sunburst`、`gpt-image-2.6-flare`、`gpt-image-2.6-sunburst`。2.6 支持生成图片和 GIF 动图，见 [GPT Image 2.6 图像生成](/cn/api-reference/images/gpt-image-2.6/generation)和[图像编辑](/cn/api-reference/images/gpt-image-2.6/edits)。图像生成接口不填 `model` 时仍使用 `gpt-image-2.5-flare`（编辑接口不填 `model` 未测）。
+具有 GPT Image 2.6 权限的图片 Key，`/v1/models` 本次返回 `gpt-image-2`、`gpt-image-2.5-flare`、`gpt-image-2.5-sunburst`、`gpt-image-2.6-flare`、`gpt-image-2.6-sunburst`。2.6 支持生成图片和 GIF 动图，见 [GPT Image 2.6 图像生成](/cn/api-reference/images/gpt-image-2.6/generation)和[图像编辑](/cn/api-reference/images/gpt-image-2.6/edits)。图像生成、编辑接口不填 `model` 时都使用 `gpt-image-2.5-flare`（官方编辑接口默认是 `gpt-image-2.5-sunburst`），要用 2.6 请明确填写。
 
 ## Nano Banana 2.1（2026-10-08 实测）
 
