@@ -1,12 +1,14 @@
 ---
 title: "GPT Image 使用指南"
-description: "三个图片模型的实测入口和参数阅读位置。"
+description: "GPT Image 各模型的实测入口和参数阅读位置。"
 ---
 
 ## 模型与入口
 
 | 模型 | 已测入口 | 已测质量 |
 | --- | --- | --- |
+| `gpt-image-2.6-flare` | 生成、编辑、GIF、SSE（只有完成事件） | low、medium、high、max、auto |
+| `gpt-image-2.6-sunburst` | 生成、编辑、GIF | low |
 | `gpt-image-2.5-flare` | 生成、编辑、SSE | low、medium、high、xhigh、max、auto |
 | `gpt-image-2.5-sunburst` | 生成、编辑、SSE | low、medium、high、xhigh、max、auto |
 | `gpt-image-2` | JSON 生成、JSON / 文件编辑 | low、medium、high、auto |
@@ -18,6 +20,7 @@ description: "三个图片模型的实测入口和参数阅读位置。"
 - 文字生成图片：运行[图像生成](/cn/api-reference/images/gpt-image-2.5/generation)中的示例。
 - 修改已有图片：运行[图像编辑](/cn/api-reference/images/gpt-image-2.5/edits)中的 JSON 或文件上传示例。
 - 透明输出：使用生成或编辑页表格中的 2.5 PNG/WebP 透明组合。
+- 生成 GIF 动图：使用 GPT Image 2.6，运行[图像生成](/cn/api-reference/images/gpt-image-2.6/generation#生成-gif-动图)或[图像编辑](/cn/api-reference/images/gpt-image-2.6/edits#参考图生成-gif)中的 GIF 示例。
 - 保存流式结果：运行[图片流式返回](/cn/api-reference/images/gpt-image-2.5/streaming)中的完整 Python 示例。
 
 Flare、Sunburst 的横竖尺寸、两张输出及 JPEG/WebP 组合均在生成和编辑页列出。需要固定输出尺寸时显式填写 `size`。

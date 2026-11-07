@@ -1,0 +1,163 @@
+---
+title: "GPT Image 2.6 图像编辑"
+description: "上传参考图生成新图片或 GIF 动图的完整实测示例。"
+api: "POST /v1/images/edits"
+---
+
+本页适用于 GPT Image 2.6。使用 2.5 请查看 [GPT Image 2.5 API](/cn/api-reference/images/gpt-image-2.5/edits)。
+
+通过 `POST https://code.heihuzi.ai/v1/images/edits` 上传参考图并描述修改要求。验证日期：**2026-11-07**。请使用具有 GPT Image 2.6 权限的 API Key，并设置环境变量 `HEIHUZI_API_KEY`。
+
+## 输入方式
+
+| 输入方式 | 本次验证的字段 | 模型 |
+| --- | --- | --- |
+| 文件上传 | multipart 文件字段 `image` | Flare、Sunburst |
+| JSON Data URL | `images: [{"image_url": "data:image/png;base64,..."}]` | Flare |
+
+下载[参考图 reference.png](/images/reference.png)到运行目录后，可以直接运行下面的示例。
+
+<RequestExample>
+```bash
+curl --fail-with-body --silent --show-error --max-time 600 \
+  --request POST \
+  --url https://code.heihuzi.ai/v1/images/edits \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
+  --form 'model=gpt-image-2.6-sunburst' \
+  --form 'prompt=Change the blue cup to a bright red cup. Keep the cup shape and the white background.' \
+  --form 'image=@reference.png' \
+  --form 'n=1' \
+  --form 'size=1024x1024' \
+  --form 'quality=low' \
+  --form 'output_format=png' \
+  --output edits-multipart.json
+```
+</RequestExample>
+
+响应保存为 `edits-multipart.json`，其中 `data[].b64_json` 是输出图片。
+
+## 请求参数
+
+`model`、`prompt`、`n`、`size`、`quality`、`output_format`、`frame_count`、`frame_duration_ms` 的含义与[图像生成](/cn/api-reference/images/gpt-image-2.6/generation)相同。编辑接口本次验证了下面这些取值。
+
+<ParamField body="model" type="string" required>
+填写 `gpt-image-2.6-flare` 或 `gpt-image-2.6-sunburst`。
+</ParamField>
+
+<ParamField body="images" type="object[]">
+JSON 参考图数组，本页验证一张参考图。multipart 改用 `image` 文件字段。
+<Expandable title="JSON 参考图字段" defaultOpen>
+<ParamField body="image_url" type="string">参考图的完整 Data URL，本次验证 PNG。</ParamField>
+</Expandable>
+</ParamField>
+
+<ParamField body="output_format" type="string">
+已验证 `png`、`gif`。输出 GIF 时用法与生成接口相同，见下方[参考图生成 GIF](#参考图生成-gif)。
+</ParamField>
+
+<ParamField body="stream" type="boolean" default="false">
+multipart 请求设置 `true` 后返回 SSE；本次只收到一个 `image_edit.completed` 完成事件，没有预览图，请以完成事件作为成功依据。
+</ParamField>
+
+2.6 不使用 `input_fidelity`，不需要填写。
+
+## JSON 编辑并保存图片
+
+这段完整代码已真实执行，把蓝色杯子改成红色并保存为 `edited-1.png`。
+
+```python
+import base64
+import os
+from pathlib import Path
+import requests
+
+encoded = base64.b64encode(Path("reference.png").read_bytes()).decode("ascii")
+response = requests.post(
+    "https://code.heihuzi.ai/v1/images/edits",
+    headers={"Authorization": f"Bearer {os.environ['HEIHUZI_API_KEY']}"},
+    json={
+        "model": "gpt-image-2.6-flare",
+        "prompt": "Change the blue cup to a bright red cup. Keep the cup shape and the white background.",
+        "images": [{"image_url": f"data:image/png;base64,{encoded}"}],
+        "n": 1,
+        "size": "1024x1024",
+        "quality": "low",
+        "output_format": "png",
+    },
+    timeout=600,
+)
+response.raise_for_status()
+data = response.json()["data"]
+for index, item in enumerate(data, 1):
+    Path(f"edited-{index}.png").write_bytes(base64.b64decode(item["b64_json"]))
+print("Saved", len(data), "image(s)")
+```
+
+## 参考图生成 GIF
+
+这段完整代码已真实执行，让参考图里的杯子上下跳动，保存为 512×512、9 帧的 `cup-bounce.gif`。
+
+```python
+import base64
+import os
+from pathlib import Path
+import requests
+
+encoded = base64.b64encode(Path("reference.png").read_bytes()).decode("ascii")
+response = requests.post(
+    "https://code.heihuzi.ai/v1/images/edits",
+    headers={"Authorization": f"Bearer {os.environ['HEIHUZI_API_KEY']}"},
+    json={
+        "model": "gpt-image-2.6-flare",
+        "prompt": "Make the blue cup gently bounce up and down.",
+        "images": [{"image_url": f"data:image/png;base64,{encoded}"}],
+        "quality": "low",
+        "output_format": "gif",
+        "frame_count": 9,
+        "frame_duration_ms": 200,
+    },
+    timeout=600,
+)
+response.raise_for_status()
+item = response.json()["data"][0]
+Path("cup-bounce.gif").write_bytes(base64.b64decode(item["b64_json"]))
+print("Saved cup-bounce.gif")
+```
+
+## 真实响应节选
+
+下面是页首示例的一次真实响应，图片 base64 已省略。
+
+<ResponseExample>
+```json
+{
+  "created": 1794058909,
+  "background": "opaque",
+  "data": [
+    {
+      "b64_json": "<此处省略真实图片的 base64>",
+      "generation_id": "e8ea7f47-4b57-4655-a6fe-c5e374a2bae5"
+    }
+  ],
+  "output_format": "png",
+  "quality": "low",
+  "safety_identifier": null,
+  "size": "1024x1024",
+  "usage": {
+    "input_tokens": 1059,
+    "input_tokens_details": {
+      "image_tokens": 1024,
+      "text_tokens": 35
+    },
+    "output_tokens": 824,
+    "output_tokens_details": {
+      "image_tokens": 824,
+      "text_tokens": 0
+    },
+    "total_tokens": 1883
+  }
+}
+```
+</ResponseExample>
+
+参考图会计入输入用量：这张 1024×1024 参考图计 1024 个图片输入用量。

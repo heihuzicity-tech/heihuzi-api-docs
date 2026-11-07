@@ -48,6 +48,13 @@
             ]
           },
           {
+            "group": "GPT Image 2.6",
+            "pages": [
+              "cn/api-reference/images/gpt-image-2.6/generation",
+              "cn/api-reference/images/gpt-image-2.6/edits"
+            ]
+          },
+          {
             "group": "GPT Image 2.5",
             "pages": [
               "cn/api-reference/images/gpt-image-2.5/generation",

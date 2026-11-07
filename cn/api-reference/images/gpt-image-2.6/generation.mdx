@@ -1,0 +1,181 @@
+---
+title: "GPT Image 2.6 图像生成"
+description: "生成图片和 GIF 动图的完整实测示例、参数和响应。"
+api: "POST /v1/images/generations"
+---
+
+本页适用于 GPT Image 2.6。使用 2.5 请查看 [GPT Image 2.5 API](/cn/api-reference/images/gpt-image-2.5/generation)。
+
+通过 `POST https://code.heihuzi.ai/v1/images/generations` 生成图片或 GIF 动图。验证日期：**2026-11-07**。请使用具有 GPT Image 2.6 权限的 API Key，并设置环境变量 `HEIHUZI_API_KEY`。
+
+<RequestExample>
+```bash
+curl --fail-with-body --silent --show-error --max-time 600 \
+  --request POST \
+  --url https://code.heihuzi.ai/v1/images/generations \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "model": "gpt-image-2.6-flare",
+  "prompt": "A simple blue ceramic cup on a white background.",
+  "n": 1,
+  "size": "1024x1024",
+  "quality": "low",
+  "output_format": "png"
+}' \
+  --output generation.json
+```
+</RequestExample>
+
+请求会把完整响应保存到 `generation.json`，其中 `data[].b64_json` 是图片的 base64。
+
+## 请求参数
+
+<ParamField body="model" type="string" required>
+填写 `gpt-image-2.6-flare` 或 `gpt-image-2.6-sunburst`。省略时使用 `gpt-image-2.5-flare`，不是 2.6，所以要用 2.6 请明确填写。
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+描述要生成的图片内容。
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+返回图片张数。已验证 `1`、`2`。客户端请遍历实际返回的 `data` 数组。
+</ParamField>
+
+<ParamField body="size" type="string">
+已验证 `1024x1024`、`1536x1024`、`2048x2048`、`2880x2880`、`auto`，每个取值用的模型见下方[已验证的参数组合](#已验证的参数组合)。`auto` 的实测返回尺寸是 `1312x1199`，需要固定尺寸时请明确填写。生成 GIF 时不要填写尺寸。
+</ParamField>
+
+<ParamField body="quality" type="string">
+Flare 已验证 `low`、`medium`、`high`、`max`、`auto`，Sunburst 已验证 `low`。本次 `auto` 实际落在 `low`，结果以响应里的 `quality` 为准。
+</ParamField>
+
+<ParamField body="output_format" type="string">
+已验证 `png`、`jpeg`、`webp`、`gif`，解码后的文件格式与请求一致。
+</ParamField>
+
+<ParamField body="frame_count" type="integer">
+GIF 的帧数，只在 `output_format` 为 `gif` 时填写。已验证 `4`、`9`、`12`、`16`，生成的 GIF 帧数与请求一致。
+</ParamField>
+
+<ParamField body="frame_duration_ms" type="integer">
+GIF 每帧显示的时长，单位毫秒，只在 `output_format` 为 `gif` 时填写。已验证 `100`、`200`、`500`，生成的 GIF 每帧时长与请求一致。
+</ParamField>
+
+<ParamField body="stream" type="boolean" default="false">
+设置 `true` 后返回 SSE（`text/event-stream`）；省略时返回 JSON。2.6 实测只返回一个 `image_generation.completed` 完成事件，没有预览图，见下方[流式返回](#流式返回)。
+</ParamField>
+
+<ParamField body="safety_identifier" type="string">
+用于标识你这边的终端用户，响应里会原样返回。
+</ParamField>
+
+## 已验证的参数组合
+
+以下每行都在正式环境实际调用，返回 200 并核对了图片文件。
+
+| 模型 | 尺寸 | 质量 | 格式 | 其他 | 实际结果 |
+| --- | --- | --- | --- | --- | --- |
+| Flare | `1024x1024` | `low` | `png` | `n: 1` | 1024×1024 PNG |
+| Sunburst | `1536x1024` | `low` | `webp` | `n: 2` | 两张 1536×1024 WebP |
+| Flare | `2048x2048` | `medium` | `jpeg` | | 2048×2048 JPEG |
+| Flare | `2880x2880` | `high` | `webp` | | 2880×2880 WebP |
+| Flare | `1024x1024` | `max` | `png` | | 1024×1024 PNG |
+| Flare | `auto` | `auto` | 省略 | `safety_identifier` | 1312×1199 PNG，质量 `low` |
+| Flare | 省略 | `low` | `gif` | `frame_count: 4`、`frame_duration_ms: 100` | 512×512 GIF，4 帧，每帧 100 毫秒 |
+| Sunburst | 省略 | `low` | `gif` | `frame_count: 9`、`frame_duration_ms: 200` | 512×512 GIF，9 帧，每帧 200 毫秒 |
+| Flare | 省略 | `low` | `gif` | `frame_count: 12`、`frame_duration_ms: 500` | 512×512 GIF，12 帧，每帧 500 毫秒 |
+| Flare | 省略 | `low` | `gif` | `frame_count: 16`、`frame_duration_ms: 200` | 512×512 GIF，16 帧，每帧 200 毫秒 |
+
+跨行叠加参数会形成新的组合，请先在自己的业务里验证再使用。
+
+## 生成 GIF 动图
+
+下面的完整示例生成一张 9 帧、每帧 200 毫秒的 GIF，响应保存到 `rabbit.json`。
+
+```bash
+curl --fail-with-body --silent --show-error --max-time 600 \
+  --request POST \
+  --url https://code.heihuzi.ai/v1/images/generations \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "model": "gpt-image-2.6-sunburst",
+  "prompt": "A small rabbit waving, simple flat illustration.",
+  "quality": "low",
+  "output_format": "gif",
+  "frame_count": 9,
+  "frame_duration_ms": 200
+}' \
+  --output rabbit.json
+```
+
+再把响应里的 base64 解码保存为 `rabbit.gif`：
+
+```bash
+python3 -c 'import base64, json; d = json.load(open("rabbit.json")); open("rabbit.gif", "wb").write(base64.b64decode(d["data"][0]["b64_json"]))'
+```
+
+- GIF 输出 512×512，响应里的 `output_format` 为 `gif`、`size` 为 `512x512`。
+- 费用按实际输出用量计算，不随帧数平稳增加。本次 4、9、12、16 帧的输出用量分别是 555、1172、1038、1668，12 帧比 9 帧还少。
+
+## 流式返回
+
+```bash
+curl --fail-with-body --silent --show-error --no-buffer --max-time 600 \
+  --request POST \
+  --url https://code.heihuzi.ai/v1/images/generations \
+  --header "Authorization: Bearer $HEIHUZI_API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "model": "gpt-image-2.6-flare",
+  "prompt": "A simple blue ceramic cup on a white background.",
+  "n": 1,
+  "size": "1024x1024",
+  "quality": "low",
+  "output_format": "png",
+  "stream": true
+}' \
+  --output stream.txt
+```
+
+`stream.txt` 里是 SSE 事件。本次只收到一个 `image_generation.completed` 事件，它的 `b64_json` 是最终图片，`usage` 是本次用量；没有收到预览事件。请以完成事件作为成功依据。
+
+## 真实响应节选
+
+下面是页首示例的一次真实响应，图片 base64 已省略。
+
+<ResponseExample>
+```json
+{
+  "created": 1794058821,
+  "background": "opaque",
+  "data": [
+    {
+      "b64_json": "<此处省略真实图片的 base64>",
+      "generation_id": "c9317a1c-3b59-4611-86c2-fe59407d7581"
+    }
+  ],
+  "output_format": "png",
+  "quality": "low",
+  "safety_identifier": null,
+  "size": "1024x1024",
+  "usage": {
+    "input_tokens": 16,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 16
+    },
+    "output_tokens": 824,
+    "output_tokens_details": {
+      "image_tokens": 824,
+      "text_tokens": 0
+    },
+    "total_tokens": 840
+  }
+}
+```
+</ResponseExample>
+
+`data[].b64_json` 解码后是图片文件，`usage` 是本次用量。同样是 1024×1024 低画质，2.6 的输出用量是 824，2.5 是 196，单张费用约为 2.5 的 4 倍。低画质想省钱可以用 [GPT Image 2.5](/cn/api-reference/images/gpt-image-2.5/generation)。
