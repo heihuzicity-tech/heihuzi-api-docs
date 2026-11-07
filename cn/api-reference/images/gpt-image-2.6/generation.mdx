@@ -31,70 +31,44 @@ curl --fail-with-body --silent --show-error --max-time 600 \
 
 ## 请求参数
 
-参数名、取值和返回结构与 OpenAI 官方 `POST /v1/images/generations` 一致。下面每个取值都在正式环境实际调用过，具体组合见[已验证的参数组合](#已验证的参数组合)。
-
 <ParamField body="model" type="string" required>
-填写 `gpt-image-2.6-flare` 或 `gpt-image-2.6-sunburst`。官方要求明确填写型号；本站省略时使用 `gpt-image-2.5-flare`，不是 2.6。
+填写 `gpt-image-2.6-flare` 或 `gpt-image-2.6-sunburst`。省略时使用 `gpt-image-2.5-flare`，不是 2.6，所以要用 2.6 请明确填写。
 </ParamField>
 
 <ParamField body="prompt" type="string" required>
 描述要生成的图片内容。
 </ParamField>
 
-<ParamField body="background" type="string">
-背景。已验证 `transparent`、`opaque`、`auto`。`transparent` 配 `png` 得到透明背景的 PNG；GIF 填 `auto` 时实际返回 `opaque`。实际背景以响应里的 `background` 为准。
-</ParamField>
-
-<ParamField body="complexity" type="string">
-出图前构思的程度，和画质 `quality` 互相独立。已验证 `low`、`medium`、`high`：同一提示词三档都正常出图，排版细节略有不同，输出用量相同，不另外收费。
-</ParamField>
-
-<ParamField body="frame_count" type="integer">
-GIF 的帧数，只能与 `output_format: "gif"` 一起用。已验证 `2`、`4`、`9`、`12`、`16`，生成的帧数与请求一致；不填时为 9 帧。填 `17` 或在非 GIF 请求里带这个字段，返回 400。
-</ParamField>
-
-<ParamField body="frame_duration_ms" type="integer">
-GIF 每帧显示的时长，单位毫秒，只用于 GIF。已验证 `20`、`100`、`200`、`500`、`2000`，生成的每帧时长与请求一致；不填时为 200。填 `105` 实际为 100 毫秒（按 10 毫秒取整）；填 `10` 返回 400。
-</ParamField>
-
-<ParamField body="moderation" type="string">
-内容审核档位。已验证 `low`（较宽松）和 `auto`。
-</ParamField>
-
 <ParamField body="n" type="integer" default="1">
-返回图片张数。已验证 `1`、`2`、`10`；填 `11` 返回 400。客户端请遍历实际返回的 `data` 数组。
-</ParamField>
-
-<ParamField body="output_compression" type="integer">
-`jpeg`、`webp` 输出的压缩率。已验证 `jpeg` 填 `50`、`webp` 填 `0`。
-</ParamField>
-
-<ParamField body="output_format" type="string">
-已验证 `png`、`jpeg`、`webp`、`gif`，两款型号都验证过，解码后的文件格式与请求一致。GIF 不支持流式，GIF 加 `stream: true` 返回 400。
-</ParamField>
-
-<ParamField body="partial_images" type="integer">
-流式返回时的预览张数。已验证 `1`、`2`、`3`。实际收到的预览可能少于请求值：本次填 `3` 收到 1 张，填 `2` 收到 2 张，填 `1` 没有收到预览。预览图是 PNG。
-</ParamField>
-
-<ParamField body="quality" type="string">
-已验证 `low`、`medium`、`high`、`xhigh`、`max`、`auto`，两款型号都验证过。`auto` 本次生成实际落在 `low`，结果以响应里的 `quality` 为准。
-</ParamField>
-
-<ParamField body="safety_identifier" type="string">
-用于标识你这边的终端用户，响应里会原样返回。两款型号都验证过。
+返回图片张数。已验证 `1`、`2`；`2` 只测了 Sunburst（`1536x1024`、`low`、`webp`），Flare 的 `2` 未测。客户端请遍历实际返回的 `data` 数组。
 </ParamField>
 
 <ParamField body="size" type="string">
-已验证 `1024x1024`、`1536x1024`、`1024x1536`、`2048x2048`、`2880x2880`、`3840x2160`、自定义的 `1536x864` 和 `auto`。宽高都要是 16 的倍数，`1000x1000` 返回 400。`auto` 的返回尺寸不固定，本次出现过 `1312x1199`、`1536x1024`，需要固定尺寸时请明确填写。GIF 的 `size` 指每一帧的尺寸：不填和填 `512x512` 都输出 512×512；填 `1024x1024` 返回 400。
+已验证 `1024x1024`、`1536x1024`、`2048x2048`、`2880x2880`、`auto`，每个取值用的模型见下方[已验证的参数组合](#已验证的参数组合)。`auto` 的实测返回尺寸是 `1312x1199`，需要固定尺寸时请明确填写。GIF 只测了不填尺寸的写法，GIF 同时填写尺寸未测。
+</ParamField>
+
+<ParamField body="quality" type="string">
+Flare 已验证 `low`、`medium`、`high`、`max`、`auto`，Sunburst 已验证 `low`。本次 `auto` 实际落在 `low`，结果以响应里的 `quality` 为准。
+</ParamField>
+
+<ParamField body="output_format" type="string">
+已验证 `png`、`jpeg`、`webp`、`gif`，解码后的文件格式与请求一致。
+</ParamField>
+
+<ParamField body="frame_count" type="integer">
+GIF 的帧数，用于 `output_format` 为 `gif` 的请求；非 GIF 请求带这个字段未测。已验证 `4`、`9`、`12`、`16`，生成的 GIF 帧数与请求一致。
+</ParamField>
+
+<ParamField body="frame_duration_ms" type="integer">
+GIF 每帧显示的时长，单位毫秒，用于 `output_format` 为 `gif` 的请求；非 GIF 请求带这个字段未测。已验证 `100`、`200`、`500`，生成的 GIF 每帧时长与请求一致。
 </ParamField>
 
 <ParamField body="stream" type="boolean" default="false">
-设置 `true` 后返回 SSE（`text/event-stream`），两款型号都验证过；省略时返回 JSON。见下方[流式返回](#流式返回)。
+Flare 设置 `true` 后返回 SSE（`text/event-stream`）；省略时返回 JSON。Sunburst 的流式未测。2.6 实测只返回一个 `image_generation.completed` 完成事件，没有预览图，见下方[流式返回](#流式返回)。
 </ParamField>
 
-<ParamField body="user" type="string">
-官方已弃用的旧字段，建议改用 `safety_identifier`。只填 `user` 时，它会作为响应里的 `safety_identifier` 返回。
+<ParamField body="safety_identifier" type="string">
+用于标识你这边的终端用户，响应里会原样返回。只测了 Flare。
 </ParamField>
 
 ## 已验证的参数组合
@@ -104,29 +78,15 @@ GIF 每帧显示的时长，单位毫秒，只用于 GIF。已验证 `20`、`100
 | 模型 | 尺寸 | 质量 | 格式 | 其他 | 实际结果 |
 | --- | --- | --- | --- | --- | --- |
 | Flare | `1024x1024` | `low` | `png` | `n: 1` | 1024×1024 PNG |
-| Flare | `1024x1024` | `low` | `png` | `n: 2` | 两张 1024×1024 PNG |
-| Flare | `1024x1024` | `low` | `png` | `n: 10` | 十张 1024×1024 PNG |
 | Sunburst | `1536x1024` | `low` | `webp` | `n: 2` | 两张 1536×1024 WebP |
 | Flare | `2048x2048` | `medium` | `jpeg` | | 2048×2048 JPEG |
-| Sunburst | `2048x2048` | `medium` | `jpeg` | `output_compression: 50`、`safety_identifier` | 2048×2048 JPEG，`safety_identifier` 原样返回 |
 | Flare | `2880x2880` | `high` | `webp` | | 2880×2880 WebP |
-| Sunburst | `2880x2880` | `high` | `png` | | 2880×2880 PNG |
 | Flare | `1024x1024` | `max` | `png` | | 1024×1024 PNG |
-| Sunburst | `1024x1024` | `max` | `png` | | 1024×1024 PNG |
-| Flare | `1024x1536` | `xhigh` | `webp` | `output_compression: 0` | 1024×1536 WebP |
-| Sunburst | `1024x1536` | `low` | `png` | `background: "transparent"` | 透明背景的 1024×1536 PNG |
-| Flare | `1536x864` | `low` | `png` | `background: "opaque"`、`moderation: "low"`、`user` | 1536×864 PNG，`user` 作为 `safety_identifier` 返回 |
-| Flare | `3840x2160` | `low` | `jpeg` | | 3840×2160 JPEG |
-| Flare | `auto` | `auto` | 省略 | `complexity: "low"`、`safety_identifier` | 1312×1199 PNG，质量 `low` |
-| Sunburst | `auto` | `auto` | 省略 | `stream: true`、`partial_images: 3` | 1 张预览和 1536×1024 PNG 完成图，质量 `low` |
-| Flare | `1024x1024` | `low` | `png` | `complexity` 分别为 `low`、`medium`、`high` | 均为 1024×1024 PNG |
+| Flare | `auto` | `auto` | 省略 | `safety_identifier` | 1312×1199 PNG，质量 `low` |
 | Flare | 省略 | `low` | `gif` | `frame_count: 4`、`frame_duration_ms: 100` | 512×512 GIF，4 帧，每帧 100 毫秒 |
-| Flare | `512x512` | `low` | `gif` | `frame_count: 2`、`frame_duration_ms: 20`、`moderation: "auto"` | 512×512 GIF，2 帧，每帧 20 毫秒 |
 | Sunburst | 省略 | `low` | `gif` | `frame_count: 9`、`frame_duration_ms: 200` | 512×512 GIF，9 帧，每帧 200 毫秒 |
-| Sunburst | 省略 | `low` | `gif` | 不填帧数和帧时长，`background: "auto"`、`moderation: "low"` | 512×512 GIF，9 帧，每帧 200 毫秒 |
 | Flare | 省略 | `low` | `gif` | `frame_count: 12`、`frame_duration_ms: 500` | 512×512 GIF，12 帧，每帧 500 毫秒 |
 | Flare | 省略 | `low` | `gif` | `frame_count: 16`、`frame_duration_ms: 200` | 512×512 GIF，16 帧，每帧 200 毫秒 |
-| Flare | 省略 | `low` | `gif` | `frame_count: 16`、`frame_duration_ms: 2000` | 512×512 GIF，16 帧，每帧 2000 毫秒 |
 
 跨行叠加参数会形成新的组合，请先在自己的业务里验证再使用。
 
@@ -180,24 +140,7 @@ curl --fail-with-body --silent --show-error --no-buffer --max-time 600 \
   --output stream.txt
 ```
 
-`stream.txt` 里是 SSE 事件。这个示例没有填 `partial_images`，只收到一个 `image_generation.completed` 事件，它的 `b64_json` 是最终图片，`usage` 是本次用量。填了 `partial_images` 时，完成事件之前会先收到 `image_generation.partial_image` 预览事件（带 `partial_image_index`），张数可能少于请求值。请以完成事件作为成功依据。
-
-## 错误返回
-
-参数不合法时返回 HTTP 400，结构与官方相同：`error` 里有 `message`、`type`、`param`、`code`。下面是填 `frame_count: 17` 的真实返回：
-
-```json
-{
-  "error": {
-    "code": "invalid_value",
-    "message": "Invalid 'frame_count' for GIF output. Received 17. Use an integer from 2 to 16, or omit 'frame_count' to use 9.",
-    "param": "frame_count",
-    "type": "image_generation_user_error"
-  }
-}
-```
-
-本次实测返回 400 的情况：`frame_count` 超过 16、`frame_duration_ms` 小于 20、GIF 加 `stream: true`、非 GIF 请求带 `frame_count`、尺寸不是 16 的倍数、`n` 超过 10、GIF 填 `size: "1024x1024"`。这些请求没有扣费。
+`stream.txt` 里是 SSE 事件。本次只收到一个 `image_generation.completed` 事件，它的 `b64_json` 是最终图片，`usage` 是本次用量；没有收到预览事件。请以完成事件作为成功依据。
 
 ## 真实响应节选
 

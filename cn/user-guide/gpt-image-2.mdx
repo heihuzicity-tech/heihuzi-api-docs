@@ -7,13 +7,13 @@ description: "GPT Image 各模型的实测入口和参数阅读位置。"
 
 | 模型 | 已测入口 | 已测质量 |
 | --- | --- | --- |
-| `gpt-image-2.6-flare` | 生成、编辑、GIF、SSE | low、medium、high、xhigh、max、auto |
-| `gpt-image-2.6-sunburst` | 生成、编辑、GIF、SSE | low、medium、high、xhigh、max、auto |
+| `gpt-image-2.6-flare` | 生成、编辑、GIF、SSE（只有完成事件） | low、medium、high、max、auto |
+| `gpt-image-2.6-sunburst` | 生成、编辑、GIF | low |
 | `gpt-image-2.5-flare` | 生成、编辑、SSE | low、medium、high、xhigh、max、auto |
 | `gpt-image-2.5-sunburst` | 生成、编辑、SSE | low、medium、high、xhigh、max、auto |
 | `gpt-image-2` | JSON 生成、JSON / 文件编辑 | low、medium、high、auto |
 
-2.5 和 2 的质量矩阵使用单张 1024×1024 PNG，流式使用 low；2.6 各档质量的尺寸和格式见 [2.6 生成](/cn/api-reference/images/gpt-image-2.6/generation#已验证的参数组合)和[编辑](/cn/api-reference/images/gpt-image-2.6/edits#已验证的参数组合)的组合表。生成和编辑省略模型的实测调度记录均为 Flare，业务中建议显式填写完整模型名。
+质量矩阵使用单张 1024×1024 PNG；流式使用 low。生成和编辑省略模型的实测调度记录均为 Flare，业务中建议显式填写完整模型名。
 
 ## 按目标使用
 
