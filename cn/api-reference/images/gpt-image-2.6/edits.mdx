@@ -12,8 +12,9 @@ api: "POST /v1/images/edits"
 
 | 输入方式 | 本次验证的字段 | 模型 |
 | --- | --- | --- |
-| 文件上传 | multipart 文件字段 `image` | Flare、Sunburst |
-| JSON Data URL | `images: [{"image_url": "data:image/png;base64,..."}]` | Flare |
+| 文件上传 | multipart 文件字段 `image`；多张时重复上传 `image[]` | Flare、Sunburst |
+| JSON Data URL | `images: [{"image_url": "data:image/png;base64,..."}]` | Flare、Sunburst |
+| JSON 图片地址 | `images: [{"image_url": "https://..."}]` | Sunburst |
 
 下载[参考图 reference.png](/images/reference.png)到运行目录后，可以直接运行下面的示例。
 
@@ -38,26 +39,101 @@ curl --fail-with-body --silent --show-error --max-time 600 \
 
 ## 请求参数
 
-`model`、`prompt`、`n`、`size`、`quality`、`output_format`、`frame_count`、`frame_duration_ms` 的含义与[图像生成](/cn/api-reference/images/gpt-image-2.6/generation)相同。编辑接口本次只验证了下面这些取值：PNG 输出均为 `n: 1`、`size: "1024x1024"`、`quality: "low"`；GIF 输出为 Flare、`quality: "low"`、`frame_count: 9`、`frame_duration_ms: 200`。编辑接口的其他张数、尺寸、画质和帧数未测。
+参数名、取值和返回结构与 OpenAI 官方 `POST /v1/images/edits` 一致。下面只列编辑接口实际调用过的取值，具体组合见[已验证的参数组合](#已验证的参数组合)。
 
 <ParamField body="model" type="string" required>
-填写 `gpt-image-2.6-flare` 或 `gpt-image-2.6-sunburst`。
+填写 `gpt-image-2.6-flare` 或 `gpt-image-2.6-sunburst`。省略时本站使用 `gpt-image-2.5-flare`，和官方默认的 `gpt-image-2.5-sunburst` 不同，要用 2.6 请明确填写。
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+描述要怎样修改参考图。
 </ParamField>
 
 <ParamField body="images" type="object[]">
-JSON 参考图数组，本页验证一张参考图。multipart 改用 `image` 文件字段。
+JSON 参考图数组，已验证一张和两张参考图。multipart 改用 `image` 文件字段，多张时重复上传 `image[]`。
 <Expandable title="JSON 参考图字段" defaultOpen>
-<ParamField body="image_url" type="string">参考图的完整 Data URL，本次验证 PNG。</ParamField>
+<ParamField body="image_url" type="string">参考图的完整 Data URL 或公开的 `https` 图片地址，本次验证 PNG。</ParamField>
 </Expandable>
+官方的 `images[].file_id` 本站不支持，实测返回 400，请改用 `image_url`。
+</ParamField>
+
+<ParamField body="background" type="string">
+已验证 `transparent`：配 `png` 得到透明背景的 PNG。实际背景以响应里的 `background` 为准。
+</ParamField>
+
+<ParamField body="complexity" type="string">
+出图前构思的程度，已验证 `low`、`medium`、`high`，输出用量不变。
+</ParamField>
+
+<ParamField body="frame_count" type="integer">
+GIF 的帧数，只用于 `output_format: "gif"`。已验证 `2`、`4`、`9`、`12`、`16`，不填时为 9 帧。
+</ParamField>
+
+<ParamField body="frame_duration_ms" type="integer">
+GIF 每帧时长，单位毫秒。已验证 `20`、`100`、`200`、`500`、`2000`，不填时为 200。
+</ParamField>
+
+<ParamField body="moderation" type="string">
+内容审核档位，已验证 `low`、`auto`。
+</ParamField>
+
+<ParamField body="n" type="integer" default="1">
+返回图片张数，已验证 `1`、`2`、`10`。一次出多张时，参考图的输入用量按张数重复计算：一张 1024×1024 参考图出 10 张，计 10240 个图片输入用量。
+</ParamField>
+
+<ParamField body="output_compression" type="integer">
+已验证 `jpeg` 填 `50`。
 </ParamField>
 
 <ParamField body="output_format" type="string">
-已验证 `png`、`gif`；`gif` 只测了 Flare 的 JSON 请求。见下方[参考图生成 GIF](#参考图生成-gif)。
+已验证 `png`、`jpeg`、`webp`、`gif`。GIF 两款型号、multipart 和 JSON 两种写法都验证过，见下方[参考图生成 GIF](#参考图生成-gif)。
+</ParamField>
+
+<ParamField body="partial_images" type="integer">
+流式返回时的预览张数。已验证 `1`、`2`：填 `2` 收到 2 张预览，填 `1` 没有收到预览。请求 `webp` 时预览图仍是 PNG，完成图是 WebP。
+</ParamField>
+
+<ParamField body="quality" type="string">
+已验证 `low`、`medium`、`high`、`xhigh`、`max`、`auto`。`auto` 本次实际落在 `medium`，以响应里的 `quality` 为准。
+</ParamField>
+
+<ParamField body="safety_identifier" type="string">
+用于标识你这边的终端用户，响应里会原样返回。同时填写已弃用的 `user` 时，响应以 `safety_identifier` 为准。
+</ParamField>
+
+<ParamField body="size" type="string">
+已验证 `1024x1024`、`1536x1024`、`1024x1536`、`2048x2048`、`2880x2880`、`auto`（本次返回 `1374x1145`）。GIF 不填和填 `512x512` 都输出 512×512，填 `1024x1024` 返回 400。
 </ParamField>
 
 <ParamField body="stream" type="boolean" default="false">
-Flare 的 multipart 请求设置 `true` 后返回 SSE（Sunburst 和 JSON 请求的流式未测）；本次只收到一个 `image_edit.completed` 完成事件，没有预览图，请以完成事件作为成功依据。
+设置 `true` 后返回 SSE。Flare、Sunburst，multipart 和 JSON 请求都验证过。完成事件是 `image_edit.completed`；填了 `partial_images` 时，之前可能先收到 `image_edit.partial_image` 预览事件。请以完成事件作为成功依据。
 </ParamField>
+
+## 已验证的参数组合
+
+以下每行都在正式环境实际调用，返回 200 并核对了图片文件。
+
+| 模型 | 写法 | 尺寸 | 质量 | 格式 | 其他 | 实际结果 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Sunburst | multipart `image` | `1024x1024` | `low` | `png` | | 1024×1024 PNG，杯子变红 |
+| Flare | JSON Data URL | `1024x1024` | `low` | `png` | | 1024×1024 PNG，杯子变红 |
+| Flare | multipart 两个 `image[]` | `1536x1024` | `medium` | `jpeg` | `n: 2`、`output_compression: 50` | 两张 1536×1024 JPEG，第一张图的杯形配第二张图的红色 |
+| Sunburst | JSON `https` 图片地址 | `2048x2048` | `high` | `webp` | `stream: true`、`partial_images: 2` | 2 张 PNG 预览和 2048×2048 WebP 完成图 |
+| Sunburst | multipart `image` | `2880x2880` | `low` | `png` | `stream: true` | 2880×2880 PNG 完成图 |
+| Flare | multipart `image` | `1024x1024` | `low` | `png` | `stream: true`、`partial_images: 1` | 1024×1024 PNG 完成图，没有预览 |
+| Flare | JSON Data URL | `auto` | `auto` | `png` | `background: "transparent"`、`moderation: "low"`、`safety_identifier`、`user` | 1374×1145 透明背景 PNG，质量 `medium` |
+| Flare | JSON Data URL | `1024x1536` | `max` | `png` | | 1024×1536 PNG |
+| Sunburst | JSON Data URL | `1024x1024` | `xhigh` | `png` | `complexity: "low"` | 1024×1024 PNG |
+| Flare | JSON Data URL | `1024x1024` | `low` | `png` | `complexity` 分别为 `medium`、`high` | 均为 1024×1024 PNG |
+| Flare | JSON Data URL | `1024x1024` | `low` | `png` | `n: 10` | 十张 1024×1024 PNG |
+| Flare | JSON Data URL | 省略 | `low` | `gif` | `frame_count: 9`、`frame_duration_ms: 200` | 512×512 GIF，9 帧，每帧 200 毫秒 |
+| Sunburst | multipart `image` | 省略 | `low` | `gif` | `frame_count: 4`、`frame_duration_ms: 100` | 512×512 GIF，4 帧，每帧 100 毫秒 |
+| Flare | JSON Data URL | `512x512` | `low` | `gif` | `frame_count: 12`、`frame_duration_ms: 500`、`moderation: "auto"` | 512×512 GIF，12 帧，每帧 500 毫秒 |
+| Sunburst | JSON Data URL | 省略 | `low` | `gif` | `frame_count: 16`、`frame_duration_ms: 2000` | 512×512 GIF，16 帧，每帧 2000 毫秒 |
+| Flare | JSON Data URL | 省略 | `low` | `gif` | `frame_count: 2`、`frame_duration_ms: 20` | 512×512 GIF，2 帧，每帧 20 毫秒 |
+| Flare | multipart `image` | 省略 | `low` | `gif` | 不填帧数和帧时长 | 512×512 GIF，9 帧，每帧 200 毫秒 |
+
+跨行叠加参数会形成新的组合，请先在自己的业务里验证再使用。参数不合法时返回的 400 结构见[图像生成的错误返回](/cn/api-reference/images/gpt-image-2.6/generation#错误返回)。
 
 ## JSON 编辑并保存图片
 
