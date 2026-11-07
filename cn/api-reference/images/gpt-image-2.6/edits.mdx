@@ -38,7 +38,7 @@ curl --fail-with-body --silent --show-error --max-time 600 \
 
 ## 请求参数
 
-`model`、`prompt`、`n`、`size`、`quality`、`output_format`、`frame_count`、`frame_duration_ms` 的含义与[图像生成](/cn/api-reference/images/gpt-image-2.6/generation)相同。编辑接口本次验证了下面这些取值。
+`model`、`prompt`、`n`、`size`、`quality`、`output_format`、`frame_count`、`frame_duration_ms` 的含义与[图像生成](/cn/api-reference/images/gpt-image-2.6/generation)相同。编辑接口本次只验证了下面这些取值：PNG 输出均为 `n: 1`、`size: "1024x1024"`、`quality: "low"`；GIF 输出为 Flare、`quality: "low"`、`frame_count: 9`、`frame_duration_ms: 200`。编辑接口的其他张数、尺寸、画质和帧数未测。
 
 <ParamField body="model" type="string" required>
 填写 `gpt-image-2.6-flare` 或 `gpt-image-2.6-sunburst`。
@@ -52,14 +52,12 @@ JSON 参考图数组，本页验证一张参考图。multipart 改用 `image` �
 </ParamField>
 
 <ParamField body="output_format" type="string">
-已验证 `png`、`gif`。输出 GIF 时用法与生成接口相同，见下方[参考图生成 GIF](#参考图生成-gif)。
+已验证 `png`、`gif`；`gif` 只测了 Flare 的 JSON 请求。见下方[参考图生成 GIF](#参考图生成-gif)。
 </ParamField>
 
 <ParamField body="stream" type="boolean" default="false">
-multipart 请求设置 `true` 后返回 SSE；本次只收到一个 `image_edit.completed` 完成事件，没有预览图，请以完成事件作为成功依据。
+Flare 的 multipart 请求设置 `true` 后返回 SSE（Sunburst 和 JSON 请求的流式未测）；本次只收到一个 `image_edit.completed` 完成事件，没有预览图，请以完成事件作为成功依据。
 </ParamField>
-
-2.6 不使用 `input_fidelity`，不需要填写。
 
 ## JSON 编辑并保存图片
 
