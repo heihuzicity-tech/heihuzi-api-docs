@@ -22,6 +22,8 @@ API 地址：**`https://code.heihuzi.ai`**。文档验证日期：**2026-09-10**
 | Nano Banana 2.1 生成、编辑 | `POST /v1beta/models/gemini-nano-banana-2.1:generateContent` |
 | MiniMax 视频生成 | `POST /v2/video_generation` |
 | Seedance 视频生成 | `POST /api/v3/contents/generations/tasks` |
+| 豆包语音配音 | `POST /api/v3/tts/create` |
+| 豆包语音识别 | `POST /api/v3/auc/bigmodel/submit`、`/query` |
 
 从[快速验证](/cn/quickstart)开始，或查看[集成指南](/cn/integrations/index)。所有请求都应使用与目标能力对应的 Key，认证和已复现错误见[认证](/cn/authentication)。
 
@@ -38,6 +40,10 @@ API 地址：**`https://code.heihuzi.ai`**。文档验证日期：**2026-09-10**
 ## Seedance 视频
 
 [Seedance 视频](/cn/api-reference/videos/seedance/create)（Seedance 2.0、2.0 Fast、2.0 mini、2.5）提供创建、查询和删除任务三个接口，支持文生视频、首帧、首尾帧、参考图和参考视频，按实际用量计费。
+
+## 豆包语音
+
+[配音](/cn/api-reference/audio/tts/create)（`seed-audio-1.0`）把文字合成为配音，可用预设音色、参考声音或参考图，同步返回音频和字幕，按原始时长每分钟 1 元计费。[语音识别](/cn/api-reference/audio/asr/submit)（`volc.seedasr.auc`）把录音文件异步转成带标点的文字，返回分句和逐字时间，按音频时长每小时 0.8 元计费。两者使用火山原生接口和 `X-Api-Key` 请求头。
 
 ## DeepSeek
 

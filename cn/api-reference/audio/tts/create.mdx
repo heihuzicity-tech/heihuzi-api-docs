@@ -1,0 +1,137 @@
+---
+title: "配音：生成音频"
+description: "用豆包语音 seed-audio-1.0 把文字合成为配音，可指定音色、参考声音或参考图，同步返回音频和字幕。"
+api: "POST /api/v3/tts/create"
+---
+
+`POST https://code.heihuzi.ai/api/v3/tts/create` 用 `seed-audio-1.0` 生成一段配音，请求和返回与火山「豆包语音 音频生成」HTTP 接口相同。接口是同步的：一次请求直接返回音频，不需要查询任务。
+
+请使用绑定「豆包语音｜火山官方」分组的 API Key。
+
+<RequestExample>
+```bash
+curl --fail-with-body --silent --show-error \
+  --request POST \
+  --url https://code.heihuzi.ai/api/v3/tts/create \
+  --header "X-Api-Key: $HEIHUZI_API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "model": "seed-audio-1.0",
+  "text_prompt": "@音频1：你好，今天阳光很好。",
+  "references": [{"speaker": "zh_female_vv_uranus_bigtts"}],
+  "audio_config": {"format": "mp3", "sample_rate": 24000, "enable_subtitle": true}
+}' > voice.json
+
+jq -r '.audio' voice.json | base64 --decode > voice.mp3
+```
+</RequestExample>
+
+运行前设置环境变量 `HEIHUZI_API_KEY`，并安装 `jq`。返回的 JSON 保存在 `voice.json`，音频解码后保存为 `voice.mp3`。
+
+## 请求参数
+
+<ParamField body="model" type="string" required>
+固定填 `seed-audio-1.0`。
+</ParamField>
+
+<ParamField body="text_prompt" type="string" required>
+要说的内容，最多 3000 个字符。用 `@音频1`、`@音频2`、`@音频3` 指定这句话用 `references` 里第几个声音来说，例如 `"@音频1：你好。@音频2：早上好。"`。可以在文字里描述语气，例如“用@音频1的声音清楚地说：……”。
+</ParamField>
+
+<ParamField body="references" type="object[]">
+参考声音或参考图，每项只写下面一种：
+
+- 预设音色：`{"speaker": "zh_female_vv_uranus_bigtts"}`，填火山豆包语音的音色 ID。
+- 参考音频（Base64）：`{"audio_data": "<音频文件的 Base64 编码>"}`，用这段录音的声音来说。
+- 参考音频（链接）：`{"audio_url": "https://example.com/voice.wav"}`，火山需要能直接下载。
+- 参考图（Base64）：`{"image_data": "<图片的 Base64 编码>"}`。
+- 参考图（链接）：`{"image_url": "https://example.com/person.png"}`。
+
+声音参考（`speaker`、`audio_data`、`audio_url`）最多 3 个，可以混用，顺序对应 `@音频1` 到 `@音频3`。参考图只能 1 张，不能和声音参考一起用。大文件建议用链接，不要用 Base64。
+</ParamField>
+
+<ParamField body="audio_config.format" type="string">
+输出格式：`wav`、`mp3`、`pcm`、`ogg_opus`。`pcm` 是没有文件头的原始音频数据。
+</ParamField>
+
+<ParamField body="audio_config.sample_rate" type="integer">
+采样率（Hz）。已实测：
+
+| 格式 | 采样率 |
+| --- | --- |
+| `wav`、`pcm` | 8000、16000、24000、32000、40000、44100、48000 |
+| `mp3` | 8000、16000、24000、32000、44100、48000 |
+| `ogg_opus` | 48000 |
+</ParamField>
+
+<ParamField body="audio_config.speech_rate" type="integer">
+语速，-50 到 100。-50 约为正常速度的一半，100 约为两倍。
+</ParamField>
+
+<ParamField body="audio_config.loudness_rate" type="integer">
+音量，-50 到 100，数值越大声音越响。
+</ParamField>
+
+<ParamField body="audio_config.pitch_rate" type="integer">
+音调，-12 到 12，数值越大声音越高。
+</ParamField>
+
+<ParamField body="audio_config.enable_subtitle" type="boolean">
+填 `true` 时返回 `subtitle` 字幕，包含分句和逐字时间。
+</ParamField>
+
+<ParamField body="watermark.aigc_watermark" type="boolean">
+填 `true` 时在音频末尾加一段可以听到的 AI 生成提示音。
+</ParamField>
+
+<ParamField body="watermark.aigc_metadata" type="object">
+把 AI 生成标识写进音频文件的元数据（已在 `wav` 格式核对）。格式：`{"enable": true, "content_producer": "…", "produce_id": "…", "content_propagator": "…", "propagate_id": "…"}`，四个字段填你自己的标识。
+</ParamField>
+
+## 响应
+
+<ResponseExample>
+```json
+{
+  "audio": "<Base64 编码的音频>",
+  "url": "https://…",
+  "duration": 3.28,
+  "original_duration": 3.28,
+  "subtitle": {
+    "text": "你好，今天阳光很好。",
+    "sentences": [
+      {
+        "text": "你好，今天阳光很好。",
+        "start_time": 120,
+        "end_time": 2840,
+        "words": [
+          {"text": "你", "start_time": 120, "end_time": 440},
+          {"text": "好", "start_time": 440, "end_time": 680},
+          {"text": "，", "start_time": 680, "end_time": 680}
+        ]
+      }
+    ]
+  }
+}
+```
+</ResponseExample>
+
+- `audio`：Base64 编码的音频，格式和采样率按 `audio_config`。
+- `url`：音频下载链接，有有效期，请及时下载保存。
+- `duration`：成品音频的时长（秒），调了语速或加了提示音后会和 `original_duration` 不同。
+- `original_duration`：按正常语速计算的原始时长（秒），也是计费时长，单次最长 120 秒。
+- `subtitle`：开启字幕时返回。`start_time`、`end_time` 单位毫秒。
+
+## 计费
+
+价格为原始时长每分钟 1 元，按 `original_duration` 计费，金额保留 8 位小数。例如原始时长 3.28 秒扣 0.05466667 元。调慢语速不会多扣钱：原始 3.7 秒的内容放慢后播放 7.4 秒，仍按 3.7 秒计费。请求失败不扣费。
+
+## 错误
+
+错误时响应体为 `{"code": …, "message": "…"}`：
+
+| HTTP 状态 | `code` | 原因 |
+| --- | --- | --- |
+| 400 | `45001116` | 缺少 `text_prompt`，或超过 3000 个字符 |
+| 401 | — | Key 错误或已停用，响应体只有 `message` |
+| 500 | `55001309` | `audio_config.format` 不是支持的格式 |

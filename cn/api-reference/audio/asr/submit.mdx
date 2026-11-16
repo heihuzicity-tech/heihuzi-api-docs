@@ -1,0 +1,100 @@
+---
+title: "语音识别：提交任务"
+description: "把录音文件交给豆包录音文件识别模型 2.0，异步转成带标点的文字。"
+api: "POST /api/v3/auc/bigmodel/submit"
+---
+
+`POST https://code.heihuzi.ai/api/v3/auc/bigmodel/submit` 提交一个录音文件识别任务，请求头、请求体和返回与火山「豆包录音文件识别模型 2.0」标准版接口相同。任务异步执行：提交后用同一个 `X-Api-Request-Id` 调[查询结果](/cn/api-reference/audio/asr/query)取文字。
+
+请使用绑定「豆包语音｜火山官方」分组的 API Key。
+
+<RequestExample>
+```bash
+curl --fail-with-body --silent --show-error --include \
+  --request POST \
+  --url https://code.heihuzi.ai/api/v3/auc/bigmodel/submit \
+  --header "X-Api-Key: $HEIHUZI_API_KEY" \
+  --header 'X-Api-Resource-Id: volc.seedasr.auc' \
+  --header "X-Api-Request-Id: $TASK_ID" \
+  --header 'X-Api-Sequence: -1' \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "user": {"uid": "my-app"},
+  "audio": {"url": "'"$AUDIO_URL"'", "format": "mp3"},
+  "request": {"model_name": "bigmodel", "enable_itn": true, "enable_punc": true}
+}'
+```
+</RequestExample>
+
+运行前设置环境变量：`HEIHUZI_API_KEY` 为你的 Key；`TASK_ID` 为新生成的 UUID（例如 `TASK_ID=$(uuidgen)`）；`AUDIO_URL` 为可以公开下载的录音链接。
+
+## 请求头
+
+<ParamField header="X-Api-Key" type="string" required>
+你的便利店 API Key。
+</ParamField>
+
+<ParamField header="X-Api-Resource-Id" type="string" required>
+固定填 `volc.seedasr.auc`。
+</ParamField>
+
+<ParamField header="X-Api-Request-Id" type="string" required>
+任务编号，由你生成，建议用 UUID。查询结果时填同一个值。同一账号下编号不能重复使用，重复时返回 400。
+</ParamField>
+
+<ParamField header="X-Api-Sequence" type="string" required>
+固定填 `-1`。
+</ParamField>
+
+## 请求参数
+
+<ParamField body="audio.url" type="string" required>
+录音文件的 http 或 https 链接，火山需要能直接下载。私有存储请用带签名的临时链接，并保证在识别完成前有效。
+</ParamField>
+
+<ParamField body="audio.format" type="string" required>
+音频格式。已实测 `mp3`、`wav`、`ogg`。
+</ParamField>
+
+<ParamField body="request.model_name" type="string" required>
+固定填 `bigmodel`。
+</ParamField>
+
+<ParamField body="request.enable_itn" type="boolean">
+填 `true` 时把口语数字写成阿拉伯数字，例如“三十秒”写成“30秒”。
+</ParamField>
+
+<ParamField body="request.enable_punc" type="boolean">
+填 `true` 时在结果里加标点。
+</ParamField>
+
+<ParamField body="user.uid" type="string">
+你自己的用户标识，便于在火山侧区分来源，可以填任意字符串。
+</ParamField>
+
+## 响应
+
+提交成功返回 HTTP 200，响应头 `X-Api-Status-Code: 20000000`，响应体为空对象 `{}`。是否提交成功以 `X-Api-Status-Code` 为准。
+
+```text
+HTTP/1.1 200 OK
+X-Api-Status-Code: 20000000
+X-Api-Message: OK
+X-Tt-Logid: 20261116183623BD397809DBBB6F8E3632
+
+{}
+```
+
+## 计费
+
+价格为音频时长每小时 0.8 元，按火山返回的实际时长精确到毫秒计费，金额保留 8 位小数。例如 28.908 秒的录音扣 0.006424 元。
+
+提交时先冻结 1 小时的费用（0.8 元），识别完成后按实际时长扣费，多冻结的退回。余额不够冻结时返回 402，不会提交任务。没有识别出语音的录音（静音）也按火山返回的时长计费。
+
+## 错误
+
+| HTTP 状态 | `X-Api-Status-Code` | 原因 |
+| --- | --- | --- |
+| 400 | `45000001` | `X-Api-Request-Id` 已经用过，或 `X-Api-Resource-Id` 不是可用的识别模型 |
+| 401 | — | Key 错误或已停用 |
+| 402 | — | 余额不够冻结 1 小时的费用 |

@@ -1,0 +1,85 @@
+---
+title: "语音识别：查询结果"
+description: "按任务编号查询录音文件识别的进度，完成后返回全文、分句和逐字时间。"
+api: "POST /api/v3/auc/bigmodel/query"
+---
+
+用[提交任务](/cn/api-reference/audio/asr/submit)时填的 `X-Api-Request-Id` 查询识别进度，完成后返回文字。返回格式与火山「豆包录音文件识别模型 2.0」查询接口相同。
+
+<RequestExample>
+```bash
+curl --fail-with-body --silent --show-error --include \
+  --request POST \
+  --url https://code.heihuzi.ai/api/v3/auc/bigmodel/query \
+  --header "X-Api-Key: $HEIHUZI_API_KEY" \
+  --header 'X-Api-Resource-Id: volc.seedasr.auc' \
+  --header "X-Api-Request-Id: $TASK_ID" \
+  --header 'X-Api-Sequence: -1' \
+  --header 'Content-Type: application/json' \
+  --data '{}'
+```
+</RequestExample>
+
+运行前把环境变量 `TASK_ID` 设为提交时用的任务编号，并用提交时的同一个 Key 查询。
+
+## 请求头
+
+与[提交任务](/cn/api-reference/audio/asr/submit)相同，`X-Api-Request-Id` 填提交时的任务编号。请求体填 `{}`。
+
+## 状态
+
+看响应头 `X-Api-Status-Code`：
+
+| `X-Api-Status-Code` | 含义 | 费用 |
+| --- | --- | --- |
+| `20000001` | 识别中 | 余额保持冻结 |
+| `20000000` | 完成，响应体里有文字 | 按实际时长扣费，多冻结的退回 |
+| `20000003` | 完成，但录音里没有识别出语音（例如静音） | 按实际时长扣费，多冻结的退回 |
+
+建议每 3 秒左右查询一次。30 秒左右的录音通常几秒到十几秒出结果，10 分钟的录音约 50 秒。即使不查询，任务结束后也会自动结算。
+
+同一个任务每秒最多查询一次。查得太快会返回 HTTP 429 和响应头 `Retry-After`（秒），按它等待后再查。
+
+## 响应
+
+<ResponseExample>
+```json
+{
+  "audio_info": {"duration": 28908},
+  "result": {
+    "additions": {"duration": "28908"},
+    "text": "欢迎来到黑胡子便利店。今天我们测试录音文件识别接口。……",
+    "utterances": [
+      {
+        "start_time": 120,
+        "end_time": 2320,
+        "text": "欢迎来到黑胡子便利店。",
+        "words": [
+          {"start_time": 120, "end_time": 320, "text": "欢", "confidence": 0},
+          {"start_time": 320, "end_time": 480, "text": "迎", "confidence": 0}
+        ]
+      }
+    ]
+  }
+}
+```
+</ResponseExample>
+
+- `audio_info.duration`：录音时长，单位毫秒，也是计费时长。
+- `result.text`：全文。
+- `result.utterances`：分句结果，`start_time`、`end_time` 是这句话在录音里的起止时间（毫秒）。
+- `result.utterances[].words`：逐字结果和每个字的起止时间（毫秒）。
+
+没有识别出语音时，`X-Api-Status-Code` 为 `20000003`，`result.text` 为空字符串：
+
+```json
+{"audio_info":{"duration":10116},"result":{"additions":{"duration":"10116"},"text":""}}
+```
+
+## 错误
+
+| HTTP 状态 | `X-Api-Status-Code` | 原因 |
+| --- | --- | --- |
+| 400 | `45000001` | 查不到这个任务编号（编号写错，或不是这个账号提交的） |
+| 401 | — | Key 错误或已停用 |
+| 429 | — | 同一个任务一秒内查了多次，按 `Retry-After` 等待后再查 |

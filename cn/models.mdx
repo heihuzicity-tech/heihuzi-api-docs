@@ -27,6 +27,10 @@ curl --fail-with-body --silent --show-error --max-time 600 \
 | Messages | `claude-sonnet-5`、`claude-opus-5`、`claude-haiku-4-5-20251001` |
 | Images 生成、编辑 | `gpt-image-2.5-flare`、`gpt-image-2.5-sunburst`、`gpt-image-2`；2026-11-07 新增 `gpt-image-2.6-flare`、`gpt-image-2.6-sunburst` |
 
+## 豆包语音 Key
+
+「豆包语音｜火山官方」分组的 Key 查询 `/v1/models` 返回 `seed-audio-1.0`（[配音](/cn/api-reference/audio/tts/create)）和 `volc.seedasr.auc`（[语音识别](/cn/api-reference/audio/asr/submit)）。其他分组的 Key 不会列出这两个模型。
+
 ## 图片 Key 的真实响应节选
 
 仅保留 `object` 和模型的 `id`、`object`、`owned_by` 字段。

@@ -93,6 +93,14 @@
               "cn/api-reference/videos/seedance/delete",
               "cn/api-reference/videos/seedance/assets"
             ]
+          },
+          {
+            "group": "豆包语音",
+            "pages": [
+              "cn/api-reference/audio/tts/create",
+              "cn/api-reference/audio/asr/submit",
+              "cn/api-reference/audio/asr/query"
+            ]
           }
         ]
       },

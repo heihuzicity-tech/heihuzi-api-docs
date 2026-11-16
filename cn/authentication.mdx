@@ -39,3 +39,7 @@ URL 参数测试使用无效占位值，同时提供有效请求头，仍返回 
 ## DeepSeek Key
 
 2026-09-19 使用 DeepSeek 分组 Key 完成三种协议调用：OpenAI SDK 使用 Bearer 认证，Anthropic SDK 使用 `x-api-key`。请将便利店 Key 与便利店 Base URL 配对，具体配置见 [DeepSeek 接入](/cn/api-reference/deepseek/index)。
+
+## 豆包语音 Key
+
+「豆包语音｜火山官方」分组的 Key 用于[配音](/cn/api-reference/audio/tts/create)和[语音识别](/cn/api-reference/audio/asr/submit)。这两个接口沿用火山原生格式，Key 放在 `X-Api-Key` 请求头里。Key 错误或已停用返回 401。
