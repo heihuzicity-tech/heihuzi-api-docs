@@ -36,6 +36,7 @@
               "cn/api-reference/deepseek/responses",
               "cn/api-reference/deepseek/messages",
               "cn/api-reference/deepseek/tools",
+              "cn/api-reference/deepseek/web-search",
               "cn/api-reference/deepseek/vision",
               "cn/api-reference/deepseek/compatibility"
             ]

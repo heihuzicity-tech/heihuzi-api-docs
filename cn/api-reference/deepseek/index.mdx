@@ -20,6 +20,8 @@ description: "模型选择、三种调用协议与便利店实际验证范围。
 | --- | --- |
 | `deepseek-flash` | 三种协议普通输出；三种协议流式；JSON；Chat / Responses 工具闭环；Responses 多轮；三种协议单图理解 |
 
+`deepseek-flash` 和 `deepseek-v4-pro` 另于 2026-11-17 实测通过 Responses 联网搜索（非流式和流式），见[联网搜索](/cn/api-reference/deepseek/web-search)。
+
 DeepSeek 官方目前将 `deepseek-flash` 对应到 V4.1-Flash，并说明旧 Flash 名称的兼容关系；便利店本次模型列表仅返回上面的两个 ID，示例使用完整 ID。[官方模型说明](https://api-docs.deepseek.com/zh-cn/quick_start/pricing/)
 
 ## 按需求阅读
@@ -29,6 +31,7 @@ DeepSeek 官方目前将 `deepseek-flash` 对应到 V4.1-Flash，并说明旧 Fl
 - [Messages](/cn/api-reference/deepseek/messages)：Anthropic SDK 的请求与完成条件。
 - [工具调用](/cn/api-reference/deepseek/tools)：工具参数、执行结果回传和最终答案。
 - [图片理解](/cn/api-reference/deepseek/vision)：三种协议的同一张参考图示例。
+- [联网搜索](/cn/api-reference/deepseek/web-search)：Responses 带 `web_search` 工具先搜再答，返回来源链接，按次收费。
 - [兼容性与限制](/cn/api-reference/deepseek/compatibility)：本轮通过的参数、输出字段和完成条件。
 
 ## 安装与运行

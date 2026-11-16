@@ -27,6 +27,10 @@ description: "本轮真实验证通过的模型、参数组合和完成条件。
 
 工具的嵌套参数和两轮完整请求见[工具调用](/cn/api-reference/deepseek/tools)；图片字段与编码见[图片理解](/cn/api-reference/deepseek/vision)。每种协议使用各自页面的请求格式。
 
+## 联网搜索
+
+2026-11-17 实测：`deepseek-flash` 和 `deepseek-v4-pro` 在 Responses 接口带 `{"type": "web_search"}` 工具时会联网搜索，非流式和流式都正常完成并返回来源链接；工具字段 `max_keyword`、`limit`、`user_location` 和顶层 `max_tool_calls` 在 `deepseek-flash` 上均实测有效。Chat Completions 的 `web_search_options`、Messages 的 `deepseek_web_search` 不会搜索。用法、返回内容和收费见[联网搜索](/cn/api-reference/deepseek/web-search)。
+
 ## 完成与截断
 
 Chat 的完整文本以 `finish_reason="stop"` 结束，Responses 为 `status="completed"`，Messages 为 `stop_reason="end_turn"`。流式也要检查最终完成标记，不能只凭收到文本片段判定完成。

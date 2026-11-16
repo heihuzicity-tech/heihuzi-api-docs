@@ -1,0 +1,138 @@
+---
+title: "DeepSeek 联网搜索"
+description: "Responses 接口带 web_search 工具，让模型先联网搜索再回答，并返回来源链接。"
+api: "POST /v1/responses"
+---
+
+实测日期：**2026-11-17**。调用 `POST https://code.heihuzi.ai/v1/responses`，在 `tools` 里加上 `{"type": "web_search"}`，模型就会按问题需要先联网搜索，再结合搜到的网页回答，并在回答里附上来源链接。`deepseek-flash` 和 `deepseek-v4-pro` 的非流式、流式都已实测通过。
+
+**只有 Responses 接口带 `web_search` 工具时才会真的搜索。** 其他写法不会联网，见本页末尾“不会搜索的写法”。
+
+## 请求参数
+
+<ParamField body="model" type="string" required>
+填写 `deepseek-flash` 或 `deepseek-v4-pro`。两个型号都实测搜到了网页并给出来源。
+</ParamField>
+
+<ParamField body="input" type="string | object[]" required>
+你的问题。本页示例在问题里写明“请联网搜索后回答，并附上来源链接”。
+</ParamField>
+
+<ParamField body="tools" type="object[]" required>
+加入 `{"type": "web_search"}` 即开启联网搜索。搜不搜、搜什么由模型按问题决定。这个工具还可以带下面这些字段，每个字段都用 `deepseek-flash` 单独实测过效果：
+
+| 字段 | 实测取值 | 实际效果 |
+| --- | --- | --- |
+| `max_keyword` | `1` | 每一轮搜索最多用几个搜索词。不设时一轮用了 3 个和 2 个搜索词；设为 `1` 后每轮只用 1 个搜索词，但模型多搜了几轮，总次数不一定变少 |
+| `limit` | `1`、`10` | 每个搜索词最多取回几条网页。同一个问题，`limit=1` 时输入 2258 token、引用 1 条；`limit=10` 时输入 3923 token、引用 3 条 |
+| `user_location` | `{"type": "approximate", "country": "中国", "region": "浙江", "city": "杭州"}` | 告诉模型用户大概在哪里。只问“今天天气怎么样”，模型搜了“杭州今天天气”，回答的是杭州的天气 |
+</ParamField>
+
+<ParamField body="max_tool_calls" type="integer">
+一次请求最多搜几轮。`deepseek-flash` 实测设为 `1` 时只搜了 1 轮；不设时同一个问题搜了 2 轮。一轮里可能带多个搜索词，按搜索词计费，所以它限制的是轮数，不是计费次数。
+</ParamField>
+
+<ParamField body="max_output_tokens" type="integer">
+示例使用 `2048`。搜索后的回答通常比普通回答长，太小可能被截断。
+</ParamField>
+
+<ParamField body="stream" type="boolean">
+开启后读取 SSE，必须看到 `response.completed` 才算完成。
+</ParamField>
+
+## 非流式完整示例
+
+下面的脚本已在正式环境照原样运行通过：模型搜索后给出答案，打印搜索词、来源链接和本次计费的搜索次数。
+
+<RequestExample>
+
+```python
+import os
+from openai import OpenAI
+client = OpenAI(api_key=os.environ['HEIHUZI_API_KEY'], base_url='https://code.heihuzi.ai/v1', timeout=180.0, max_retries=0)
+result = client.responses.create(
+    model='deepseek-flash',
+    input='DeepSeek 在 2026 年 11 月 13 日发布了什么 API 更新？请联网搜索后用两句话回答，并附上来源链接。',
+    tools=[{'type': 'web_search'}],
+    max_output_tokens=2048,
+)
+assert result.status == 'completed'
+searches = [item for item in result.output if item.type == 'web_search_call']
+for item in searches:
+    print('搜索词:', item.action.query)
+print(result.output_text)
+for item in result.output:
+    if item.type == 'message':
+        for part in item.content:
+            for ann in getattr(part, 'annotations', None) or []:
+                if ann.type == 'url_citation':
+                    print('来源:', ann.title, ann.url)
+tool_usage = getattr(result.usage, 'tool_usage', None) or {}
+print('计费搜索次数:', tool_usage.get('web_search', 0))
+assert searches and tool_usage.get('web_search', 0) >= 1
+```
+</RequestExample>
+
+把 `model` 换成 `deepseek-v4-pro` 同样可用，实测非流式和流式都正常完成。
+
+## 流式完整示例
+
+流式会依次收到 `response.web_search_call.in_progress`、`response.web_search_call.searching`、`response.web_search_call.completed`，然后是正文增量 `response.output_text.delta`、来源 `response.output_text.annotation.added`，最后是 `response.completed`。搜索次数在 `response.completed` 的 `usage` 里。
+
+```python
+import os
+from openai import OpenAI
+client = OpenAI(api_key=os.environ['HEIHUZI_API_KEY'], base_url='https://code.heihuzi.ai/v1', timeout=180.0, max_retries=0)
+events = client.responses.create(
+    model='deepseek-flash',
+    input='DeepSeek 在 2026 年 11 月 13 日发布了什么 API 更新？请联网搜索后用两句话回答，并附上来源链接。',
+    tools=[{'type': 'web_search'}],
+    max_output_tokens=2048,
+    stream=True,
+)
+(answer, citations, final) = ('', [], None)
+for event in events:
+    if event.type == 'response.web_search_call.searching':
+        print('正在搜索…')
+    elif event.type == 'response.output_text.delta':
+        answer += event.delta
+    elif event.type == 'response.output_text.annotation.added':
+        citations.append(event.annotation)
+    elif event.type == 'response.completed':
+        final = event.response
+    elif event.type in ('response.failed', 'response.incomplete', 'error'):
+        raise RuntimeError(event.model_dump_json())
+assert final is not None and final.status == 'completed'
+print(answer)
+for ann in citations:
+    print('来源:', ann.get('title'), ann.get('url'))
+tool_usage = getattr(final.usage, 'tool_usage', None) or {}
+print('计费搜索次数:', tool_usage.get('web_search', 0))
+assert citations and tool_usage.get('web_search', 0) >= 1
+```
+
+## 返回内容
+
+- **`web_search_call`**：`output` 里每一轮搜索有一条，`status` 为 `completed`，`action.query` 是这一轮用的搜索词。一轮可能有多个搜索词，用英文分号 `;` 隔开，例如 `北京今天天气;上海今天天气;广州今天天气`。
+- **来源链接**：回答正文（`message` 里的 `output_text`）的 `annotations` 是 `url_citation` 引用，每条有 `title`（可能为空）和 `url`，实测还带 `site_name`、`publish_time`、`summary`、`logo_url`。这些引用没有 `start_index`、`end_index`，不要按位置去读。
+- **搜索次数**：`usage.tool_usage.web_search` 是本次计费的搜索次数，等于所有 `web_search_call` 里搜索词的总个数。上面例子里一轮用了 3 个搜索词，就计 3 次。
+- 模型可能在搜索前先输出一句“我来搜索一下”之类的话，这时 `output` 里有两条 `message`。SDK 的 `output_text` 会把它们连在一起。
+
+## 怎么收费
+
+- **搜索费**：每次 **0.00375 元**（3.75 元/千次），次数按 `usage.tool_usage.web_search` 算。
+- **token 费**：搜到的网页内容会算进输入 token，按 DeepSeek 分组的正常价格计费。实测搜一轮时输入约 2000～5500 token；问题需要多轮搜索时，输入可能超过 2 万 token。
+- 想控制费用，可以设 `max_tool_calls` 限制搜索轮数、`max_keyword` 限制每轮的搜索词个数、`limit` 限制每个搜索词取回的网页条数。
+- 每次请求的实际扣费以用量明细为准。用量明细的费用浮窗里，带搜索的请求会多一行“联网搜索 N 次”。
+
+## 不会搜索的写法
+
+下面这些写法都不会联网，也不收搜索费。模型只能凭自己已有的知识回答，可能告诉你它无法联网，或者给出过时的信息。
+
+| 写法 | 实测结果 |
+| --- | --- |
+| Chat Completions（`/v1/chat/completions`）带 `web_search_options` | 正常回答，但没有搜索 |
+| Messages（`/v1/messages`）带 `deepseek_web_search` 工具 | 这个工具被忽略，正常回答，没有搜索 |
+| Responses 不带 `web_search` 工具 | 普通回答，没有搜索 |
+
+需要联网时，请改用本页的 Responses 写法。
