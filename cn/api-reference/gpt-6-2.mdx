@@ -1,0 +1,67 @@
+---
+title: "GPT-6.2 Astra / Sol"
+description: "GPT-6.2 Astra、Sol 的 Responses 地址、认证、请求格式和实测范围。"
+---
+
+## 模型与权限
+
+| 模型 | 完整调用 ID |
+| --- | --- |
+| GPT-6.2 Astra | `gpt-6.2-astra` |
+| GPT-6.2 Sol | `gpt-6.2-sol` |
+
+使用具有对应模型权限的 ChatGPT 分组 API Key，先通过 [Models](/cn/models) 查询可见模型。
+
+## 地址与认证
+
+请求地址为 `POST https://code.heihuzi.ai/v1/responses`。请求头使用 `Content-Type: application/json` 和 `Authorization: Bearer <便利店 API Key>`。
+
+## 普通文本
+
+下面是已在正式 API 实际发送并验证成功的完整请求 JSON：
+
+```json
+{
+  "model": "gpt-6.2-sol",
+  "input": [{"role": "user", "content": "Reply with exactly API_OK."}]
+}
+```
+
+使用 Astra 时，将 `model` 替换为 `gpt-6.2-astra`；两款模型均分别验证过这一请求。
+
+从 `output[]` 的 `message.content[]` 中读取 `type: output_text` 对应的 `text`。此请求成功时回答为 `API_OK`，`status` 为 `completed`；检查响应的 `model` 与请求一致。`error: null` 不代表接口失败。
+
+## 流式文本
+
+同一接口使用下面的请求 JSON：
+
+```json
+{
+  "model": "gpt-6.2-sol",
+  "input": [{"role": "user", "content": "Reply with exactly API_OK."}],
+  "stream": true
+}
+```
+
+Astra 使用自己的完整模型 ID。两款模型的流式请求均已实测。
+
+响应为 SSE。拼接 `response.output_text.delta` 的文本增量，并检查 `response.completed` 中的最终状态和文本；出现 `response.failed`、`response.incomplete` 或错误事件时，不应当作正常完成。只收到 HTTP 200 或部分增量不够。
+
+## 已实测的使用范围
+
+2026-11-18，Astra、Sol 均通过文本、流式、PNG 图片理解、客户端多轮、函数调用闭环、JSON Schema 结构化输出六个场景；返回模型与请求一致。
+
+| 场景 | 本站通过的范围 |
+| --- | --- |
+| 图片理解 | PNG 通过 `input_image` Data URL 与 `input_text` 一起输入，正确识别图片内容 |
+| 客户端多轮 | 保留上一轮完整 `output`，追加下一轮用户输入 |
+| 函数调用 | 声明 `add` 函数，首轮指定该函数；实际收到参数 17、29，回传本地计算结果 46 后收到最终答案 |
+| 结构化输出 | `text.format` 使用 `json_schema`、`strict: true`；指定 schema 的 JSON 结果通过解析和字段检查 |
+
+这些结果只对应所述场景，不代表所有推理档位、参数组合或官方协议均已在本站验证。函数调用和结构化输出的协议细节参见下方官方参考。
+
+本页文本示例不设置输出长度上限。价格以[模型广场](https://code.heihuzi.ai/ai-models)和实际用量明细为准。
+
+## 官方协议参考
+
+使用 OpenAI [Responses 接口](https://developers.openai.com/api/reference/resources/responses/methods/create)。图片、工具和 JSON 格式分别参考[图片输入](https://developers.openai.com/api/docs/guides/images-vision)、[函数调用](https://developers.openai.com/api/docs/guides/function-calling)和[结构化输出](https://developers.openai.com/api/docs/guides/structured-outputs)。旧型号的历史测试见 [Responses](/cn/api-reference/responses)，其测试日期和范围不外推到 GPT-6.2。

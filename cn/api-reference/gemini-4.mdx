@@ -1,0 +1,74 @@
+---
+title: "Gemini 4"
+description: "Gemini 4 Argon、Carbon、Hydrogen 的原生 API 地址、认证、文本和流式接入。"
+---
+
+<Warning>
+Gemini 当前资源较紧张，调用可能遇到 429、502 或等待超时。成功调用记录说明下方请求格式可用，不代表当前每次请求都能成功；遇到错误时请检查错误正文，避免连续重复提交。
+</Warning>
+
+## 模型与权限
+
+| 模型 | 完整调用 ID |
+| --- | --- |
+| Gemini 4 Argon | `gemini-4-argon` |
+| Gemini 4 Carbon | `gemini-4-carbon` |
+| Gemini 4 Hydrogen | `gemini-4-hydrogen` |
+
+使用 Gemini 分组的便利店 API Key。先通过 [Models](/cn/models) 查询当前 Key 的可见模型；`gemini4` 是系列简称，调用时使用表中的完整 ID。
+
+## 地址与认证
+
+模型 ID 放在 URL 路径中。以 Hydrogen 为例：
+
+| 用途 | 请求地址 |
+| --- | --- |
+| 普通文本 | `POST https://code.heihuzi.ai/v1beta/models/gemini-4-hydrogen:generateContent` |
+| 流式文本 | `POST https://code.heihuzi.ai/v1beta/models/gemini-4-hydrogen:streamGenerateContent?alt=sse` |
+
+Argon、Carbon 使用同样的路径结构，将路径中的模型 ID 分别替换为 `gemini-4-argon`、`gemini-4-carbon`。请求头使用 `Content-Type: application/json` 和 `x-goog-api-key: <便利店 API Key>`。
+
+## 文本请求
+
+下面是三款模型均有真实成功记录的完整请求 JSON；普通和流式文本使用相同的请求体。
+
+```json
+{
+  "contents": [{"role": "user", "parts": [{"text": "Reply with exactly API_OK."}]}],
+  "generationConfig": {"maxOutputTokens": 4096}
+}
+```
+
+| 字段 | 本页示例取值 |
+| --- | --- |
+| `contents[].role` | `user` |
+| `contents[].parts[].text` | `Reply with exactly API_OK.` |
+| `generationConfig.maxOutputTokens` | `4096`，本页请求采用的配置值，不是模型最大输出规格 |
+
+普通响应从 `candidates[].content.parts[]` 中读取非思考部分的 `text`；此请求的成功结果为 `API_OK`，完成原因为 `finishReason: STOP`。同时检查返回的 `modelVersion` 是否与请求模型一致，不能把其他模型的回答算作请求模型的成功。
+
+## 流式读取
+
+流式使用上表的 `streamGenerateContent?alt=sse` 地址。响应为 `text/event-stream`，按 SSE 的 `data:` 事件逐帧解析，将非思考部分的文本增量拼接起来，并确认最终出现 `finishReason: STOP`。
+
+HTTP 200、连接关闭或收到部分文字都不能单独证明正常完成；还需检查错误事件、完成原因及返回模型。资源不足时，流式请求也可能在返回第一帧之前失败。
+
+## 当前接入范围
+
+2026-11-18，Argon、Carbon、Hydrogen 的上述普通文本和流式请求均有成功记录；后续补测也出现了资源限流、上游拒绝及超时。本页先提供已成功调用的基础文本协议，不把资源错误当成模型能力结论。
+
+本页不承诺所有官方参数或全部多模态能力均可通过当前线路使用。价格以[模型广场](https://code.heihuzi.ai/ai-models)与实际用量明细为准。
+
+## 错误处理
+
+| 现象 | 如何判断 |
+| --- | --- |
+| `429` | 本次记录中上游曾明确报告 TPM 配额耗尽；应降低提交频率，等待资源恢复 |
+| `502` | 先看错误正文；`Upstream access forbidden` 表示该次上游访问被拒绝，不能仅凭 502 判断模型能力 |
+| 客户端等待超时 | 不等于模型返回“成功”或“参数不支持”；保留发生时间、模型及错误信息，必要时联系支持核查 |
+
+客户端关闭自动重试并不保证服务端没有重试。不要以客户端提交次数直接推算上游尝试次数；费用查看本站用量记录。
+
+## 官方协议参考
+
+字段与接口结构参考 Google [GenerateContent REST 接口](https://aistudio.google.com/api-reference/generate-content/generate-content)及[内容生成接口说明](https://aistudio.google.com/api-reference/generate-content)。本页使用 GenerateContent，不能混入 Interactions API 的请求字段。官方能力说明与便利店当前线路的实际可用范围分别判断。

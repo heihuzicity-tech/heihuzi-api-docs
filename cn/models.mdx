@@ -75,3 +75,10 @@ Gemini 格式的 `/v1beta/models` 会列出更多模型，但列出的模型不�
 ## DeepSeek 模型（2026-09-19 实测）
 
 DeepSeek Key 的 `/v1/models` 本次返回 `deepseek-flash` 与 `deepseek-v4-pro`；Flash 的三种协议普通文本已通过。Flash 的流式、JSON、工具闭环及图片输入范围见 [DeepSeek 接入](/cn/api-reference/deepseek/index)。模型列表不会自动证明每种参数或协议组合均受支持。
+
+## GPT-6.2 与 Gemini 4
+
+- `gpt-6.2-astra`、`gpt-6.2-sol`：使用 ChatGPT 分组 Key，见 [GPT-6.2 接入](/cn/api-reference/gpt-6-2)。
+- `gemini-4-argon`、`gemini-4-carbon`、`gemini-4-hydrogen`：使用 Gemini 分组 Key，见 [Gemini 4 接入](/cn/api-reference/gemini-4)。
+
+完整 ID 与对应分组权限必须同时匹配。上面的历史实测表保留原有日期；新型号的协议、参数和示例范围在专页单独说明。

@@ -35,7 +35,7 @@
                 "properties": {
                   "model": {
                     "type": "string",
-                    "description": "已验证文本模型：gpt-5.5、gpt-5.6-luna、gpt-5.6-sol、gpt-5.6-terra、gpt-6-astra。扩展输入和流式测试使用 gpt-5.5。",
+                    "description": "已验证文本模型：gpt-5.5、gpt-5.6-luna、gpt-5.6-sol、gpt-5.6-terra、gpt-6-astra。扩展输入和流式测试使用 gpt-5.5。 GPT-6.2 Astra / Sol 的模型 ID、参数组合和示例请见 GPT-6.2 专页（/cn/api-reference/gpt-6-2）；本页历史结果不外推到新型号。",
                     "example": "gpt-5.5"
                   },
                   "input": {

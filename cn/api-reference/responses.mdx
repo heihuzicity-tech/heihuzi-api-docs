@@ -4,7 +4,9 @@ description: "文本、流式、图片识别、多轮对话和函数调用的完
 openapi: "/openapi/responses.json POST /v1/responses"
 ---
 
-`POST https://code.heihuzi.ai/v1/responses` 已验证文本生成。五个文本模型见 [Models](/cn/models)；本页扩展输入及流式测试使用 `gpt-5.5`。验证日期：**2026-09-13**。
+`POST https://code.heihuzi.ai/v1/responses` 已验证文本生成。历史实测的五个文本模型见 [Models](/cn/models)；本页扩展输入及流式测试使用 `gpt-5.5`。验证日期：**2026-09-13**。
+
+GPT-6.2 Astra 和 Sol 的接入与逐模型范围见 [GPT-6.2 专页](/cn/api-reference/gpt-6-2)。本页旧型号的测试结果不外推到新型号。
 
 运行示例前设置环境变量 `HEIHUZI_API_KEY`，使用具有对应文本模型权限的 Key。Python 示例使用已验证的 OpenAI Python SDK **2.32.0**。
 

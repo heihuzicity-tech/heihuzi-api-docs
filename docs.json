@@ -24,8 +24,15 @@
             "group": "OpenAI API 调用",
             "pages": [
               "cn/api-reference/responses",
+              "cn/api-reference/gpt-6-2",
               "cn/api-reference/chat-completions",
               "cn/models"
+            ]
+          },
+          {
+            "group": "Gemini 4",
+            "pages": [
+              "cn/api-reference/gemini-4"
             ]
           },
           {
