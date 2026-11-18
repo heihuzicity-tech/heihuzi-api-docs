@@ -1,6 +1,6 @@
 ---
-title: "Gemini 4"
-description: "Gemini 4 Argon、Carbon、Hydrogen 的原生 API 地址、认证、文本和流式接入。"
+title: "Gemini 系列"
+description: "Gemini 3.8 Flash 与 Gemini 4 系列模型、分组权限及原生文本接口参考。"
 ---
 
 <Warning>
@@ -11,15 +11,18 @@ Gemini 当前资源较紧张，调用可能遇到 429、502 或等待超时。�
 
 | 模型 | 完整调用 ID |
 | --- | --- |
+| Gemini 3.8 Flash | `gemini-3.8-flash` |
 | Gemini 4 Argon | `gemini-4-argon` |
 | Gemini 4 Carbon | `gemini-4-carbon` |
 | Gemini 4 Hydrogen | `gemini-4-hydrogen` |
 
+以上四款型号已在便利店模型列表中核对可见；模型列表用于确认型号与权限，不代替逐模型的参数验证。
+
 使用 Gemini 分组的便利店 API Key。先通过 [Models](/cn/models) 查询当前 Key 的可见模型；`gemini4` 是系列简称，调用时使用表中的完整 ID。
 
-## 地址与认证
+## Gemini 4 文本接口
 
-模型 ID 放在 URL 路径中。以 Hydrogen 为例：
+以下请求体和流式说明的成功调用记录覆盖 Gemini 4 Argon、Carbon、Hydrogen。模型 ID 放在 URL 路径中；以 Hydrogen 为例：
 
 | 用途 | 请求地址 |
 | --- | --- |
@@ -30,7 +33,7 @@ Argon、Carbon 使用同样的路径结构，将路径中的模型 ID 分别替�
 
 ## 文本请求
 
-下面是三款模型均有真实成功记录的完整请求 JSON；普通和流式文本使用相同的请求体。
+下面是上述三款 Gemini 4 模型均有真实成功记录的完整请求 JSON；普通和流式文本使用相同的请求体。
 
 ```json
 {

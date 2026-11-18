@@ -30,9 +30,9 @@
             ]
           },
           {
-            "group": "Gemini 4",
+            "group": "Gemini 系列",
             "pages": [
-              "cn/api-reference/gemini-4"
+              "cn/api-reference/gemini"
             ]
           },
           {
@@ -195,6 +195,10 @@
     {
       "source": "/cn/api-reference/videos/minimax/content",
       "destination": "/cn/api-reference/videos/minimax-v2/query"
+    },
+    {
+      "source": "/cn/api-reference/gemini-4",
+      "destination": "/cn/api-reference/gemini"
     }
   ],
   "api": {
